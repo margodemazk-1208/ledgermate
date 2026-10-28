@@ -44,6 +44,8 @@ dependencies:
   isar_community: ^3.4.1
   isar_community_flutter_libs: ^3.4.1
   path_provider: ^2.1.6
+  file_picker: ^13.3.0
+  timezone: ^0.11.2
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +71,7 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  generate: true
 
   # To add assets to your application, add an assets section, like this:
   # assets:

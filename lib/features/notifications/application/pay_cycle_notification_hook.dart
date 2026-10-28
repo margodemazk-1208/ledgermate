@@ -1,21 +1,14 @@
 // Notification integration point for Pay Cycle lifecycle events (PRD FR-11 reminder type 3: "Siklus gajian baru").
-//
-// M10 will implement/override this hook to schedule local notifications
-// via `flutter_local_notifications` when a pay cycle starts or expires.
-// M5 provides this single, unambiguous integration hook so M10 does not need
-// to reverse-engineer where to wire into.
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:isar_community/isar.dart';
 
+import '../../../core/database/isar_provider.dart';
 import '../../../core/database/local_profile.dart';
+import '../data/notification_service.dart';
 
 /// Contract for handling pay cycle notification triggers.
 abstract class PayCycleNotificationHook {
   /// Invoked when a new pay cycle has started (transition completed).
-  ///
-  /// [incomeFrequency] indicates whether Mode A (periodic) or Mode B (daily) applies.
-  /// [nextPaydayDate] is the scheduled end/payday of the cycle (Mode A), or null for Mode B.
-  /// [incomeAmount] is the fixed salary (Mode A) or logged bekel (Mode B).
   Future<void> onPayCycleStarted({
     required IncomeFrequency incomeFrequency,
     DateTime? nextPaydayDate,
@@ -29,8 +22,7 @@ abstract class PayCycleNotificationHook {
   });
 }
 
-/// Default no-op hook for M5. M10 overrides this provider with
-/// real `flutter_local_notifications` scheduling.
+/// Default no-op hook for fallback or isolated testing.
 class NoOpPayCycleNotificationHook implements PayCycleNotificationHook {
   const NoOpPayCycleNotificationHook();
 
@@ -39,8 +31,49 @@ class NoOpPayCycleNotificationHook implements PayCycleNotificationHook {
     required IncomeFrequency incomeFrequency,
     DateTime? nextPaydayDate,
     required int incomeAmount,
+  }) async {}
+
+  @override
+  Future<void> onPayCycleExpired({
+    required IncomeFrequency incomeFrequency,
+    required DateTime expiredDate,
+  }) async {}
+}
+
+/// Real M10 hook integrating with [NotificationServiceBase] and [LocalProfile] (FR-11).
+class RealPayCycleNotificationHook implements PayCycleNotificationHook {
+  RealPayCycleNotificationHook(this._ref);
+
+  final Ref _ref;
+
+  Future<LocalProfile?> _getProfile() async {
+    try {
+      final isar = _ref.read(isarProvider);
+      return await isar.localProfiles.where().findFirst();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> onPayCycleStarted({
+    required IncomeFrequency incomeFrequency,
+    DateTime? nextPaydayDate,
+    required int incomeAmount,
   }) async {
-    // Integration point for M10: schedule reminder for nextPaydayDate.
+    final profile = await _getProfile();
+    if (profile == null || !profile.notifPayCycleEnabled) return;
+
+    final notifService = _ref.read(notificationServiceProvider);
+    final title = incomeFrequency == IncomeFrequency.periodic
+        ? 'Siklus Baru Dimulai'
+        : 'Siklus Harian Baru';
+    final body =
+        incomeFrequency == IncomeFrequency.periodic && nextPaydayDate != null
+        ? 'Siklus baru aktif hingga ${nextPaydayDate.day}/${nextPaydayDate.month}/${nextPaydayDate.year}. Budget harian telah disesuaikan.'
+        : 'Bekel harian telah dicatat. Uang jajan aman siap digunakan hari ini.';
+
+    await notifService.showPayCycleAlert(title: title, body: body);
   }
 
   @override
@@ -48,7 +81,14 @@ class NoOpPayCycleNotificationHook implements PayCycleNotificationHook {
     required IncomeFrequency incomeFrequency,
     required DateTime expiredDate,
   }) async {
-    // Integration point for M10: trigger immediate notification when cycle expires.
+    final profile = await _getProfile();
+    if (profile == null || !profile.notifPayCycleEnabled) return;
+
+    final notifService = _ref.read(notificationServiceProvider);
+    await notifService.showPayCycleAlert(
+      title: 'Siklus Gajian Telah Tiba!',
+      body: 'Waktunya perbarui gaji dan pengeluaran wajib untuk memulai siklus baru.',
+    );
   }
 }
 
@@ -56,5 +96,5 @@ class NoOpPayCycleNotificationHook implements PayCycleNotificationHook {
 final payCycleNotificationHookProvider = Provider<PayCycleNotificationHook>((
   ref,
 ) {
-  return const NoOpPayCycleNotificationHook();
+  return RealPayCycleNotificationHook(ref);
 });

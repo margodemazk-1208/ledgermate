@@ -1,0 +1,16 @@
+{
+  "@@locale": "en",
+  "appTitle": "LedgerMate",
+  "settingsTitle": "Settings",
+  "dataManagement": "Backup & Restore",
+  "appearanceAndLanguage": "Appearance & Language",
+  "darkMode": "Dark Mode",
+  "language": "App Language",
+  "notificationsTitle": "Notifications & Reminders",
+  "dailyReminder": "Daily Logging Reminder",
+  "limitAlert": "Daily Limit Exceeded Alert",
+  "payCycleAlert": "New Pay Cycle Alert",
+  "goalMilestoneAlert": "Goal Milestone Alert",
+  "categoryManagement": "Manage Categories",
+  "aboutTitle": "About LedgerMate"
+}

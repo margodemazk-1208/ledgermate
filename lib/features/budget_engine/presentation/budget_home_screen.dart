@@ -9,6 +9,7 @@ import '../../analytics/presentation/analytics_screen.dart';
 import '../../assets/presentation/assets_screen.dart';
 import '../../goals/presentation/goals_screen.dart';
 import '../../pay_cycle/presentation/pay_cycle_transition_screen.dart';
+import '../../settings/presentation/settings_screen.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../../transactions/presentation/transactions_screen.dart';
 import '../application/budget_providers.dart';
@@ -156,11 +157,9 @@ class BudgetHomeScreen extends ConsumerWidget {
               );
               break;
             case 5:
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fitur Pengaturan akan hadir di Milestone 10.'),
-                ),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
               break;
           }
         },

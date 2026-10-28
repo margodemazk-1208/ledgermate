@@ -11,10 +11,14 @@ import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
 import '../../../core/formulas/daily_budget_formulas.dart';
 import '../../budget_engine/application/budget_providers.dart';
+import '../../notifications/application/goal_notification_hook.dart';
 import '../data/goals_repository.dart';
 
 final goalsRepositoryProvider = Provider<GoalsRepositoryBase>((ref) {
-  return GoalsRepository(ref.watch(isarProvider));
+  return GoalsRepository(
+    ref.watch(isarProvider),
+    ref.watch(goalNotificationHookProvider),
+  );
 });
 
 final goalsStreamProvider = StreamProvider<List<FinancialGoal>>((ref) {

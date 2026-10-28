@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/l10n/app_localizations.dart';
 import 'core/theme/theme_provider.dart';
 import 'features/budget_engine/presentation/budget_home_screen.dart';
 import 'features/onboarding/application/onboarding_providers.dart';
 import 'features/onboarding/presentation/onboarding_screen.dart';
+import 'features/settings/application/settings_providers.dart';
 
 /// Root widget: MaterialApp + theme wiring. M2 adds the boot-time
 /// Onboarding/Home gate (FR-01: "Wajib selesai sebelum masuk Home") —
@@ -17,20 +18,16 @@ class LedgerMateApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+    final appLocale = ref.watch(appLocaleProvider);
     return MaterialApp(
       title: 'LedgerMate',
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
       theme: ref.watch(lightThemeProvider),
       darkTheme: ref.watch(darkThemeProvider),
-      // ID/EN dwibahasa per FR-09; full .arb-backed l10n lands in M10 —
-      // this just proves the delegates wire up without errors in M0.
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [Locale('id'), Locale('en')],
+      locale: appLocale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: const _OnboardingGate(),
     );
   }

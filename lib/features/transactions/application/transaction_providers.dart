@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/category.dart';
 import '../../../core/database/isar_provider.dart';
 import '../../../core/database/transaction.dart' as db;
+import '../../notifications/application/limit_alert_hook.dart';
 import '../data/transaction_repository.dart';
 
 final transactionRepositoryProvider = Provider<TransactionRepositoryBase>((
@@ -153,6 +154,7 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
             date: state.date,
             notes: state.notes,
           );
+      await ref.read(limitAlertHookProvider).onTransactionSaved();
       state = state.copyWith(isSubmitting: false);
       return true;
     } catch (e) {

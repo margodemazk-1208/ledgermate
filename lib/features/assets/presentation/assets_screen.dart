@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/rupiah_formatter.dart';
 import '../../budget_engine/presentation/budget_home_screen.dart';
 import '../../goals/presentation/goals_screen.dart';
+import '../../settings/presentation/settings_screen.dart';
 import '../../transactions/presentation/transactions_screen.dart';
 import '../application/assets_providers.dart';
 import 'asset_form_screen.dart';
@@ -153,11 +154,8 @@ class AssetsScreen extends ConsumerWidget {
         );
         break;
       case 5:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Fitur Pengaturan akan hadir di Milestone 10.'),
-          ),
-        );
+        Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
         break;
     }
   }

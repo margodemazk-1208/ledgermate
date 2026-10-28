@@ -7,6 +7,7 @@ import '../../../core/database/financial_goal.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
+import '../../notifications/application/goal_notification_hook.dart';
 
 abstract class GoalsRepositoryBase {
   Stream<List<FinancialGoal>> watchGoals();
@@ -43,9 +44,10 @@ abstract class GoalsRepositoryBase {
 }
 
 class GoalsRepository implements GoalsRepositoryBase {
-  GoalsRepository(this._isar);
+  GoalsRepository(this._isar, [this._goalNotificationHook]);
 
   final Isar _isar;
+  final GoalNotificationHook? _goalNotificationHook;
 
   @override
   Stream<List<FinancialGoal>> watchGoals() {
@@ -106,7 +108,15 @@ class GoalsRepository implements GoalsRepositoryBase {
       );
     }
 
-    return _isar.writeTxn(() async {
+    int oldAmount = 0;
+    if (id != null && id > 0) {
+      final existing = await _isar.financialGoals.get(id);
+      if (existing != null) {
+        oldAmount = existing.currentAmount;
+      }
+    }
+
+    final savedGoal = await _isar.writeTxn(() async {
       final goal = (id != null && id > 0)
           ? (await _isar.financialGoals.get(id) ?? FinancialGoal())
           : FinancialGoal();
@@ -124,6 +134,17 @@ class GoalsRepository implements GoalsRepositoryBase {
       goal.id = savedId;
       return goal;
     });
+
+    if (_goalNotificationHook != null) {
+      await _goalNotificationHook.onGoalProgressChanged(
+        goalName: savedGoal.goalName,
+        targetAmount: savedGoal.targetAmount,
+        oldCurrentAmount: oldAmount,
+        newCurrentAmount: savedGoal.currentAmount,
+      );
+    }
+
+    return savedGoal;
   }
 
   @override

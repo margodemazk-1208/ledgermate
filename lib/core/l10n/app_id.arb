@@ -1,0 +1,16 @@
+{
+  "@@locale": "id",
+  "appTitle": "LedgerMate",
+  "settingsTitle": "Pengaturan",
+  "dataManagement": "Cadangkan & Pulihkan",
+  "appearanceAndLanguage": "Tampilan & Bahasa",
+  "darkMode": "Mode Gelap (Dark Mode)",
+  "language": "Bahasa Aplikasi",
+  "notificationsTitle": "Notifikasi & Pengingat",
+  "dailyReminder": "Pengingat Catat Harian",
+  "limitAlert": "Peringatan Limit Harian",
+  "payCycleAlert": "Siklus Gajian Baru",
+  "goalMilestoneAlert": "Milestone Target Tabungan",
+  "categoryManagement": "Kelola Kategori",
+  "aboutTitle": "Tentang LedgerMate"
+}
