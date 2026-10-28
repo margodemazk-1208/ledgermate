@@ -86,7 +86,7 @@ LedgerMate adalah aplikasi manajemen keuangan pribadi **100% offline**, dibangun
 - Cold launch app: **< 1.5 detik**
 
 ### 6.2 Data Integrity
-- Semua data tersimpan lokal via Isar, terenkripsi dengan Isar's built-in encryption (AES) — tetap relevan walau offline, karena ini data finansial pribadi dan HP bisa hilang/dicuri.
+- **Koreksi (2026-10-28, lihat DECISIONS.md D14):** klaim awal "Isar's built-in AES encryption" di versi sebelumnya dokumen ini **tidak akurat** — baik `isar` maupun `isar_community` tidak pernah punya fitur enkripsi built-in. Keputusan final: andalkan **enkripsi app-sandbox bawaan Android** (default aktif di API level modern) — cukup buat ancaman realistis app ini (dibagi ke circle temen kecil, bukan data sensitif level enterprise). Tidak ada library enkripsi tambahan yang dipasang.
 - Tidak ada `sync_status` field di data model — dihapus total, karena tidak ada server untuk disinkron.
 
 ### 6.3 Tech Stack (final, v2)
