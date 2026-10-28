@@ -11,7 +11,7 @@ Milestones map 1:1 to FR/BR ids in `docs/PRD.md`. Each milestone = one unit of w
 - [x] **M2 — Onboarding Wizard** (FR-01)
   Income Frequency picker (Mode A/B), initial income input, mandatory expenses input. Gates entry to Home until complete.
 
-- [ ] **M3 — Transaction CRUD** (FR-02, FR-03)
+- [x] **M3 — Transaction CRUD** (FR-02, FR-03)
   Add/edit transaction, Rupiah-formatted input validation, delete restricted to today only.
 
 - [ ] **M4 — Smart Daily Budget Engine** (FR-04, BR-01, BR-02)
