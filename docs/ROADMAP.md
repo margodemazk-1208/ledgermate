@@ -14,7 +14,7 @@ Milestones map 1:1 to FR/BR ids in `docs/PRD.md`. Each milestone = one unit of w
 - [x] **M3 — Transaction CRUD** (FR-02, FR-03)
   Add/edit transaction, Rupiah-formatted input validation, delete restricted to today only.
 
-- [ ] **M4 — Smart Daily Budget Engine** (FR-04, BR-01, BR-02)
+- [x] **M4 — Smart Daily Budget Engine** (FR-04, BR-01, BR-02)
   Both formula modes (Periodic + Daily/carry-over) implemented as a pure, independently unit-testable function — not tangled into widget code. Recalculates on every transaction/income/goal change.
 
 - [ ] **M5 — Pay Cycle Transition** (FR-05)

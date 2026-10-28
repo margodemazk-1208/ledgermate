@@ -3,9 +3,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/theme_provider.dart';
+import 'features/budget_engine/presentation/budget_home_screen.dart';
 import 'features/onboarding/application/onboarding_providers.dart';
 import 'features/onboarding/presentation/onboarding_screen.dart';
-import 'features/onboarding/presentation/placeholder_home_screen.dart';
 
 /// Root widget: MaterialApp + theme wiring. M2 adds the boot-time
 /// Onboarding/Home gate (FR-01: "Wajib selesai sebelum masuk Home") —
@@ -48,7 +48,7 @@ class _OnboardingGate extends ConsumerWidget {
     final onboardingComplete = ref.watch(onboardingCompleteProvider);
     return onboardingComplete.when(
       data: (isComplete) =>
-          isComplete ? const PlaceholderHomeScreen() : const OnboardingScreen(),
+          isComplete ? const BudgetHomeScreen() : const OnboardingScreen(),
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, stackTrace) => Scaffold(

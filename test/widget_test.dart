@@ -1,4 +1,4 @@
-// Smoke test for the M2 boot-time Onboarding/Home gate in `app.dart`.
+// Smoke test for the boot-time Onboarding/Home gate in `app.dart`.
 // Deliberately overrides `onboardingCompleteProvider` directly instead of
 // `isarProvider`: `testWidgets()`'s test binding hangs indefinitely on
 // real Isar async calls (confirmed by direct repro — open/read/write/watch
@@ -14,9 +14,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ledgermate/app.dart';
+import 'package:ledgermate/core/database/local_profile.dart';
+import 'package:ledgermate/core/formulas/daily_budget_formulas.dart';
+import 'package:ledgermate/features/budget_engine/application/budget_providers.dart';
 import 'package:ledgermate/features/onboarding/application/onboarding_providers.dart';
 
 void main() {
+  const sampleSummary = DailyBudgetSummary(
+    incomeFrequency: IncomeFrequency.periodic,
+    uangJajanAmanHariIni: 150000,
+    dailySavingsReserve: 50000,
+    modeA: ModeABudgetResult(
+      remainingDays: 15,
+      remainingBalance: 3000000,
+      dailySpendingAllowance: 200000,
+      dailySavingsReserve: 50000,
+      uangJajanAmanHariIni: 150000,
+    ),
+  );
+
   testWidgets('onboarding incomplete shows the Onboarding Wizard', (
     tester,
   ) async {
@@ -33,15 +49,20 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Pola Pendapatanmu'), findsOneWidget);
-    expect(find.text('Welcome, onboarding done'), findsNothing);
+    expect(find.text('Uang Jajan Aman Hari Ini'), findsNothing);
   });
 
-  testWidgets('onboarding complete shows the Home placeholder', (tester) async {
+  testWidgets('onboarding complete shows the Budget Home dashboard', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           onboardingCompleteProvider.overrideWithValue(
             const AsyncValue.data(true),
+          ),
+          dailyBudgetSummaryProvider.overrideWithValue(
+            const AsyncValue.data(sampleSummary),
           ),
         ],
         child: const LedgerMateApp(),
@@ -49,7 +70,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Welcome, onboarding done'), findsOneWidget);
+    expect(find.text('Uang Jajan Aman Hari Ini'), findsOneWidget);
+    expect(find.text('Rp 150.000'), findsOneWidget);
     expect(find.text('Pola Pendapatanmu'), findsNothing);
   });
 
