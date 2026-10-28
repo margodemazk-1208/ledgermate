@@ -243,3 +243,37 @@ ModeBBudgetResult calculateModeBBudget({
 int calculateNextDayCarryOver(int currentUangJajanAmanHariIni) {
   return currentUangJajanAmanHariIni;
 }
+
+/// Checks whether a Mode A pay cycle has reached its boundary / expired (FR-05).
+///
+/// A cycle expires when [today] (normalized to midnight) is on or after
+/// [paydayDate] (normalized to midnight).
+bool isModeACycleExpired({
+  required DateTime today,
+  required DateTime paydayDate,
+}) {
+  final todayMidnight = normalizeDate(today);
+  final paydayMidnight = normalizeDate(paydayDate);
+  return !todayMidnight.isBefore(paydayMidnight);
+}
+
+/// Checks whether a new calendar day has started for Mode B daily rollover (FR-05).
+///
+/// Returns true if [today] (normalized to midnight) is strictly after
+/// [lastRolloverDate] (normalized to midnight), or if [lastRolloverDate] is null
+/// and at least one transaction was recorded on a previous calendar day.
+bool isModeBDailyRolloverDue({
+  required DateTime today,
+  DateTime? lastRolloverDate,
+  List<DateTime> transactionDates = const [],
+}) {
+  final todayMidnight = normalizeDate(today);
+  if (lastRolloverDate != null) {
+    return todayMidnight.isAfter(normalizeDate(lastRolloverDate));
+  }
+  if (transactionDates.isNotEmpty) {
+    final latestTx = transactionDates.reduce((a, b) => a.isAfter(b) ? a : b);
+    return todayMidnight.isAfter(normalizeDate(latestTx));
+  }
+  return false;
+}

@@ -5,6 +5,7 @@ import '../../../core/database/local_profile.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/utils/rupiah_formatter.dart';
+import '../../pay_cycle/presentation/pay_cycle_transition_screen.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../../transactions/presentation/transactions_screen.dart';
 import '../application/budget_providers.dart';
@@ -150,6 +151,74 @@ class _DashboardBody extends StatelessWidget {
               ),
             ],
           ),
+          if (summary.isCycleExpired) ...[
+            const SizedBox(height: 16),
+            Container(
+              key: const ValueKey('cycle_transition_banner'),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.expenseRed.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.expenseRed.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: AppColors.expenseRed,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          summary.incomeFrequency == IncomeFrequency.periodic
+                              ? 'Siklus Gajian Berakhir'
+                              : 'Rollover Harian Dibutuhkan',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.expenseRed,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    summary.incomeFrequency == IncomeFrequency.periodic
+                        ? 'Jadwal gajian telah tercapai. Mulai siklus baru untuk memperbarui Uang Jajan Aman.'
+                        : 'Hari baru telah tiba. Konfirmasi carry-over saldo untuk memulai hari ini.',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    key: const ValueKey('cycle_transition_button'),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const PayCycleTransitionScreen(),
+                        ),
+                      );
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.expenseRed,
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: const Icon(Icons.arrow_forward, size: 16),
+                    label: Text(
+                      summary.incomeFrequency == IncomeFrequency.periodic
+                          ? 'Mulai Siklus Baru'
+                          : 'Rollover Hari Ini',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
 
           // Focal Point Header: Uang Jajan Aman Hari Ini

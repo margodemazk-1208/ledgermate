@@ -277,5 +277,99 @@ void main() {
         expect(goalAllocation, 33334);
       },
     );
+
+    test('M5 FR-05: isModeACycleExpired boundary checks', () {
+      final payday = DateTime(2026, 10, 25, 0, 0, 0);
+
+      // Day before payday -> false
+      expect(
+        isModeACycleExpired(
+          today: DateTime(2026, 10, 24, 23, 59, 59),
+          paydayDate: payday,
+        ),
+        isFalse,
+      );
+
+      // Exactly on payday (midnight) -> true
+      expect(
+        isModeACycleExpired(
+          today: DateTime(2026, 10, 25, 0, 0, 0),
+          paydayDate: payday,
+        ),
+        isTrue,
+      );
+
+      // Mid-day on payday -> true
+      expect(
+        isModeACycleExpired(
+          today: DateTime(2026, 10, 25, 14, 30, 0),
+          paydayDate: payday,
+        ),
+        isTrue,
+      );
+
+      // Day after payday -> true
+      expect(
+        isModeACycleExpired(
+          today: DateTime(2026, 10, 26, 8, 0, 0),
+          paydayDate: payday,
+        ),
+        isTrue,
+      );
+    });
+
+    test('M5 FR-05 & BR-02: isModeBDailyRolloverDue checks', () {
+      final today = DateTime(2026, 10, 28, 10, 0, 0);
+      final yesterday = DateTime(2026, 10, 27, 21, 0, 0);
+
+      // Null lastRolloverDate and no transactions -> false (fresh onboarding today)
+      expect(
+        isModeBDailyRolloverDue(
+          today: today,
+          lastRolloverDate: null,
+          transactionDates: [],
+        ),
+        isFalse,
+      );
+
+      // Null lastRolloverDate but transactions exist from yesterday -> true
+      expect(
+        isModeBDailyRolloverDue(
+          today: today,
+          lastRolloverDate: null,
+          transactionDates: [yesterday],
+        ),
+        isTrue,
+      );
+
+      // Last rollover was today -> false
+      expect(
+        isModeBDailyRolloverDue(
+          today: today,
+          lastRolloverDate: DateTime(2026, 10, 28, 0, 15, 0),
+          transactionDates: [],
+        ),
+        isFalse,
+      );
+
+      // Last rollover was yesterday -> true
+      expect(
+        isModeBDailyRolloverDue(
+          today: today,
+          lastRolloverDate: yesterday,
+          transactionDates: [],
+        ),
+        isTrue,
+      );
+    });
+
+    test(
+      'M5 BR-02: calculateNextDayCarryOver accumulates surplus or deficit',
+      () {
+        expect(calculateNextDayCarryOver(50000), 50000);
+        expect(calculateNextDayCarryOver(0), 0);
+        expect(calculateNextDayCarryOver(-25000), -25000);
+      },
+    );
   });
 }

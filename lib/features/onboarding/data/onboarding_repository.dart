@@ -85,6 +85,7 @@ class OnboardingRepository implements OnboardingRepositoryBase {
         profile.nextPaydayDate = null;
         profile.carryOverBalance = initialIncomeAmount;
         profile.mandatoryExpenses = mandatoryExpenses;
+        profile.lastRolloverDate = DateTime.now();
       }
 
       await _isar.localProfiles.put(profile);

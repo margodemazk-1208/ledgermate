@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:ledgermate/core/database/local_profile.dart';
 import 'package:ledgermate/core/formulas/daily_budget_formulas.dart';
 import 'package:ledgermate/core/theme/app_colors.dart';
 import 'package:ledgermate/core/theme/theme_provider.dart';
 import 'package:ledgermate/features/budget_engine/application/budget_providers.dart';
 import 'package:ledgermate/features/budget_engine/presentation/budget_home_screen.dart';
+import 'package:ledgermate/features/pay_cycle/application/pay_cycle_providers.dart';
+import 'package:ledgermate/features/pay_cycle/presentation/pay_cycle_transition_screen.dart';
 import 'package:ledgermate/features/transactions/presentation/transaction_form_screen.dart';
 import 'package:ledgermate/features/transactions/presentation/transactions_screen.dart';
 
+import '../pay_cycle/fake_pay_cycle_repository.dart';
+
 void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('id_ID');
+  });
+
   const modeASummary = DailyBudgetSummary(
     incomeFrequency: IncomeFrequency.periodic,
     uangJajanAmanHariIni: 150000,
@@ -54,11 +63,33 @@ void main() {
   Widget buildTestWidget({
     required AsyncValue<DailyBudgetSummary> budgetValue,
     ThemeMode themeMode = ThemeMode.dark,
+    LocalProfile? profile,
   }) {
+    final fakeRepo = FakePayCycleRepository();
+    final testProfile =
+        profile ??
+        (LocalProfile()
+          ..incomeFrequency = IncomeFrequency.periodic
+          ..incomeIntervalType = IncomeIntervalType.monthly
+          ..fixedSalary = 5000000
+          ..nextPaydayDate = DateTime(2026, 11, 25)
+          ..onboardingComplete = true);
+
     return ProviderScope(
       overrides: [
         dailyBudgetSummaryProvider.overrideWithValue(budgetValue),
         themeModeProvider.overrideWith(() => _TestThemeNotifier(themeMode)),
+        payCycleRepositoryProvider.overrideWithValue(fakeRepo),
+        budgetProfileStreamProvider.overrideWith(
+          (ref) => Stream.value(testProfile),
+        ),
+        budgetLatestPayCycleStreamProvider.overrideWith(
+          (ref) => Stream.value(null),
+        ),
+        budgetTransactionsStreamProvider.overrideWith(
+          (ref) => Stream.value([]),
+        ),
+        budgetGoalsStreamProvider.overrideWith((ref) => Stream.value([])),
       ],
       child: Consumer(
         builder: (context, ref, _) {
@@ -246,6 +277,75 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Gagal memuat budget'), findsOneWidget);
     });
+
+    testWidgets(
+      'Cycle transition banner appears when isCycleExpired is true (Mode A)',
+      (tester) async {
+        const expiredSummary = DailyBudgetSummary(
+          incomeFrequency: IncomeFrequency.periodic,
+          uangJajanAmanHariIni: 0,
+          dailySavingsReserve: 0,
+          isCycleExpired: true,
+        );
+
+        await tester.pumpWidget(
+          buildTestWidget(budgetValue: const AsyncValue.data(expiredSummary)),
+        );
+        await tester.pumpAndSettle();
+
+        final banner = find.byKey(const ValueKey('cycle_transition_banner'));
+        expect(banner, findsOneWidget);
+        expect(find.text('Siklus Gajian Berakhir'), findsOneWidget);
+
+        final button = find.byKey(const ValueKey('cycle_transition_button'));
+        expect(button, findsOneWidget);
+        expect(find.text('Mulai Siklus Baru'), findsOneWidget);
+
+        await tester.tap(button);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(PayCycleTransitionScreen), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Cycle transition banner appears when isCycleExpired is true (Mode B)',
+      (tester) async {
+        const rolloverSummary = DailyBudgetSummary(
+          incomeFrequency: IncomeFrequency.daily,
+          uangJajanAmanHariIni: 50000,
+          dailySavingsReserve: 0,
+          isCycleExpired: true,
+        );
+
+        await tester.pumpWidget(
+          buildTestWidget(budgetValue: const AsyncValue.data(rolloverSummary)),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('cycle_transition_banner')),
+          findsOneWidget,
+        );
+        expect(find.text('Rollover Harian Dibutuhkan'), findsOneWidget);
+        expect(find.text('Rollover Hari Ini'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Cycle transition banner is hidden when isCycleExpired is false',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('cycle_transition_banner')),
+          findsNothing,
+        );
+      },
+    );
   });
 }
 

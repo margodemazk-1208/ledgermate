@@ -109,4 +109,9 @@ class LocalProfile {
   /// so a freshly-created/implicit profile is correctly treated as
   /// "onboarding not done".
   bool onboardingComplete = false;
+
+  /// M5 schema addition: tracks the calendar date of the last daily rollover
+  /// for Mode B (or cycle transition). Nullable for backward compatibility;
+  /// when null, cycle boundary detection falls back to transaction dates.
+  DateTime? lastRolloverDate;
 }

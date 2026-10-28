@@ -45,50 +45,55 @@ const LocalProfileSchema = CollectionSchema(
       type: IsarType.byte,
       enumMap: _LocalProfilelanguageEnumValueMap,
     ),
-    r'mandatoryExpenses': PropertySchema(
+    r'lastRolloverDate': PropertySchema(
       id: 5,
+      name: r'lastRolloverDate',
+      type: IsarType.dateTime,
+    ),
+    r'mandatoryExpenses': PropertySchema(
+      id: 6,
       name: r'mandatoryExpenses',
       type: IsarType.objectList,
 
       target: r'MandatoryExpenseItem',
     ),
     r'nextPaydayDate': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'nextPaydayDate',
       type: IsarType.dateTime,
     ),
     r'notifDailyReminderEnabled': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'notifDailyReminderEnabled',
       type: IsarType.bool,
     ),
     r'notifDailyReminderTime': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'notifDailyReminderTime',
       type: IsarType.long,
     ),
     r'notifGoalMilestoneEnabled': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'notifGoalMilestoneEnabled',
       type: IsarType.bool,
     ),
     r'notifLimitAlertEnabled': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'notifLimitAlertEnabled',
       type: IsarType.bool,
     ),
     r'notifPayCycleEnabled': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'notifPayCycleEnabled',
       type: IsarType.bool,
     ),
     r'onboardingComplete': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'onboardingComplete',
       type: IsarType.bool,
     ),
     r'theme': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'theme',
       type: IsarType.byte,
       enumMap: _LocalProfilethemeEnumValueMap,
@@ -142,20 +147,21 @@ void _localProfileSerialize(
   writer.writeByte(offsets[2], object.incomeFrequency.index);
   writer.writeInt(offsets[3], object.incomeIntervalType?.index);
   writer.writeByte(offsets[4], object.language.index);
+  writer.writeDateTime(offsets[5], object.lastRolloverDate);
   writer.writeObjectList<MandatoryExpenseItem>(
-    offsets[5],
+    offsets[6],
     allOffsets,
     MandatoryExpenseItemSchema.serialize,
     object.mandatoryExpenses,
   );
-  writer.writeDateTime(offsets[6], object.nextPaydayDate);
-  writer.writeBool(offsets[7], object.notifDailyReminderEnabled);
-  writer.writeLong(offsets[8], object.notifDailyReminderTime);
-  writer.writeBool(offsets[9], object.notifGoalMilestoneEnabled);
-  writer.writeBool(offsets[10], object.notifLimitAlertEnabled);
-  writer.writeBool(offsets[11], object.notifPayCycleEnabled);
-  writer.writeBool(offsets[12], object.onboardingComplete);
-  writer.writeByte(offsets[13], object.theme.index);
+  writer.writeDateTime(offsets[7], object.nextPaydayDate);
+  writer.writeBool(offsets[8], object.notifDailyReminderEnabled);
+  writer.writeLong(offsets[9], object.notifDailyReminderTime);
+  writer.writeBool(offsets[10], object.notifGoalMilestoneEnabled);
+  writer.writeBool(offsets[11], object.notifLimitAlertEnabled);
+  writer.writeBool(offsets[12], object.notifPayCycleEnabled);
+  writer.writeBool(offsets[13], object.onboardingComplete);
+  writer.writeByte(offsets[14], object.theme.index);
 }
 
 LocalProfile _localProfileDeserialize(
@@ -180,23 +186,24 @@ LocalProfile _localProfileDeserialize(
   object.language =
       _LocalProfilelanguageValueEnumMap[reader.readByteOrNull(offsets[4])] ??
       AppLanguage.id;
+  object.lastRolloverDate = reader.readDateTimeOrNull(offsets[5]);
   object.mandatoryExpenses =
       reader.readObjectList<MandatoryExpenseItem>(
-        offsets[5],
+        offsets[6],
         MandatoryExpenseItemSchema.deserialize,
         allOffsets,
         MandatoryExpenseItem(),
       ) ??
       [];
-  object.nextPaydayDate = reader.readDateTimeOrNull(offsets[6]);
-  object.notifDailyReminderEnabled = reader.readBool(offsets[7]);
-  object.notifDailyReminderTime = reader.readLong(offsets[8]);
-  object.notifGoalMilestoneEnabled = reader.readBool(offsets[9]);
-  object.notifLimitAlertEnabled = reader.readBool(offsets[10]);
-  object.notifPayCycleEnabled = reader.readBool(offsets[11]);
-  object.onboardingComplete = reader.readBool(offsets[12]);
+  object.nextPaydayDate = reader.readDateTimeOrNull(offsets[7]);
+  object.notifDailyReminderEnabled = reader.readBool(offsets[8]);
+  object.notifDailyReminderTime = reader.readLong(offsets[9]);
+  object.notifGoalMilestoneEnabled = reader.readBool(offsets[10]);
+  object.notifLimitAlertEnabled = reader.readBool(offsets[11]);
+  object.notifPayCycleEnabled = reader.readBool(offsets[12]);
+  object.onboardingComplete = reader.readBool(offsets[13]);
   object.theme =
-      _LocalProfilethemeValueEnumMap[reader.readByteOrNull(offsets[13])] ??
+      _LocalProfilethemeValueEnumMap[reader.readByteOrNull(offsets[14])] ??
       AppThemeSetting.dark;
   return object;
 }
@@ -230,6 +237,8 @@ P _localProfileDeserializeProp<P>(
               AppLanguage.id)
           as P;
     case 5:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 6:
       return (reader.readObjectList<MandatoryExpenseItem>(
                 offset,
                 MandatoryExpenseItemSchema.deserialize,
@@ -238,14 +247,12 @@ P _localProfileDeserializeProp<P>(
               ) ??
               [])
           as P;
-    case 6:
-      return (reader.readDateTimeOrNull(offset)) as P;
     case 7:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 8:
-      return (reader.readLong(offset)) as P;
-    case 9:
       return (reader.readBool(offset)) as P;
+    case 9:
+      return (reader.readLong(offset)) as P;
     case 10:
       return (reader.readBool(offset)) as P;
     case 11:
@@ -253,6 +260,8 @@ P _localProfileDeserializeProp<P>(
     case 12:
       return (reader.readBool(offset)) as P;
     case 13:
+      return (reader.readBool(offset)) as P;
+    case 14:
       return (_LocalProfilethemeValueEnumMap[reader.readByteOrNull(offset)] ??
               AppThemeSetting.dark)
           as P;
@@ -748,6 +757,79 @@ extension LocalProfileQueryFilter
   }
 
   QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  lastRolloverDateIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'lastRolloverDate'),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  lastRolloverDateIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'lastRolloverDate'),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  lastRolloverDateEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'lastRolloverDate', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  lastRolloverDateGreaterThan(DateTime? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'lastRolloverDate',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  lastRolloverDateLessThan(DateTime? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'lastRolloverDate',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  lastRolloverDateBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'lastRolloverDate',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
   mandatoryExpensesLengthEqualTo(int length) {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(r'mandatoryExpenses', length, true, length, true);
@@ -1135,6 +1217,20 @@ extension LocalProfileQuerySortBy
   }
 
   QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  sortByLastRolloverDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastRolloverDate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  sortByLastRolloverDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastRolloverDate', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
   sortByNextPaydayDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'nextPaydayDate', Sort.asc);
@@ -1327,6 +1423,20 @@ extension LocalProfileQuerySortThenBy
   }
 
   QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  thenByLastRolloverDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastRolloverDate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  thenByLastRolloverDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastRolloverDate', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
   thenByNextPaydayDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'nextPaydayDate', Sort.asc);
@@ -1473,6 +1583,13 @@ extension LocalProfileQueryWhereDistinct
   }
 
   QueryBuilder<LocalProfile, LocalProfile, QDistinct>
+  distinctByLastRolloverDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastRolloverDate');
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QDistinct>
   distinctByNextPaydayDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'nextPaydayDate');
@@ -1565,6 +1682,13 @@ extension LocalProfileQueryProperty
   QueryBuilder<LocalProfile, AppLanguage, QQueryOperations> languageProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'language');
+    });
+  }
+
+  QueryBuilder<LocalProfile, DateTime?, QQueryOperations>
+  lastRolloverDateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastRolloverDate');
     });
   }
 

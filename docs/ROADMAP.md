@@ -17,7 +17,7 @@ Milestones map 1:1 to FR/BR ids in `docs/PRD.md`. Each milestone = one unit of w
 - [x] **M4 — Smart Daily Budget Engine** (FR-04, BR-01, BR-02)
   Both formula modes (Periodic + Daily/carry-over) implemented as a pure, independently unit-testable function — not tangled into widget code. Recalculates on every transaction/income/goal change.
 
-- [ ] **M5 — Pay Cycle Transition** (FR-05)
+- [x] **M5 — Pay Cycle Transition** (FR-05)
   Prompt + re-input flow when a new cycle starts (payday reached, or user manually rolls to next day in Daily mode).
 
 - [ ] **M6 — Goals & Projection Tracker** (FR-06, FR-06b, FR-06c, BR-03)

@@ -39,6 +39,7 @@ class DailyBudgetSummary {
     required this.dailySavingsReserve,
     this.modeA,
     this.modeB,
+    this.isCycleExpired = false,
   });
 
   final IncomeFrequency incomeFrequency;
@@ -46,6 +47,7 @@ class DailyBudgetSummary {
   final int dailySavingsReserve;
   final ModeABudgetResult? modeA;
   final ModeBBudgetResult? modeB;
+  final bool isCycleExpired;
 
   bool get isPositive => uangJajanAmanHariIni >= 0;
 }
@@ -85,6 +87,7 @@ DailyBudgetSummary computeDailyBudgetSummary({
     // Mode A: Periodik (Lump-sum pay cycle)
     final payday = latestCycle?.paydayDate ?? profile.nextPaydayDate ?? now;
     final remainingDays = calculateRemainingDays(now, payday);
+    final isExpired = isModeACycleExpired(today: now, paydayDate: payday);
 
     final cycleId = latestCycle?.id;
     final cycleStart = latestCycle?.startDate;
@@ -132,9 +135,16 @@ DailyBudgetSummary computeDailyBudgetSummary({
       uangJajanAmanHariIni: modeAResult.uangJajanAmanHariIni,
       dailySavingsReserve: dailySavingsReserve,
       modeA: modeAResult,
+      isCycleExpired: isExpired,
     );
   } else {
     // Mode B: Harian (Bekel harian/irregular)
+    final isRolloverDue = isModeBDailyRolloverDue(
+      today: now,
+      lastRolloverDate: profile.lastRolloverDate,
+      transactionDates: transactions.map((t) => t.date).toList(),
+    );
+
     var bekelHariIni = 0;
     var pengeluaranHariIni = 0;
     for (final tx in transactions) {
@@ -167,6 +177,7 @@ DailyBudgetSummary computeDailyBudgetSummary({
       uangJajanAmanHariIni: modeBResult.uangJajanAmanHariIni,
       dailySavingsReserve: dailySavingsReserve,
       modeB: modeBResult,
+      isCycleExpired: isRolloverDue,
     );
   }
 }
