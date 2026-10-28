@@ -29,7 +29,7 @@ Milestones map 1:1 to FR/BR ids in `docs/PRD.md`. Each milestone = one unit of w
 - [x] **M8 — Visual Analytics** (FR-07)
   Pie/bar breakdown + month-over-month trend comparison.
 
-- [ ] **M9 — Export/Import** (FR-08)
+- [x] **M9 — Export/Import** (FR-08)
   JSON/CSV export of all local data to Downloads; import/restore flow with validation against corrupt/foreign files.
 
 - [ ] **M10 — Settings, Notifications, i18n, Theming** (FR-09, FR-11)
