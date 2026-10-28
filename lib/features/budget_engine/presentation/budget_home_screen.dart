@@ -5,6 +5,7 @@ import '../../../core/database/local_profile.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/utils/rupiah_formatter.dart';
+import '../../goals/presentation/goals_screen.dart';
 import '../../pay_cycle/presentation/pay_cycle_transition_screen.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../../transactions/presentation/transactions_screen.dart';
@@ -39,6 +40,15 @@ class BudgetHomeScreen extends ConsumerWidget {
               ref
                   .read(themeModeProvider.notifier)
                   .set(isDark ? ThemeMode.light : ThemeMode.dark);
+            },
+          ),
+          IconButton(
+            key: const ValueKey('appbar_goals_button'),
+            tooltip: 'Target Tabungan',
+            icon: const Icon(Icons.flag_outlined),
+            onPressed: () {
+              Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const GoalsScreen()));
             },
           ),
           IconButton(
@@ -264,6 +274,16 @@ class _DashboardBody extends StatelessWidget {
             },
             icon: const Icon(Icons.list_alt),
             label: const Text('Lihat Riwayat Transaksi'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            key: const ValueKey('view_goals_button'),
+            onPressed: () {
+              Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const GoalsScreen()));
+            },
+            icon: const Icon(Icons.flag_outlined),
+            label: const Text('Kelola Target Tabungan'),
           ),
           const SizedBox(height: 60), // Room for extended FAB
         ],
