@@ -5,6 +5,7 @@ import '../../../core/database/local_profile.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/utils/rupiah_formatter.dart';
+import '../../assets/presentation/assets_screen.dart';
 import '../../goals/presentation/goals_screen.dart';
 import '../../pay_cycle/presentation/pay_cycle_transition_screen.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
@@ -49,6 +50,16 @@ class BudgetHomeScreen extends ConsumerWidget {
             onPressed: () {
               Navigator.of(context)
                   .push(MaterialPageRoute(builder: (_) => const GoalsScreen()));
+            },
+          ),
+          IconButton(
+            key: const ValueKey('appbar_assets_button'),
+            tooltip: 'Aset & Investasi',
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const AssetsScreen()));
             },
           ),
           IconButton(
@@ -101,6 +112,81 @@ class BudgetHomeScreen extends ConsumerWidget {
         },
         icon: const Icon(Icons.add),
         label: const Text('Catat Transaksi'),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        key: const ValueKey('budget_home_bottom_nav_bar'),
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: AppColors.brandTeal,
+        unselectedItemColor: theme.textTheme.bodySmall?.color?.withValues(
+          alpha: 0.6,
+        ),
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              break;
+            case 1:
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const TransactionsScreen()),
+              );
+              break;
+            case 2:
+              Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const GoalsScreen()));
+              break;
+            case 3:
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const AssetsScreen()));
+              break;
+            case 4:
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Fitur Analitik akan hadir di Milestone 8.'),
+                ),
+              );
+              break;
+            case 5:
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Fitur Pengaturan akan hadir di Milestone 10.'),
+                ),
+              );
+              break;
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long_outlined),
+            activeIcon: Icon(Icons.receipt_long),
+            label: 'Transaksi',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.flag_outlined),
+            activeIcon: Icon(Icons.flag),
+            label: 'Goals',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            activeIcon: Icon(Icons.account_balance_wallet),
+            label: 'Aset',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.pie_chart_outline),
+            activeIcon: Icon(Icons.pie_chart),
+            label: 'Analitik',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined),
+            activeIcon: Icon(Icons.settings),
+            label: 'Pengaturan',
+          ),
+        ],
       ),
     );
   }
@@ -284,6 +370,17 @@ class _DashboardBody extends StatelessWidget {
             },
             icon: const Icon(Icons.flag_outlined),
             label: const Text('Kelola Target Tabungan'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            key: const ValueKey('view_assets_button'),
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const AssetsScreen()));
+            },
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            label: const Text('Kelola Aset & Investasi'),
           ),
           const SizedBox(height: 60), // Room for extended FAB
         ],

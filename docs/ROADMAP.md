@@ -23,7 +23,7 @@ Milestones map 1:1 to FR/BR ids in `docs/PRD.md`. Each milestone = one unit of w
 - [x] **M6 — Goals & Projection Tracker** (FR-06, FR-06b, FR-06c, BR-03)
   Multi-goal CRUD, manual allocation override, realism warning, auto-accrual into `currentAmount`, withdraw flow.
 
-- [ ] **M7 — Asset/Investment Tracker** (FR-10)
+- [x] **M7 — Asset/Investment Tracker** (FR-10)
   New tab, manual value entry, gain/loss display. Confirm this never touches BR-01 formula inputs.
 
 - [ ] **M8 — Visual Analytics** (FR-07)
