@@ -2,13 +2,13 @@
 
 Milestones map 1:1 to FR/BR ids in `docs/PRD.md`. Each milestone = one unit of work assignable to a kanban task. Do not start M(n+1) work before M(n) is merged — later milestones depend on earlier data models/providers existing.
 
-- [ ] **M0 — Project Skeleton & Environment**
+- [x] **M0 — Project Skeleton & Environment**
   Flutter project created, folder structure per `ARCHITECTURE.md`, dependencies pinned (riverpod, isar, fl_chart, flutter_local_notifications, flutter_localizations), `flutter analyze` clean, runs on a connected device showing a blank scaffold. *(Dev environment itself already verified — see `SETUP.md`.)*
 
-- [ ] **M1 — Core Data Layer (Isar)**
+- [x] **M1 — Core Data Layer (Isar)**
   All 6 Isar collections from PRD §8 (`LocalProfile`, `PayCycle`, `Transaction`, `Category`, `FinancialGoal`, `Asset`) with schemas, codegen, and a working local DB instance. No UI yet — verified via unit tests inserting/reading each collection.
 
-- [ ] **M2 — Onboarding Wizard** (FR-01)
+- [x] **M2 — Onboarding Wizard** (FR-01)
   Income Frequency picker (Mode A/B), initial income input, mandatory expenses input. Gates entry to Home until complete.
 
 - [ ] **M3 — Transaction CRUD** (FR-02, FR-03)
