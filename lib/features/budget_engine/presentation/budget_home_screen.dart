@@ -5,6 +5,7 @@ import '../../../core/database/local_profile.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/utils/rupiah_formatter.dart';
+import '../../analytics/presentation/analytics_screen.dart';
 import '../../assets/presentation/assets_screen.dart';
 import '../../goals/presentation/goals_screen.dart';
 import '../../pay_cycle/presentation/pay_cycle_transition_screen.dart';
@@ -60,6 +61,16 @@ class BudgetHomeScreen extends ConsumerWidget {
               Navigator.of(
                 context,
               ).push(MaterialPageRoute(builder: (_) => const AssetsScreen()));
+            },
+          ),
+          IconButton(
+            key: const ValueKey('appbar_analytics_button'),
+            tooltip: 'Visual Analitik',
+            icon: const Icon(Icons.pie_chart_outline),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
+              );
             },
           ),
           IconButton(
@@ -140,10 +151,8 @@ class BudgetHomeScreen extends ConsumerWidget {
               ).push(MaterialPageRoute(builder: (_) => const AssetsScreen()));
               break;
             case 4:
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fitur Analitik akan hadir di Milestone 8.'),
-                ),
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
               );
               break;
             case 5:

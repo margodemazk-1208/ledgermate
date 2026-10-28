@@ -6,6 +6,8 @@ import 'package:ledgermate/core/database/local_profile.dart';
 import 'package:ledgermate/core/formulas/daily_budget_formulas.dart';
 import 'package:ledgermate/core/theme/app_colors.dart';
 import 'package:ledgermate/core/theme/theme_provider.dart';
+import 'package:ledgermate/features/analytics/application/analytics_providers.dart';
+import 'package:ledgermate/features/analytics/presentation/analytics_screen.dart';
 import 'package:ledgermate/features/budget_engine/application/budget_providers.dart';
 import 'package:ledgermate/features/budget_engine/presentation/budget_home_screen.dart';
 import 'package:ledgermate/features/pay_cycle/application/pay_cycle_providers.dart';
@@ -13,6 +15,7 @@ import 'package:ledgermate/features/pay_cycle/presentation/pay_cycle_transition_
 import 'package:ledgermate/features/transactions/presentation/transaction_form_screen.dart';
 import 'package:ledgermate/features/transactions/presentation/transactions_screen.dart';
 
+import '../analytics/fake_analytics_repository.dart';
 import '../pay_cycle/fake_pay_cycle_repository.dart';
 
 void main() {
@@ -90,6 +93,9 @@ void main() {
           (ref) => Stream.value([]),
         ),
         budgetGoalsStreamProvider.overrideWith((ref) => Stream.value([])),
+        analyticsRepositoryProvider.overrideWithValue(
+          FakeAnalyticsRepository(),
+        ),
       ],
       child: Consumer(
         builder: (context, ref, _) {
@@ -252,6 +258,38 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(TransactionsScreen), findsOneWidget);
+    });
+
+    testWidgets('Appbar action navigates to AnalyticsScreen (M8 FR-07)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
+      );
+      await tester.pumpAndSettle();
+
+      final button = find.byKey(const ValueKey('appbar_analytics_button'));
+      expect(button, findsOneWidget);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AnalyticsScreen), findsOneWidget);
+    });
+
+    testWidgets('Bottom nav item 4 navigates to AnalyticsScreen (M8 FR-07)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
+      );
+      await tester.pumpAndSettle();
+
+      final navItem = find.text('Analitik');
+      expect(navItem, findsOneWidget);
+      await tester.tap(navItem);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AnalyticsScreen), findsOneWidget);
     });
 
     testWidgets('Loading and error states (antislop R-27)', (tester) async {
