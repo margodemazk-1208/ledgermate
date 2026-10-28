@@ -1,0 +1,358 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
+import '../../../core/database/transaction.dart' as db;
+import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/rupiah_formatter.dart';
+import '../application/transaction_providers.dart';
+import '../data/transaction_repository.dart';
+
+/// Screen for adding a new transaction or editing an existing one (FR-02, FR-03).
+class TransactionFormScreen extends ConsumerStatefulWidget {
+  const TransactionFormScreen({super.key, this.transaction});
+
+  final db.Transaction? transaction;
+
+  @override
+  ConsumerState<TransactionFormScreen> createState() =>
+      _TransactionFormScreenState();
+}
+
+class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
+  late final TextEditingController _amountController;
+  late final TextEditingController _notesController;
+  String? _amountError;
+
+  @override
+  void initState() {
+    super.initState();
+    final tx = widget.transaction;
+    // Initialize notifier state for edit or add
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(transactionFormProvider.notifier).init(tx);
+    });
+
+    _amountController = TextEditingController(
+      text: tx == null ? '' : formatRupiah(tx.amount).replaceAll('Rp ', ''),
+    );
+    _notesController = TextEditingController(text: tx?.notes ?? '');
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  void _onAmountChanged(String value) {
+    final parsed = parseRupiah(value);
+    ref.read(transactionFormProvider.notifier).setAmount(parsed);
+    setState(() {
+      _amountError = validateRupiahAmount(
+        value,
+        emptyMessage: 'Jumlah tidak boleh kosong',
+        invalidMessage: 'Jumlah tidak boleh nol atau negatif',
+      );
+    });
+  }
+
+  Future<void> _pickDate(BuildContext context, DateTime currentDate) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: currentDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(now.year + 5),
+    );
+    if (picked != null) {
+      ref.read(transactionFormProvider.notifier).setDate(picked);
+    }
+  }
+
+  Future<void> _onSave() async {
+    final formNotifier = ref.read(transactionFormProvider.notifier);
+    final amountText = _amountController.text;
+    final err = validateRupiahAmount(
+      amountText,
+      emptyMessage: 'Jumlah tidak boleh kosong',
+      invalidMessage: 'Jumlah tidak boleh nol atau negatif',
+    );
+    if (err != null) {
+      setState(() => _amountError = err);
+      return;
+    }
+
+    final success = await formNotifier.save();
+    if (success && mounted) {
+      Navigator.of(context).pop(true);
+    }
+  }
+
+  Future<void> _onDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Transaksi?'),
+        content: const Text(
+          'Apakah kamu yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.expenseRed,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final success = await ref.read(transactionFormProvider.notifier).delete();
+      if (success && mounted) {
+        Navigator.of(context).pop(true);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final formState = ref.watch(transactionFormProvider);
+    final categoriesAsync = ref.watch(categoriesStreamProvider);
+    final isEdit = widget.transaction != null;
+
+    // Auto-select first category if none is selected yet and categories are ready
+    categoriesAsync.whenData((categories) {
+      if (formState.categoryId == null && categories.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref
+              .read(transactionFormProvider.notifier)
+              .setCategory(categories.first.id);
+        });
+      }
+    });
+
+    final dateFormatted = DateFormat('d MMMM yyyy').format(formState.date);
+    final isToday = isTransactionDeletable(formState.date);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(isEdit ? 'Edit Transaksi' : 'Tambah Transaksi'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. Transaction Type Toggle (Pengeluaran vs Pemasukan)
+            SegmentedButton<db.TransactionType>(
+              segments: const [
+                ButtonSegment<db.TransactionType>(
+                  value: db.TransactionType.expense,
+                  label: Text('Pengeluaran'),
+                  icon: Icon(Icons.arrow_upward),
+                ),
+                ButtonSegment<db.TransactionType>(
+                  value: db.TransactionType.income,
+                  label: Text('Pemasukan'),
+                  icon: Icon(Icons.arrow_downward),
+                ),
+              ],
+              selected: {formState.type},
+              onSelectionChanged: (selected) {
+                ref
+                    .read(transactionFormProvider.notifier)
+                    .setType(selected.first);
+              },
+            ),
+            const SizedBox(height: 20),
+
+            // 2. Amount field (Rupiah formatted, live validate)
+            TextField(
+              key: const ValueKey('transaction_amount_field'),
+              controller: _amountController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [RupiahInputFormatter()],
+              onChanged: _onAmountChanged,
+              decoration: InputDecoration(
+                labelText: 'Jumlah',
+                prefixText: 'Rp ',
+                errorText: _amountError,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // 3. Category Dropdown
+            categoriesAsync.when(
+              data: (categories) {
+                final selectedValue =
+                    categories.any((c) => c.id == formState.categoryId)
+                    ? formState.categoryId
+                    : (categories.isNotEmpty ? categories.first.id : null);
+
+                return DropdownButtonFormField<int>(
+                  key: const ValueKey('transaction_category_picker'),
+                  initialValue: selectedValue,
+                  decoration: const InputDecoration(
+                    labelText: 'Kategori',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: categories.map((cat) {
+                    return DropdownMenuItem<int>(
+                      value: cat.id,
+                      child: Text(cat.name),
+                    );
+                  }).toList(),
+                  onChanged: (catId) {
+                    if (catId != null) {
+                      ref
+                          .read(transactionFormProvider.notifier)
+                          .setCategory(catId);
+                    }
+                  },
+                );
+              },
+              loading: () => const LinearProgressIndicator(),
+              error: (err, _) => Text(
+                'Gagal memuat kategori: $err',
+                style: const TextStyle(color: AppColors.expenseRed),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // 4. Date Picker
+            InkWell(
+              key: const ValueKey('transaction_date_picker'),
+              onTap: () => _pickDate(context, formState.date),
+              borderRadius: BorderRadius.circular(4),
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Tanggal',
+                  border: OutlineInputBorder(),
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+                child: Text(
+                  dateFormatted,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // 5. Notes (optional)
+            TextField(
+              key: const ValueKey('transaction_notes_field'),
+              controller: _notesController,
+              onChanged: (val) {
+                ref.read(transactionFormProvider.notifier).setNotes(val);
+              },
+              decoration: const InputDecoration(
+                labelText: 'Catatan (opsional)',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 24),
+
+            // Error banner if submit failed
+            if (formState.submitError != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.expenseRed.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.expenseRed),
+                ),
+                child: Text(
+                  formState.submitError!,
+                  style: const TextStyle(color: AppColors.expenseRed),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // 6. Save Button (disabled while submitting or if amount invalid)
+            FilledButton(
+              key: const ValueKey('transaction_save_button'),
+              onPressed: formState.isSubmitting ? null : _onSave,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: formState.isSubmitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        isEdit ? 'Simpan Perubahan' : 'Simpan Transaksi',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+              ),
+            ),
+
+            // 7. Edit mode delete section
+            if (isEdit) ...[
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 12),
+              if (isToday) ...[
+                // Today transaction: delete is allowed
+                OutlinedButton.icon(
+                  key: const ValueKey('transaction_delete_button'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.expenseRed,
+                    side: const BorderSide(color: AppColors.expenseRed),
+                  ),
+                  onPressed: formState.isSubmitting ? null : _onDelete,
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Hapus Transaksi'),
+                ),
+              ] else ...[
+                // Older transaction: delete is blocked in UI (FR-03)
+                OutlinedButton.icon(
+                  key: const ValueKey('transaction_delete_button_disabled'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).disabledColor,
+                  ),
+                  onPressed: null,
+                  icon: const Icon(Icons.lock_outline),
+                  label: const Text('Hapus Transaksi (Terkunci)'),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: AppColors.warningAmber,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Hanya transaksi bertanggal hari ini yang dapat dihapus. '
+                        'Transaksi lampau tidak dapat dihapus untuk menjaga integritas histori (FR-03).',
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: AppColors.warningAmber),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
