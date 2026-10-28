@@ -1,0 +1,337 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/theme/app_colors.dart';
+import '../../application/export_import_providers.dart';
+import 'restore_confirmation_dialog.dart';
+
+/// UI card managing export and import actions for FR-08.
+class DataManagementCard extends ConsumerWidget {
+  const DataManagementCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final state = ref.watch(exportImportNotifierProvider);
+    final notifier = ref.read(exportImportNotifierProvider.notifier);
+
+    return Card(
+      key: const ValueKey('data_management_card'),
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.brandTeal.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.cloud_sync_outlined,
+                    color: AppColors.brandTeal,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Cadangkan & Pulihkan Data',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Format JSON & CSV (100% Offline, FR-08)',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.textTheme.bodySmall?.color?.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Cadangkan seluruh database secara berkala atau pindahkan data finansial ke perangkat baru tanpa koneksi server.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 20),
+
+            // Status Feedback Banners
+            if (state.isLoading) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.brandTeal.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        key: ValueKey('export_import_progress_indicator'),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Text('Sedang memproses data...'),
+                  ],
+                ),
+              ),
+            ],
+
+            if (state.lastExportedPath != null) ...[
+              Container(
+                key: const ValueKey('export_success_banner'),
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.savingsGreen.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.savingsGreen.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.check_circle_outline,
+                      color: AppColors.savingsGreen,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ekspor Berhasil!',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.savingsGreen,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            state.lastExportedPath!,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            if (state.errorMessage != null) ...[
+              Container(
+                key: const ValueKey('export_error_banner'),
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.expenseRed.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.expenseRed.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: AppColors.expenseRed,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        state.errorMessage!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.expenseRed,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            // Action 1: Export JSON
+            _buildActionTile(
+              context: context,
+              icon: Icons.data_object_outlined,
+              title: 'Cadangkan Database (JSON)',
+              subtitle: 'Simpan semua koleksi (profil, gajian, kategori, transaksi, goals, aset) ke file JSON.',
+              buttonKey: const ValueKey('export_json_button'),
+              buttonLabel: 'Cadangkan (JSON)',
+              isLoading: state.isLoading,
+              onPressed: () async {
+                final path = await notifier.exportJson();
+                if (path != null && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('File cadangan tersimpan di:\n$path'),
+                    ),
+                  );
+                }
+              },
+            ),
+            const Divider(height: 28),
+
+            // Action 2: Export CSV
+            _buildActionTile(
+              context: context,
+              icon: Icons.table_chart_outlined,
+              title: 'Ekspor Riwayat Transaksi (CSV)',
+              subtitle: 'Format tabel CSV RFC 4180 dengan header berbahasa Indonesia untuk spreadsheet.',
+              buttonKey: const ValueKey('export_csv_button'),
+              buttonLabel: 'Ekspor CSV',
+              isLoading: state.isLoading,
+              onPressed: () async {
+                final path = await notifier.exportCsv();
+                if (path != null && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Tabel transaksi CSV tersimpan di:\n$path'),
+                    ),
+                  );
+                }
+              },
+            ),
+            const Divider(height: 28),
+
+            // Action 3: Restore JSON
+            _buildActionTile(
+              context: context,
+              icon: Icons.settings_backup_restore_outlined,
+              title: 'Pulihkan Data (JSON)',
+              subtitle: 'Pilih file .json cadangan untuk mengembalikan seluruh database ke kondisi tersimpan.',
+              buttonKey: const ValueKey('restore_backup_button'),
+              buttonLabel: 'Pilih File Cadangan',
+              isLoading: state.isLoading,
+              isDestructive: true,
+              onPressed: () async {
+                final backupData = await notifier.pickAndValidateBackup();
+                if (backupData != null && context.mounted) {
+                  await showDialog<void>(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (dialogCtx) => RestoreConfirmationDialog(
+                      summary: backupData.summary,
+                      onCancel: () {
+                        notifier.cancelPendingRestore();
+                        Navigator.of(dialogCtx).pop();
+                      },
+                      onConfirm: () async {
+                        Navigator.of(dialogCtx).pop();
+                        final success = await notifier.confirmRestore(
+                          backupData,
+                        );
+                        if (success && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Database lokal berhasil dipulihkan dari cadangan.',
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Key buttonKey,
+    required String buttonLabel,
+    required bool isLoading,
+    required VoidCallback onPressed,
+    bool isDestructive = false,
+  }) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 20, color: AppColors.brandTeal),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.75),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: isDestructive
+              ? OutlinedButton.icon(
+                  key: buttonKey,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.brandTeal,
+                    side: const BorderSide(color: AppColors.brandTeal),
+                  ),
+                  onPressed: isLoading ? null : onPressed,
+                  icon: const Icon(Icons.upload_file_outlined),
+                  label: Text(buttonLabel),
+                )
+              : FilledButton.tonalIcon(
+                  key: buttonKey,
+                  onPressed: isLoading ? null : onPressed,
+                  icon: const Icon(Icons.file_download_outlined),
+                  label: Text(buttonLabel),
+                ),
+        ),
+      ],
+    );
+  }
+}
