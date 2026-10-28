@@ -3,10 +3,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/theme_provider.dart';
+import 'features/onboarding/application/onboarding_providers.dart';
+import 'features/onboarding/presentation/onboarding_screen.dart';
 import 'features/onboarding/presentation/placeholder_home_screen.dart';
 
-/// Root widget: MaterialApp + theme wiring. Router and real screens land
-/// in M2+; M0 only proves the skeleton + both themes render cleanly.
+/// Root widget: MaterialApp + theme wiring. M2 adds the boot-time
+/// Onboarding/Home gate (FR-01: "Wajib selesai sebelum masuk Home") —
+/// `main.dart` opens Isar before `runApp`, so `isarProvider` is always
+/// available once this widget builds.
 class LedgerMateApp extends ConsumerWidget {
   const LedgerMateApp({super.key});
 
@@ -27,7 +31,34 @@ class LedgerMateApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('id'), Locale('en')],
-      home: const PlaceholderHomeScreen(),
+      home: const _OnboardingGate(),
+    );
+  }
+}
+
+/// Routes to Onboarding while incomplete, Home placeholder once done.
+/// Also covers the loading/error states around the first Isar read
+/// (antislop R-27 — every data-backed screen needs these, including the
+/// very first one at boot).
+class _OnboardingGate extends ConsumerWidget {
+  const _OnboardingGate();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final onboardingComplete = ref.watch(onboardingCompleteProvider);
+    return onboardingComplete.when(
+      data: (isComplete) =>
+          isComplete ? const PlaceholderHomeScreen() : const OnboardingScreen(),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, stackTrace) => Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text('Gagal memuat data: $error'),
+          ),
+        ),
+      ),
     );
   }
 }

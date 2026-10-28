@@ -33,44 +33,62 @@ const LocalProfileSchema = CollectionSchema(
       type: IsarType.byte,
       enumMap: _LocalProfileincomeFrequencyEnumValueMap,
     ),
-    r'language': PropertySchema(
+    r'incomeIntervalType': PropertySchema(
       id: 3,
+      name: r'incomeIntervalType',
+      type: IsarType.int,
+      enumMap: _LocalProfileincomeIntervalTypeEnumValueMap,
+    ),
+    r'language': PropertySchema(
+      id: 4,
       name: r'language',
       type: IsarType.byte,
       enumMap: _LocalProfilelanguageEnumValueMap,
     ),
+    r'mandatoryExpenses': PropertySchema(
+      id: 5,
+      name: r'mandatoryExpenses',
+      type: IsarType.objectList,
+
+      target: r'MandatoryExpenseItem',
+    ),
     r'nextPaydayDate': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'nextPaydayDate',
       type: IsarType.dateTime,
     ),
     r'notifDailyReminderEnabled': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'notifDailyReminderEnabled',
       type: IsarType.bool,
     ),
     r'notifDailyReminderTime': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'notifDailyReminderTime',
       type: IsarType.long,
     ),
     r'notifGoalMilestoneEnabled': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'notifGoalMilestoneEnabled',
       type: IsarType.bool,
     ),
     r'notifLimitAlertEnabled': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'notifLimitAlertEnabled',
       type: IsarType.bool,
     ),
     r'notifPayCycleEnabled': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'notifPayCycleEnabled',
       type: IsarType.bool,
     ),
+    r'onboardingComplete': PropertySchema(
+      id: 12,
+      name: r'onboardingComplete',
+      type: IsarType.bool,
+    ),
     r'theme': PropertySchema(
-      id: 10,
+      id: 13,
       name: r'theme',
       type: IsarType.byte,
       enumMap: _LocalProfilethemeEnumValueMap,
@@ -84,7 +102,7 @@ const LocalProfileSchema = CollectionSchema(
   idName: r'id',
   indexes: {},
   links: {},
-  embeddedSchemas: {},
+  embeddedSchemas: {r'MandatoryExpenseItem': MandatoryExpenseItemSchema},
 
   getId: _localProfileGetId,
   getLinks: _localProfileGetLinks,
@@ -98,6 +116,18 @@ int _localProfileEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  bytesCount += 3 + object.mandatoryExpenses.length * 3;
+  {
+    final offsets = allOffsets[MandatoryExpenseItem]!;
+    for (var i = 0; i < object.mandatoryExpenses.length; i++) {
+      final value = object.mandatoryExpenses[i];
+      bytesCount += MandatoryExpenseItemSchema.estimateSize(
+        value,
+        offsets,
+        allOffsets,
+      );
+    }
+  }
   return bytesCount;
 }
 
@@ -110,14 +140,22 @@ void _localProfileSerialize(
   writer.writeLong(offsets[0], object.carryOverBalance);
   writer.writeLong(offsets[1], object.fixedSalary);
   writer.writeByte(offsets[2], object.incomeFrequency.index);
-  writer.writeByte(offsets[3], object.language.index);
-  writer.writeDateTime(offsets[4], object.nextPaydayDate);
-  writer.writeBool(offsets[5], object.notifDailyReminderEnabled);
-  writer.writeLong(offsets[6], object.notifDailyReminderTime);
-  writer.writeBool(offsets[7], object.notifGoalMilestoneEnabled);
-  writer.writeBool(offsets[8], object.notifLimitAlertEnabled);
-  writer.writeBool(offsets[9], object.notifPayCycleEnabled);
-  writer.writeByte(offsets[10], object.theme.index);
+  writer.writeInt(offsets[3], object.incomeIntervalType?.index);
+  writer.writeByte(offsets[4], object.language.index);
+  writer.writeObjectList<MandatoryExpenseItem>(
+    offsets[5],
+    allOffsets,
+    MandatoryExpenseItemSchema.serialize,
+    object.mandatoryExpenses,
+  );
+  writer.writeDateTime(offsets[6], object.nextPaydayDate);
+  writer.writeBool(offsets[7], object.notifDailyReminderEnabled);
+  writer.writeLong(offsets[8], object.notifDailyReminderTime);
+  writer.writeBool(offsets[9], object.notifGoalMilestoneEnabled);
+  writer.writeBool(offsets[10], object.notifLimitAlertEnabled);
+  writer.writeBool(offsets[11], object.notifPayCycleEnabled);
+  writer.writeBool(offsets[12], object.onboardingComplete);
+  writer.writeByte(offsets[13], object.theme.index);
 }
 
 LocalProfile _localProfileDeserialize(
@@ -135,17 +173,30 @@ LocalProfile _localProfileDeserialize(
         offsets[2],
       )] ??
       IncomeFrequency.periodic;
+  object.incomeIntervalType =
+      _LocalProfileincomeIntervalTypeValueEnumMap[reader.readIntOrNull(
+        offsets[3],
+      )];
   object.language =
-      _LocalProfilelanguageValueEnumMap[reader.readByteOrNull(offsets[3])] ??
+      _LocalProfilelanguageValueEnumMap[reader.readByteOrNull(offsets[4])] ??
       AppLanguage.id;
-  object.nextPaydayDate = reader.readDateTimeOrNull(offsets[4]);
-  object.notifDailyReminderEnabled = reader.readBool(offsets[5]);
-  object.notifDailyReminderTime = reader.readLong(offsets[6]);
-  object.notifGoalMilestoneEnabled = reader.readBool(offsets[7]);
-  object.notifLimitAlertEnabled = reader.readBool(offsets[8]);
-  object.notifPayCycleEnabled = reader.readBool(offsets[9]);
+  object.mandatoryExpenses =
+      reader.readObjectList<MandatoryExpenseItem>(
+        offsets[5],
+        MandatoryExpenseItemSchema.deserialize,
+        allOffsets,
+        MandatoryExpenseItem(),
+      ) ??
+      [];
+  object.nextPaydayDate = reader.readDateTimeOrNull(offsets[6]);
+  object.notifDailyReminderEnabled = reader.readBool(offsets[7]);
+  object.notifDailyReminderTime = reader.readLong(offsets[8]);
+  object.notifGoalMilestoneEnabled = reader.readBool(offsets[9]);
+  object.notifLimitAlertEnabled = reader.readBool(offsets[10]);
+  object.notifPayCycleEnabled = reader.readBool(offsets[11]);
+  object.onboardingComplete = reader.readBool(offsets[12]);
   object.theme =
-      _LocalProfilethemeValueEnumMap[reader.readByteOrNull(offsets[10])] ??
+      _LocalProfilethemeValueEnumMap[reader.readByteOrNull(offsets[13])] ??
       AppThemeSetting.dark;
   return object;
 }
@@ -168,24 +219,40 @@ P _localProfileDeserializeProp<P>(
               IncomeFrequency.periodic)
           as P;
     case 3:
+      return (_LocalProfileincomeIntervalTypeValueEnumMap[reader.readIntOrNull(
+            offset,
+          )])
+          as P;
+    case 4:
       return (_LocalProfilelanguageValueEnumMap[reader.readByteOrNull(
                 offset,
               )] ??
               AppLanguage.id)
           as P;
-    case 4:
-      return (reader.readDateTimeOrNull(offset)) as P;
     case 5:
-      return (reader.readBool(offset)) as P;
+      return (reader.readObjectList<MandatoryExpenseItem>(
+                offset,
+                MandatoryExpenseItemSchema.deserialize,
+                allOffsets,
+                MandatoryExpenseItem(),
+              ) ??
+              [])
+          as P;
     case 6:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 7:
       return (reader.readBool(offset)) as P;
     case 8:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 9:
       return (reader.readBool(offset)) as P;
     case 10:
+      return (reader.readBool(offset)) as P;
+    case 11:
+      return (reader.readBool(offset)) as P;
+    case 12:
+      return (reader.readBool(offset)) as P;
+    case 13:
       return (_LocalProfilethemeValueEnumMap[reader.readByteOrNull(offset)] ??
               AppThemeSetting.dark)
           as P;
@@ -198,6 +265,18 @@ const _LocalProfileincomeFrequencyEnumValueMap = {'periodic': 0, 'daily': 1};
 const _LocalProfileincomeFrequencyValueEnumMap = {
   0: IncomeFrequency.periodic,
   1: IncomeFrequency.daily,
+};
+const _LocalProfileincomeIntervalTypeEnumValueMap = {
+  'weekly': 0,
+  'biweekly': 1,
+  'monthly': 2,
+  'custom': 3,
+};
+const _LocalProfileincomeIntervalTypeValueEnumMap = {
+  0: IncomeIntervalType.weekly,
+  1: IncomeIntervalType.biweekly,
+  2: IncomeIntervalType.monthly,
+  3: IncomeIntervalType.custom,
 };
 const _LocalProfilelanguageEnumValueMap = {'id': 0, 'en': 1};
 const _LocalProfilelanguageValueEnumMap = {
@@ -535,6 +614,85 @@ extension LocalProfileQueryFilter
   }
 
   QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  incomeIntervalTypeIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'incomeIntervalType'),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  incomeIntervalTypeIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'incomeIntervalType'),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  incomeIntervalTypeEqualTo(IncomeIntervalType? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'incomeIntervalType', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  incomeIntervalTypeGreaterThan(
+    IncomeIntervalType? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'incomeIntervalType',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  incomeIntervalTypeLessThan(
+    IncomeIntervalType? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'incomeIntervalType',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  incomeIntervalTypeBetween(
+    IncomeIntervalType? lower,
+    IncomeIntervalType? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'incomeIntervalType',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
   languageEqualTo(AppLanguage value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -585,6 +743,65 @@ extension LocalProfileQueryFilter
           upper: upper,
           includeUpper: includeUpper,
         ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  mandatoryExpensesLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'mandatoryExpenses', length, true, length, true);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  mandatoryExpensesIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'mandatoryExpenses', 0, true, 0, true);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  mandatoryExpensesIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'mandatoryExpenses', 0, false, 999999, true);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  mandatoryExpensesLengthLessThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'mandatoryExpenses', 0, true, length, include);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  mandatoryExpensesLengthGreaterThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mandatoryExpenses',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  mandatoryExpensesLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mandatoryExpenses',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
       );
     });
   }
@@ -768,6 +985,15 @@ extension LocalProfileQueryFilter
     });
   }
 
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  onboardingCompleteEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'onboardingComplete', value: value),
+      );
+    });
+  }
+
   QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition> themeEqualTo(
     AppThemeSetting value,
   ) {
@@ -827,7 +1053,14 @@ extension LocalProfileQueryFilter
 }
 
 extension LocalProfileQueryObject
-    on QueryBuilder<LocalProfile, LocalProfile, QFilterCondition> {}
+    on QueryBuilder<LocalProfile, LocalProfile, QFilterCondition> {
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  mandatoryExpensesElement(FilterQuery<MandatoryExpenseItem> q) {
+    return QueryBuilder.apply(this, (query) {
+      return query.object(q, r'mandatoryExpenses');
+    });
+  }
+}
 
 extension LocalProfileQueryLinks
     on QueryBuilder<LocalProfile, LocalProfile, QFilterCondition> {}
@@ -872,6 +1105,20 @@ extension LocalProfileQuerySortBy
   sortByIncomeFrequencyDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'incomeFrequency', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  sortByIncomeIntervalType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'incomeIntervalType', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  sortByIncomeIntervalTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'incomeIntervalType', Sort.desc);
     });
   }
 
@@ -971,6 +1218,20 @@ extension LocalProfileQuerySortBy
     });
   }
 
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  sortByOnboardingComplete() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'onboardingComplete', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  sortByOnboardingCompleteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'onboardingComplete', Sort.desc);
+    });
+  }
+
   QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy> sortByTheme() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'theme', Sort.asc);
@@ -1036,6 +1297,20 @@ extension LocalProfileQuerySortThenBy
   thenByIncomeFrequencyDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'incomeFrequency', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  thenByIncomeIntervalType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'incomeIntervalType', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  thenByIncomeIntervalTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'incomeIntervalType', Sort.desc);
     });
   }
 
@@ -1135,6 +1410,20 @@ extension LocalProfileQuerySortThenBy
     });
   }
 
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  thenByOnboardingComplete() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'onboardingComplete', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  thenByOnboardingCompleteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'onboardingComplete', Sort.desc);
+    });
+  }
+
   QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy> thenByTheme() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'theme', Sort.asc);
@@ -1167,6 +1456,13 @@ extension LocalProfileQueryWhereDistinct
   distinctByIncomeFrequency() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'incomeFrequency');
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QDistinct>
+  distinctByIncomeIntervalType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'incomeIntervalType');
     });
   }
 
@@ -1218,6 +1514,13 @@ extension LocalProfileQueryWhereDistinct
     });
   }
 
+  QueryBuilder<LocalProfile, LocalProfile, QDistinct>
+  distinctByOnboardingComplete() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'onboardingComplete');
+    });
+  }
+
   QueryBuilder<LocalProfile, LocalProfile, QDistinct> distinctByTheme() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'theme');
@@ -1252,9 +1555,23 @@ extension LocalProfileQueryProperty
     });
   }
 
+  QueryBuilder<LocalProfile, IncomeIntervalType?, QQueryOperations>
+  incomeIntervalTypeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'incomeIntervalType');
+    });
+  }
+
   QueryBuilder<LocalProfile, AppLanguage, QQueryOperations> languageProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'language');
+    });
+  }
+
+  QueryBuilder<LocalProfile, List<MandatoryExpenseItem>, QQueryOperations>
+  mandatoryExpensesProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'mandatoryExpenses');
     });
   }
 
@@ -1297,6 +1614,13 @@ extension LocalProfileQueryProperty
   notifPayCycleEnabledProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'notifPayCycleEnabled');
+    });
+  }
+
+  QueryBuilder<LocalProfile, bool, QQueryOperations>
+  onboardingCompleteProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'onboardingComplete');
     });
   }
 

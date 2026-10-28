@@ -12,6 +12,15 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Required by the flutter_local_notifications dependency (FR-11) —
+        // without this, `:app:checkDebugAarMetadata` fails the build with
+        // "requires core library desugaring to be enabled". Pre-existing
+        // gap from M0 (flutter_local_notifications was added to pubspec.yaml
+        // there, but this Gradle flag was never set, so no `flutter build`
+        // had actually been run against it until this M2 verification step
+        // surfaced it) — flagged separately per AGENTS.md, fixed here only
+        // because it blocks building/verifying M2's own UI work.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -46,4 +55,9 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Required alongside isCoreLibraryDesugaringEnabled above.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
