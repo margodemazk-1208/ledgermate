@@ -46,3 +46,10 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Isar native core binary, auto-downloaded by
+# Isar.initializeIsarCore(download: true) for host-platform `flutter test`
+# runs (see test/core/database/*_test.dart) — platform-specific, not source.
+libisar.so
+libisar.dylib
+isar.dll
