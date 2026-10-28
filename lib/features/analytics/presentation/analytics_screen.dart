@@ -51,7 +51,7 @@ class AnalyticsScreen extends ConsumerWidget {
           ),
         ),
         error: (err, _) => Center(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,

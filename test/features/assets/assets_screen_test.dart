@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:ledgermate/core/theme/theme_provider.dart';
+import 'package:ledgermate/features/analytics/application/analytics_providers.dart';
 import 'package:ledgermate/features/assets/application/assets_providers.dart';
 import 'package:ledgermate/features/assets/presentation/asset_form_screen.dart';
 import 'package:ledgermate/features/assets/presentation/assets_screen.dart';
 
+import '../analytics/fake_analytics_repository.dart';
 import 'fake_assets_repository.dart';
 
 void main() {
@@ -29,7 +31,12 @@ void main() {
     ThemeMode themeMode = ThemeMode.dark,
   }) {
     return ProviderScope(
-      overrides: [assetsRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        assetsRepositoryProvider.overrideWithValue(repository),
+        analyticsRepositoryProvider.overrideWithValue(
+          FakeAnalyticsRepository(),
+        ),
+      ],
       child: Consumer(
         builder: (context, ref, _) {
           final darkTheme = ref.watch(darkThemeProvider);
@@ -274,5 +281,22 @@ void main() {
       expect(find.text('Nama aset tidak boleh kosong.'), findsOneWidget);
       expect(find.text('Tipe aset tidak boleh kosong.'), findsOneWidget);
     });
+
+    testWidgets(
+      'bottom navigation bar navigates to Analytics without placeholder (R-26)',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1600);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+
+        // Tap tab 4 (Analitik)
+        await tester.tap(find.text('Analitik'));
+        await tester.pumpAndSettle();
+        expect(find.text('Visual Analitik'), findsOneWidget);
+      },
+    );
   });
 }

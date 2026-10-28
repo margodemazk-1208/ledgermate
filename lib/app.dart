@@ -33,7 +33,7 @@ class LedgerMateApp extends ConsumerWidget {
   }
 }
 
-/// Routes to Onboarding while incomplete, Home placeholder once done.
+/// Routes to Onboarding while incomplete, BudgetHomeScreen once done.
 /// Also covers the loading/error states around the first Isar read
 /// (antislop R-27 — every data-backed screen needs these, including the
 /// very first one at boot).

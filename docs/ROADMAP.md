@@ -35,7 +35,7 @@ Milestones map 1:1 to FR/BR ids in `docs/PRD.md`. Each milestone = one unit of w
 - [x] **M10 — Settings, Notifications, i18n, Theming** (FR-09, FR-11)
   4 local reminder types (toggle + scheduling), dark/light toggle, ID/EN switch.
 
-- [ ] **M11 — Polish & Release Candidate**
+- [x] **M11 — Polish & Release Candidate**
   Run the antislop Delivery Gate (see `AGENTS.md`) on every screen, empty/loading/error states on every data view, manual click-through on a real device per FR acceptance criteria, build release APK.
 
 ## Non-goals (do not implement without a new PRD revision)

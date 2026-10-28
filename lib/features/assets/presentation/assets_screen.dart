@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/rupiah_formatter.dart';
+import '../../analytics/presentation/analytics_screen.dart';
 import '../../budget_engine/presentation/budget_home_screen.dart';
 import '../../goals/presentation/goals_screen.dart';
 import '../../settings/presentation/settings_screen.dart';
@@ -147,15 +148,14 @@ class AssetsScreen extends ConsumerWidget {
         );
         break;
       case 4:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Fitur Analitik akan hadir di Milestone 8.'),
-          ),
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
         );
         break;
       case 5:
-        Navigator.of(context)
-            .push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const SettingsScreen()),
+        );
         break;
     }
   }
