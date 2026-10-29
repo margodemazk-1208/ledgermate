@@ -43,6 +43,7 @@ LedgerMate adalah aplikasi manajemen keuangan pribadi **100% offline**, dibangun
 - Dwibahasa (Indonesia/English), dark mode default + light mode toggle.
 - Navigasi 6 tab: Home, Tambah Transaksi, Goals, **Aset**, Analytics, Settings.
 - Aset/Investasi tracker — nilai di-update manual (emas, saham, reksadana, dll), murni net-worth, terpisah dari budget harian.
+- **Multi-Dompet (v1.1, lihat D16)** — user bikin/hapus/rename dompet sendiri secara bebas (nggak dibatasi 3 tipe tertentu), tiap transaksi nyantol ke 1 dompet spesifik, transfer antar dompet didukung, dan user pilih sendiri dompet mana yang ikut dihitung di Smart Daily Budget Engine (lihat BR-04).
 
 ### 3.2 Out-of-Scope (v1) — dihapus total dari v1.0
 - ❌ Backend server (Node.js/PostgreSQL) — tidak ada data terpusat.
@@ -65,8 +66,8 @@ LedgerMate adalah aplikasi manajemen keuangan pribadi **100% offline**, dibangun
 
 | ID | Modul | Requirement | Acceptance Criteria |
 |---|---|---|---|
-| FR-01 | Onboarding | Setup Wizard pertama install | Pilih **Income Frequency**: Mode A - Periodik (lump-sum di interval mingguan/2 mingguan/bulanan/custom — input tanggal income berikutnya) atau Mode B - Harian (income dicatat tiap kali masuk, termasuk jadwal nggak rata, tanpa tanggal payday). Lanjut input income awal + daftar pengeluaran wajib. Wajib selesai sebelum masuk Home. |
-| FR-02 | Transaction | Catat transaksi offline | Simpan ke Isar <50ms. Form: jumlah (format Rupiah otomatis, tidak boleh negatif/kosong), kategori, tanggal, catatan opsional, tipe (income/expense). |
+| FR-01 | Onboarding | Setup Wizard pertama install | Pilih **Income Frequency**: Mode A - Periodik (lump-sum di interval mingguan/2 mingguan/bulanan/custom — input tanggal income berikutnya) atau Mode B - Harian (income dicatat tiap kali masuk, termasuk jadwal nggak rata, tanpa tanggal payday). Lanjut buat **minimal 1 dompet** (FR-12) dengan saldo awal, lalu pilih dompet mana yang ikut dihitung di budget engine (BR-04). Lanjut input income awal + daftar pengeluaran wajib. Wajib selesai sebelum masuk Home. |
+| FR-02 | Transaction | Catat transaksi offline | Simpan ke Isar <50ms. Form: jumlah (format Rupiah otomatis, tidak boleh negatif/kosong), kategori, **dompet (wajib pilih 1)**, tanggal, catatan opsional, tipe (income/expense). |
 | FR-03 | Transaction | Edit & Delete transaksi | Edit bebas kapan saja. **Delete dibatasi hanya untuk transaksi tanggal hari ini** — transaksi lampau tidak bisa dihapus (jaga integritas histori), hanya bisa di-edit jumlah/kategorinya. |
 | FR-04 | Engine | Smart Daily Budget Engine | Hitung "Uang Jajan Aman Hari Ini" sesuai formula BR-01 (§7.1). Rekalkulasi tiap ada transaksi baru, income baru, atau goal berubah. |
 | FR-05 | Cycle | Siklus Gajian Baru | Saat tanggal gajian tercapai, app prompt user re-input gaji & pengeluaran wajib siklus baru (manual, tidak ada default/template). |
@@ -78,6 +79,8 @@ LedgerMate adalah aplikasi manajemen keuangan pribadi **100% offline**, dibangun
 | FR-07 | Analytics | Visual Analytics | Pie/bar chart breakdown per kategori, filter harian/mingguan/bulanan, **plus tren bulan-ke-bulan** (perbandingan total & per kategori vs bulan sebelumnya). |
 | FR-08 | Data | Export/Import Manual | Export seluruh data (transaksi, goals, settings) ke file JSON/CSV di folder Download. Import dari file untuk restore/pindah HP. |
 | FR-09 | Settings | Pengaturan App | Ganti bahasa (ID/EN), ganti tema (dark/light), kelola kategori custom, lihat/export data. |
+| FR-12 | Wallets | Multi-Dompet Management (v1.1) | User bisa tambah/edit/hapus dompet sendiri secara bebas (nama + ikon, tanpa dibatasi tipe tertentu) dari Settings atau Home. Tiap dompet punya saldo (dihitung on-the-fly dari `startingBalance` + jumlah transaksi yang nyantol ke dompet itu, bukan disimpan sebagai angka statis). Dompet yang masih punya transaksi/transfer terkait tidak bisa dihapus (harus dipindah/dihapus transaksinya dulu, cegah data yatim). Minimal selalu ada 1 dompet aktif. |
+| FR-13 | Wallets | Transfer Antar Dompet | User bisa transfer nominal dari 1 dompet ke dompet lain dalam 1 aksi (misal tarik tunai dari Bank ke Tunai). Tidak dihitung sebagai income/expense di Analytics (FR-07) atau budget engine (BR-01) — murni perpindahan saldo internal, netral terhadap total kekayaan. |
 
 ## 6. Non-Functional Requirements (NFR)
 
@@ -118,6 +121,10 @@ RemainingDays       = jumlah hari dari HARI INI sampai tanggal income berikutnya
 RemainingBalance    = (IncomeTetapSiklusIni + TotalIncomeTambahanYangSudahMasuk)
                       − TotalPengeluaranWajibSiklusIni
                       − TotalPengeluaranHarianYangSudahDicatatSiklusIni
+                      // ⚠️ v1.1 (D16, BR-04): hanya transaksi yang nyantol ke dompet
+                      // ber-flag includeInDailyBudget=true yang dihitung di sini.
+                      // Transaksi di dompet non-budget (mis. tabungan Bank) diabaikan
+                      // dari formula, meski tetap tercatat & muncul di Analytics/saldo total.
 
 DailySavingsReserve = Σ untuk setiap goal aktif:
                         (TargetAmount − CurrentAmount) / SisaHariKeTargetDate
@@ -139,6 +146,8 @@ UangJajanAmanHariIni = SaldoCarryOver + BekelHariIni
                        − PengeluaranWajibHariIni (kalau ada, mis. ongkos)
                        − PengeluaranYangSudahDicatatHariIni
                        − DailySavingsReserve
+                       // ⚠️ v1.1 (D16, BR-04): BekelHariIni & PengeluaranYangSudahDicatatHariIni
+                       // hanya menjumlahkan transaksi di dompet ber-flag includeInDailyBudget=true.
 ```
 
 **Behavior:** Tidak ada konsep "sisa hari sampai payday" karena incomenya memang harian. Sisa bekel yang tidak terpakai **terakumulasi** ke saldo besok (carry-over), bukan hangus — supaya user yang hemat hari ini dapat buffer lebih besar besoknya.
@@ -155,6 +164,12 @@ Semua goal aktif menyumbang `DailySavingsReserve` secara independen dan dijumlah
 - **Warning kalau nggak realistis:** kalau total `DailySavingsReserve` dari semua goal aktif bikin `UangJajanAmanHariIni` jadi negatif atau di bawah ambang wajar, app munculin alert ke user dengan 2 opsi: perpanjang tanggal target goal (biar alokasi harian ngecil), atau lanjut terima resiko (limit harian tetap ditampilkan minus/kecil, nggak diblokir).
 - **Akumulasi progress (auto-accrual):** App ini cuma pencatat, bukan e-wallet — uang goal nggak beneran dipindah secara fisik. Progress `currentAmount` tiap goal **bertambah otomatis tiap hari** sebesar `DailySavingsReserve` hari itu (karena nominal itu sudah "disisihkan" dari `UangJajanAmanHariIni`, jadi dianggap otomatis masuk tabungan goal), tanpa perlu user catat transaksi "setor" manual.
 - **Penarikan (Withdraw):** Kalau kepepet butuh uang yang udah "disetor" ke goal, user bisa tap **"Tarik dari Goal"** — `currentAmount` goal itu turun sejumlah yang ditarik, dan nominalnya otomatis balik nambah ke `UangJajanAmanHariIni`/`RemainingBalance` periode berjalan (dianggap kayak income masuk lagi). Konfirmasi dialog ditampilkan sebelum penarikan diproses (irreversible terhadap progress goal).
+
+### 7.4 BR-04 — Wallet Scoping ke Budget Engine (v1.1, lihat D16)
+Tiap dompet (`Wallet`) punya flag `includeInDailyBudget` (Bool), diset user pas bikin dompet (default saat onboarding: user pilih dompet mana yang "dianggap uang jajan harian" vs "dianggap tabungan/di luar budget harian", bisa diubah lagi kapan saja dari Settings).
+- `RemainingBalance` (Mode A) dan `BekelHariIni`/`PengeluaranYangSudahDicatatHariIni` (Mode B) **hanya** menjumlahkan transaksi di dompet-dompet dengan `includeInDailyBudget=true`.
+- Transaksi di dompet `includeInDailyBudget=false` tetap tercatat penuh, tetap muncul di Analytics (FR-07) dan Total Saldo Home, tapi **tidak** memengaruhi `UangJajanAmanHariIni` — logic yang sama kayak Asset (FR-10) terhadap budget harian, cuma versinya buat dompet/transaksi, bukan aset.
+- **Transfer** (FR-13) antar 2 dompet yang sama-sama `includeInDailyBudget=true` net-neutral terhadap `RemainingBalance` (satu turun, satu naik, totalnya nggak berubah). Transfer yang nyeberang status include/exclude (misal dari dompet budget ke dompet tabungan) **akan** mengubah `RemainingBalance`/`UangJajanAmanHariIni` — ini WAJAR dan disengaja (uang itu beneran keluar dari pool jajan harian), bukan bug.
 
 ## 8. Data Model (Isar, lokal-only)
 
@@ -181,13 +196,25 @@ PayCycle
 
 Transaction
   - id
-  - type (INCOME / EXPENSE)
+  - type (INCOME / EXPENSE / TRANSFER)            // TRANSFER NEW (v1.1, D16)
   - amount
-  - categoryId
+  - categoryId                                     // nullable kalau type=TRANSFER (transfer tidak punya kategori pengeluaran/income)
+  - walletId (FK ke Wallet.id)                     // NEW (v1.1) — wajib diisi, dompet asal transaksi
+  - transferPeerWalletId (FK ke Wallet.id, nullable) // NEW (v1.1) — hanya diisi kalau type=TRANSFER, dompet tujuan
+  - transferGroupId (String/UUID, nullable)        // NEW (v1.1) — pasangan 2 row Transaction (keluar+masuk) dari 1 aksi transfer dapat id yang sama, buat gampang di-undo/ditampilkan sebagai 1 entri di UI meski 2 row di DB
   - date
   - notes (nullable)
   - payCycleId (FK, biar gampang hitung per-siklus)
   // sync_status DIHAPUS — tidak relevan, app offline-only
+
+Wallet                                            // NEW (v1.1, D16) — custom, bukan 3 tipe fixed
+  - id
+  - name                                           // bebas, user-defined (bukan enum Tunai/E-Wallet/Bank)
+  - icon (String — key ikon dari set ikon app, bukan upload bebas)
+  - startingBalance (int, whole Rupiah)            // saldo awal pas dompet dibuat
+  - includeInDailyBudget (Bool, default true)      // NEW — lihat BR-04, nentuin ikut dihitung UangJajanAmanHariIni atau nggak
+  - createdAt (Timestamp)
+  // saldo SEKARANG dihitung on-the-fly: startingBalance + Σ(transaksi masuk/keluar/transfer yang nyantol ke wallet ini) — tidak disimpan sbg field statis, konsisten sama pola Asset.gainLoss (§8 Asset)
 
 Category
   - id

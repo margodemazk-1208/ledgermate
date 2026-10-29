@@ -38,5 +38,8 @@ Milestones map 1:1 to FR/BR ids in `docs/PRD.md`. Each milestone = one unit of w
 - [x] **M11 — Polish & Release Candidate**
   Run the antislop Delivery Gate (see `AGENTS.md`) on every screen, empty/loading/error states on every data view, manual click-through on a real device per FR acceptance criteria, build release APK.
 
+- [ ] **M12 — Multi-Wallet System** (FR-12, FR-13, BR-04, D16, v1.1 — post release)
+  New `Wallet` collection + data migration for existing `Transaction` rows, wallet CRUD UI, inter-wallet transfer, budget-engine wallet scoping (`includeInDailyBudget`). See D16 for full reasoning — this reopens frozen v1.0.0 scope with explicit user approval.
+
 ## Non-goals (do not implement without a new PRD revision)
 See `docs/PRD.md` §3.2 Out-of-Scope and `docs/EXTENDING.md`.
