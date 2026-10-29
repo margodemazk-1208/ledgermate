@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/category.dart';
 import '../../../core/database/local_profile.dart';
+import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -782,7 +783,7 @@ class _WalletsManagementCard extends StatelessWidget {
                   key: const ValueKey('settings_open_wallets_button'),
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const WalletsScreen()),
+                      SlidePageRoute(builder: (_) => const WalletsScreen()),
                     );
                   },
                   icon: const Icon(Icons.arrow_forward),

@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/financial_goal.dart';
 import '../../../core/formulas/daily_budget_formulas.dart';
+import '../../../core/presentation/widgets/press_scale.dart';
+import '../../../core/presentation/widgets/success_toast.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
@@ -164,6 +166,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
             manualDailyAllocation: manualAlloc,
           );
       if (mounted) {
+        showSuccessToast(context, 'Target tabungan berhasil disimpan');
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -390,26 +393,29 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
               const SizedBox(height: 32),
 
               // Submit Button
-              FilledButton(
-                key: const ValueKey('save_goal_button'),
-                onPressed: _isSubmitting ? null : _handleSave,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: AppColors.brandTeal,
-                ),
-                child: _isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+              PressScale(
+                enabled: !_isSubmitting,
+                child: FilledButton(
+                  key: const ValueKey('save_goal_button'),
+                  onPressed: _isSubmitting ? null : _handleSave,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: AppColors.brandTeal,
+                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          isEditing ? 'Perbarui Target' : 'Simpan Target',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
-                      )
-                    : Text(
-                        isEditing ? 'Perbarui Target' : 'Simpan Target',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
+                ),
               ),
             ],
           ),

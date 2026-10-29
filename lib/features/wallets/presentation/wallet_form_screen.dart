@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/wallet.dart';
+import '../../../core/presentation/widgets/press_scale.dart';
+import '../../../core/presentation/widgets/success_toast.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
@@ -70,6 +72,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
             includeInDailyBudget: _includeInDailyBudget,
           );
       if (mounted) {
+        showSuccessToast(context, 'Dompet berhasil disimpan');
         Navigator.of(context).pop(true);
       }
     } catch (e) {
@@ -276,25 +279,28 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
               const SizedBox(height: 32),
 
               // 5. Submit Button
-              FilledButton.icon(
-                key: const ValueKey('wallet_save_button'),
-                onPressed: _isSubmitting ? null : _save,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.brandTeal,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+              PressScale(
+                enabled: !_isSubmitting,
+                child: FilledButton.icon(
+                  key: const ValueKey('wallet_save_button'),
+                  onPressed: _isSubmitting ? null : _save,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.brandTeal,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  icon: _isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.check),
+                  label: Text(isEdit ? 'Simpan Perubahan' : 'Buat Dompet'),
                 ),
-                icon: _isSubmitting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.check),
-                label: Text(isEdit ? 'Simpan Perubahan' : 'Buat Dompet'),
               ),
             ],
           ),

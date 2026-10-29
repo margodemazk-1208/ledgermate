@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
+import '../navigation/slide_page_route.dart';
 import '../../../features/analytics/presentation/analytics_screen.dart';
 import '../../../features/assets/presentation/assets_screen.dart';
 import '../../../features/budget_engine/presentation/budget_home_screen.dart';
@@ -44,16 +45,21 @@ class AppBottomNav extends StatelessWidget {
       4 => const AnalyticsScreen(),
       _ => const SettingsScreen(),
     };
+    // Direction-aware per docs/DESIGN.md §Motion: moving to a later tab
+    // slides in from the right (forward), to an earlier tab from the left
+    // (feels like "going back").
+    final fromLeft = index < currentIndex;
     if (index == 0) {
       // Home is the app's root tab — clear the stack so Back doesn't pile up
       // through every tab previously visited.
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => screen),
+        SlidePageRoute(builder: (_) => screen, fromLeft: fromLeft),
         (route) => false,
       );
     } else {
-      Navigator.of(context)
-          .pushReplacement(MaterialPageRoute(builder: (_) => screen));
+      Navigator.of(context).pushReplacement(
+        SlidePageRoute(builder: (_) => screen, fromLeft: fromLeft),
+      );
     }
   }
 

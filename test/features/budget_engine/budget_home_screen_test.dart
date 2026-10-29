@@ -254,6 +254,71 @@ void main() {
       },
     );
 
+    testWidgets(
+      'FAB speed-dial staggers its reveal bottom-to-top and collapses '
+      'top-to-bottom on close (docs/DESIGN.md §Motion touchpoint 4)',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
+        );
+        await tester.pumpAndSettle();
+
+        double opacityOf(Key key) {
+          final opacityFinder = find
+              .ancestor(of: find.byKey(key), matching: find.byType(Opacity))
+              .first;
+          return tester.widget<Opacity>(opacityFinder).opacity;
+        }
+
+        await tester.tap(find.byKey(const ValueKey('home_fab_speed_dial')));
+        await tester.pump(); // overlay mounts, stagger controller starts
+        await tester.pump(const Duration(milliseconds: 60)); // early reveal
+
+        // Pengeluaran (index 0, nearest the FAB) starts revealing first;
+        // Aset (index 4, top-most) starts last — so early into the
+        // animation it should still be much less visible.
+        final expenseOpacityEarly = opacityOf(
+          const ValueKey('fab_option_expense'),
+        );
+        final assetOpacityEarly = opacityOf(
+          const ValueKey('fab_option_add_asset'),
+        );
+        expect(
+          expenseOpacityEarly,
+          greaterThan(assetOpacityEarly),
+          reason: 'Pengeluaran should reveal before Aset (bottom-to-top)',
+        );
+
+        await tester.pumpAndSettle();
+        expect(opacityOf(const ValueKey('fab_option_expense')), 1.0);
+        expect(opacityOf(const ValueKey('fab_option_add_asset')), 1.0);
+
+        // Tap the scrim (not any option) to close — should collapse
+        // top-to-bottom (reverse of open), not hard-cut.
+        await tester.tapAt(const Offset(20, 20));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 60));
+
+        final expenseOpacityClosing = opacityOf(
+          const ValueKey('fab_option_expense'),
+        );
+        final assetOpacityClosing = opacityOf(
+          const ValueKey('fab_option_add_asset'),
+        );
+        expect(
+          assetOpacityClosing,
+          lessThan(expenseOpacityClosing),
+          reason:
+              'Aset (top-most, revealed last) should be the first to fade '
+              'out on close',
+        );
+
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('fab_option_expense')), findsNothing);
+        expect(find.byType(BudgetHomeScreen), findsOneWidget);
+      },
+    );
+
     testWidgets('Bottom nav renders all 6 tabs with Home active', (
       tester,
     ) async {
@@ -289,6 +354,41 @@ void main() {
 
       expect(find.byType(AnalyticsScreen), findsOneWidget);
     });
+
+    testWidgets(
+      'Bottom nav tab switch slides horizontally, not an instant swap '
+      '(docs/DESIGN.md §Motion touchpoint 1)',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Analitik'));
+        await tester.pump(); // transition starts
+        await tester.pump(const Duration(milliseconds: 50)); // mid-flight
+
+        // Checking the rendered global position (rather than reaching into
+        // a specific `SlideTransition` instance, since a push/replace
+        // transiently mounts several — for both the exiting and entering
+        // tab) proves the incoming tab is still animating into place.
+        final midPosition = tester.getTopLeft(
+          find.text('Visual Analitik').first,
+        );
+
+        await tester.pumpAndSettle();
+        expect(find.byType(AnalyticsScreen), findsOneWidget);
+        final restPosition = tester.getTopLeft(find.text('Visual Analitik'));
+
+        expect(
+          midPosition.dx,
+          isNot(restPosition.dx),
+          reason:
+              'mid-transition the incoming tab should still be offset from '
+              'its final resting position, not an instant swap',
+        );
+      },
+    );
 
     testWidgets('Loading and error states (antislop R-27)', (tester) async {
       // Loading

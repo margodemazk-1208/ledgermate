@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/financial_goal.dart';
+import '../../../../core/presentation/widgets/press_scale.dart';
+import '../../../../core/presentation/widgets/success_toast.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/rupiah_formatter.dart';
 import '../../application/goals_providers.dart';
@@ -93,6 +95,7 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
           .read(goalsRepositoryProvider)
           .withdrawFromGoal(goalId: widget.goal.id, amount: amount);
       if (mounted) {
+        showSuccessToast(context, 'Penarikan ${formatRupiah(amount)} berhasil');
         Navigator.of(context).pop(amount);
       }
     } catch (e) {
@@ -204,19 +207,22 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
           onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
           child: const Text('Batal'),
         ),
-        FilledButton(
-          key: const ValueKey('withdraw_submit_button'),
-          onPressed: _isSubmitting ? null : _handleWithdraw,
-          child: _isSubmitting
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Text('Lanjut Tarik'),
+        PressScale(
+          enabled: !_isSubmitting,
+          child: FilledButton(
+            key: const ValueKey('withdraw_submit_button'),
+            onPressed: _isSubmitting ? null : _handleWithdraw,
+            child: _isSubmitting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('Lanjut Tarik'),
+          ),
         ),
       ],
     );

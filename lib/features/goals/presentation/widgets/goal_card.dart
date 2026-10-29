@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/presentation/navigation/slide_page_route.dart';
+import '../../../../core/presentation/widgets/animated_progress_bar.dart';
+import '../../../../core/presentation/widgets/press_scale.dart';
 import '../../../../core/utils/rupiah_formatter.dart';
 import '../../application/goals_providers.dart';
 import '../goal_form_screen.dart';
@@ -34,13 +37,15 @@ class GoalCard extends ConsumerWidget {
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Batal'),
           ),
-          FilledButton(
-            key: const ValueKey('delete_confirm_submit_button'),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.expenseRed,
+          PressScale(
+            child: FilledButton(
+              key: const ValueKey('delete_confirm_submit_button'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.expenseRed,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Hapus'),
             ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Hapus'),
           ),
         ],
       ),
@@ -176,14 +181,14 @@ class GoalCard extends ConsumerWidget {
             const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
+              child: AnimatedProgressBar(
                 key: ValueKey('goal_progress_bar_${goal.id}'),
                 value: projection.progressPercent,
                 minHeight: 8,
                 backgroundColor: theme.dividerColor.withValues(alpha: 0.12),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  isCompleted ? AppColors.savingsGreen : AppColors.brandTeal,
-                ),
+                valueColor: isCompleted
+                    ? AppColors.savingsGreen
+                    : AppColors.brandTeal,
               ),
             ),
             const SizedBox(height: 14),
@@ -237,22 +242,25 @@ class GoalCard extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
-                    key: ValueKey('withdraw_goal_button_${goal.id}'),
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
+                  child: PressScale(
+                    enabled: goal.currentAmount > 0,
+                    child: OutlinedButton(
+                      key: ValueKey('withdraw_goal_button_${goal.id}'),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999),
+                        ),
                       ),
+                      onPressed: goal.currentAmount > 0
+                          ? () {
+                              showDialog(
+                                context: context,
+                                builder: (_) => WithdrawDialog(goal: goal),
+                              );
+                            }
+                          : null,
+                      child: const Text('Tarik dari Goal'),
                     ),
-                    onPressed: goal.currentAmount > 0
-                        ? () {
-                            showDialog(
-                              context: context,
-                              builder: (_) => WithdrawDialog(goal: goal),
-                            );
-                          }
-                        : null,
-                    child: const Text('Tarik dari Goal'),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -267,7 +275,7 @@ class GoalCard extends ConsumerWidget {
                     ),
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(
+                        SlidePageRoute(
                           builder: (_) => GoalFormScreen(goal: goal),
                         ),
                       );
@@ -275,12 +283,14 @@ class GoalCard extends ConsumerWidget {
                     child: const Text('Edit'),
                   ),
                 ),
-                IconButton(
-                  key: ValueKey('delete_goal_button_${goal.id}'),
-                  tooltip: 'Hapus Target',
-                  color: AppColors.expenseRed,
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  onPressed: () => _handleDelete(context, ref),
+                PressScale(
+                  child: IconButton(
+                    key: ValueKey('delete_goal_button_${goal.id}'),
+                    tooltip: 'Hapus Target',
+                    color: AppColors.expenseRed,
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    onPressed: () => _handleDelete(context, ref),
+                  ),
                 ),
               ],
             ),

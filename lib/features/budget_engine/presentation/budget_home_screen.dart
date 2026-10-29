@@ -4,7 +4,9 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
+import '../../../core/presentation/widgets/count_up_rupiah.dart';
 import '../../../core/presentation/widgets/fab_speed_dial.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -213,9 +215,9 @@ class _DashboardBody extends ConsumerWidget {
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    key: const ValueKey('daily_safe_spend_number'),
-                    formatRupiah(summary.uangJajanAmanHariIni),
+                  child: CountUpRupiah(
+                    textKey: const ValueKey('daily_safe_spend_number'),
+                    value: summary.uangJajanAmanHariIni,
                     style: theme.textTheme.displayLarge?.copyWith(
                       color: focalColor,
                       fontWeight: FontWeight.w700,
@@ -304,7 +306,7 @@ class _CycleTransitionBanner extends StatelessWidget {
             key: const ValueKey('cycle_transition_button'),
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
+                SlidePageRoute(
                   builder: (_) => const PayCycleTransitionScreen(),
                 ),
               );
@@ -586,9 +588,7 @@ class _RincianTransaksiCard extends ConsumerWidget {
                 key: const ValueKey('home_view_all_transactions_link'),
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const TransactionsScreen(),
-                    ),
+                    SlidePageRoute(builder: (_) => const TransactionsScreen()),
                   );
                 },
                 child: Row(

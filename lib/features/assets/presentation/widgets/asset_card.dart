@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../../core/presentation/widgets/icon_circle.dart';
+import '../../../../core/presentation/widgets/press_scale.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/rupiah_formatter.dart';
@@ -56,13 +58,15 @@ class AssetCard extends ConsumerWidget {
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Batal'),
           ),
-          FilledButton(
-            key: const ValueKey('delete_asset_confirm_button'),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.expenseRed,
+          PressScale(
+            child: FilledButton(
+              key: const ValueKey('delete_asset_confirm_button'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.expenseRed,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Hapus'),
             ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Hapus'),
           ),
         ],
       ),
@@ -132,21 +136,23 @@ class AssetCard extends ConsumerWidget {
                   icon: const Icon(Icons.edit_outlined, size: 20),
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
+                      SlidePageRoute(
                         builder: (_) => AssetFormScreen(asset: item.asset),
                       ),
                     );
                   },
                 ),
-                IconButton(
-                  key: ValueKey('delete_asset_button_${item.id}'),
-                  tooltip: 'Hapus Aset',
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    size: 20,
-                    color: AppColors.expenseRed,
+                PressScale(
+                  child: IconButton(
+                    key: ValueKey('delete_asset_button_${item.id}'),
+                    tooltip: 'Hapus Aset',
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      size: 20,
+                      color: AppColors.expenseRed,
+                    ),
+                    onPressed: () => _handleDelete(context, ref),
                   ),
-                  onPressed: () => _handleDelete(context, ref),
                 ),
               ],
             ),

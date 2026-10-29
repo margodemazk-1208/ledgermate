@@ -1,27 +1,31 @@
 import 'package:flutter/material.dart';
 
 import '../../database/transaction.dart' as db;
+import '../../motion/motion_durations.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
+import '../navigation/slide_page_route.dart';
+import 'press_scale.dart';
 import '../../../features/assets/presentation/asset_form_screen.dart';
 import '../../../features/goals/presentation/goal_form_screen.dart';
 import '../../../features/transactions/presentation/transaction_form_screen.dart';
 import '../../../features/wallets/presentation/transfer_form_screen.dart';
 
-/// Home's FAB speed-dial per `docs/design/mockups/08_fab_overlay.html`.
-///
-/// Per the M13 task scope this delivers the STATIC visual state only (dimmed
-/// background, 5 stacked options bottom-to-top, FAB rotated 45° to an "X")
-/// — the staggered reveal/collapse animation is M14's job
-/// (`docs/DESIGN.md` §Motion), so the overlay is shown/hidden instantly here
-/// (`transitionDuration: Duration.zero`).
+/// Home's FAB speed-dial per `docs/design/mockups/08_fab_overlay.html`,
+/// with the M14 motion treatment from `docs/DESIGN.md` §Motion touchpoint 4:
+/// staggered bottom-to-top reveal (Pengeluaran -> Pemasukan -> Transfer ->
+/// Goal -> Aset), ~50ms stagger, each item fade+scale (0.8->1.0), FAB icon
+/// rotates 45° (+ -> ×) over the same duration. Closing reverses the
+/// stagger (top-to-bottom collapse) via the SAME `AnimationController` run
+/// in reverse — see `_SpeedDialOverlay` doc comment for why that alone
+/// produces the correct reverse ordering.
 class FabSpeedDial extends StatelessWidget {
   const FabSpeedDial({super.key});
 
   Future<void> _open(BuildContext context) async {
     await showGeneralDialog<void>(
       context: context,
-      barrierDismissible: true,
+      barrierDismissible: false,
       barrierLabel: 'Tutup',
       barrierColor: Colors.black.withValues(alpha: 0.6),
       transitionDuration: Duration.zero,
@@ -31,20 +35,78 @@ class FabSpeedDial extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton(
-      key: const ValueKey('home_fab_speed_dial'),
-      onPressed: () => _open(context),
-      child: const Icon(Icons.add),
+    return PressScale(
+      child: FloatingActionButton(
+        key: const ValueKey('home_fab_speed_dial'),
+        onPressed: () => _open(context),
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
 
-class _SpeedDialOverlay extends StatelessWidget {
+class _SpeedDialOverlay extends StatefulWidget {
   const _SpeedDialOverlay();
 
+  @override
+  State<_SpeedDialOverlay> createState() => _SpeedDialOverlayState();
+}
+
+class _SpeedDialOverlayState extends State<_SpeedDialOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: MotionDurations.fabSpeedDial,
+  );
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      _controller.duration = motionDuration(
+        context,
+        MotionDurations.fabSpeedDial,
+      );
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// Reverses the stagger (top-to-bottom collapse — see class doc comment
+  /// on [FabSpeedDial]) before popping, so closing never hard-cuts.
+  Future<void> _close() async {
+    await _controller.reverse();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  /// Selecting an action dismisses the dial immediately and navigates —
+  /// unlike explicit close (tap FAB/barrier), this isn't "closing the
+  /// dial", it's "leaving it for another screen", so no collapse wait.
   void _openScreen(BuildContext context, Widget screen) {
-    Navigator.of(context).pop(); // close overlay first
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+    Navigator.of(context).pop();
+    Navigator.of(context).push(SlidePageRoute(builder: (_) => screen));
+  }
+
+  /// Per-item reveal [Interval] within the shared controller's timeline,
+  /// bottom-to-top on open (index 0 starts first) — reversing the same
+  /// controller naturally collapses top-to-bottom (the last-revealed item,
+  /// index 4, has the LATEST interval so it's first to fade out as the
+  /// controller value decreases back through it).
+  Interval _intervalFor(int index) {
+    const stagger = 0.111; // ~50ms of the 450ms total duration
+    const itemSpan = 0.555; // ~250ms fade/scale span
+    final start = (index * stagger).clamp(0.0, 1.0);
+    final end = (start + itemSpan).clamp(0.0, 1.0);
+    return Interval(start, end, curve: Curves.easeOut);
   }
 
   @override
@@ -53,12 +115,11 @@ class _SpeedDialOverlay extends StatelessWidget {
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          // Tap-anywhere-to-dismiss scrim (the barrier itself already does
-          // this via barrierDismissible, this just gives the FAB area a
-          // dedicated close target matching the mockup's rotated-X affordance).
+          // Tap-anywhere-to-dismiss scrim (the barrier itself is now
+          // non-dismissible so every close path plays the collapse anim).
           Positioned.fill(
             child: GestureDetector(
-              onTap: () => Navigator.of(context).pop(),
+              onTap: _close,
               behavior: HitTestBehavior.opaque,
             ),
           ),
@@ -68,64 +129,101 @@ class _SpeedDialOverlay extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _SpeedDialOption(
-                  key: const ValueKey('fab_option_add_asset'),
-                  label: 'Tambah Aset Baru',
-                  icon: Icons.account_balance_outlined,
-                  dark: true,
-                  onTap: () => _openScreen(context, const AssetFormScreen()),
+                _StaggeredItem(
+                  animation: CurvedAnimation(
+                    parent: _controller,
+                    curve: _intervalFor(4),
+                  ),
+                  child: _SpeedDialOption(
+                    key: const ValueKey('fab_option_add_asset'),
+                    label: 'Tambah Aset Baru',
+                    icon: Icons.account_balance_outlined,
+                    dark: true,
+                    onTap: () => _openScreen(context, const AssetFormScreen()),
+                  ),
                 ),
                 const SizedBox(height: 14),
-                _SpeedDialOption(
-                  key: const ValueKey('fab_option_add_goal'),
-                  label: 'Tambah Goal Baru',
-                  icon: Icons.track_changes_outlined,
-                  dark: true,
-                  onTap: () => _openScreen(context, const GoalFormScreen()),
+                _StaggeredItem(
+                  animation: CurvedAnimation(
+                    parent: _controller,
+                    curve: _intervalFor(3),
+                  ),
+                  child: _SpeedDialOption(
+                    key: const ValueKey('fab_option_add_goal'),
+                    label: 'Tambah Goal Baru',
+                    icon: Icons.track_changes_outlined,
+                    dark: true,
+                    onTap: () => _openScreen(context, const GoalFormScreen()),
+                  ),
                 ),
                 const SizedBox(height: 14),
-                _SpeedDialOption(
-                  key: const ValueKey('fab_option_transfer'),
-                  label: 'Transfer Antar Dompet',
-                  icon: Icons.swap_horiz,
-                  dark: true,
-                  onTap: () => _openScreen(context, const TransferFormScreen()),
+                _StaggeredItem(
+                  animation: CurvedAnimation(
+                    parent: _controller,
+                    curve: _intervalFor(2),
+                  ),
+                  child: _SpeedDialOption(
+                    key: const ValueKey('fab_option_transfer'),
+                    label: 'Transfer Antar Dompet',
+                    icon: Icons.swap_horiz,
+                    dark: true,
+                    onTap: () =>
+                        _openScreen(context, const TransferFormScreen()),
+                  ),
                 ),
                 const SizedBox(height: 14),
-                _SpeedDialOption(
-                  key: const ValueKey('fab_option_income'),
-                  label: 'Catat Pemasukan',
-                  icon: Icons.arrow_upward,
-                  dark: false,
-                  onTap: () => _openScreen(
-                    context,
-                    const TransactionFormScreen(
-                      initialType: db.TransactionType.income,
+                _StaggeredItem(
+                  animation: CurvedAnimation(
+                    parent: _controller,
+                    curve: _intervalFor(1),
+                  ),
+                  child: _SpeedDialOption(
+                    key: const ValueKey('fab_option_income'),
+                    label: 'Catat Pemasukan',
+                    icon: Icons.arrow_upward,
+                    dark: false,
+                    onTap: () => _openScreen(
+                      context,
+                      const TransactionFormScreen(
+                        initialType: db.TransactionType.income,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 14),
-                _SpeedDialOption(
-                  key: const ValueKey('fab_option_expense'),
-                  label: 'Catat Pengeluaran',
-                  icon: Icons.arrow_downward,
-                  dark: false,
-                  onTap: () => _openScreen(
-                    context,
-                    const TransactionFormScreen(
-                      initialType: db.TransactionType.expense,
+                _StaggeredItem(
+                  animation: CurvedAnimation(
+                    parent: _controller,
+                    curve: _intervalFor(0),
+                  ),
+                  child: _SpeedDialOption(
+                    key: const ValueKey('fab_option_expense'),
+                    label: 'Catat Pengeluaran',
+                    icon: Icons.arrow_downward,
+                    dark: false,
+                    onTap: () => _openScreen(
+                      context,
+                      const TransactionFormScreen(
+                        initialType: db.TransactionType.expense,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 14),
                 // Rotated FAB-to-X: same slot the real FAB occupies, closes
-                // the overlay on tap (static visual only, per scope).
-                FloatingActionButton(
-                  key: const ValueKey('home_fab_speed_dial_close'),
-                  heroTag: 'fab_speed_dial_close',
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Transform.rotate(
-                    angle: 0.785398, // 45 degrees
+                // the overlay (with the collapse animation) on tap.
+                AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      angle: _controller.value * 0.785398, // 0 -> 45 degrees
+                      child: child,
+                    );
+                  },
+                  child: FloatingActionButton(
+                    key: const ValueKey('home_fab_speed_dial_close'),
+                    heroTag: 'fab_speed_dial_close',
+                    onPressed: _close,
                     child: const Icon(Icons.add),
                   ),
                 ),
@@ -134,6 +232,34 @@ class _SpeedDialOverlay extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Fade (0->1) + scale (0.8->1.0) wrapper driven by a per-item [Interval]
+/// of the shared stagger controller.
+class _StaggeredItem extends StatelessWidget {
+  const _StaggeredItem({required this.animation, required this.child});
+
+  final Animation<double> animation;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      child: child,
+      builder: (context, child) {
+        final t = animation.value.clamp(0.0, 1.0);
+        return Opacity(
+          opacity: t,
+          child: Transform.scale(
+            scale: 0.8 + (0.2 * t),
+            alignment: Alignment.centerRight,
+            child: child,
+          ),
+        );
+      },
     );
   }
 }

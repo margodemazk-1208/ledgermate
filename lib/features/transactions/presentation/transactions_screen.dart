@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/icon_circle.dart';
 import '../../../core/presentation/widgets/filter_pill.dart';
+import '../../../core/presentation/widgets/skeleton_loader.dart';
+import '../../../core/presentation/widgets/slide_fade_in_once.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
@@ -85,7 +88,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const TransactionsSkeletonList(),
         error: (err, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -100,9 +103,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       floatingActionButton: FloatingActionButton(
         key: const ValueKey('add_transaction_fab'),
         onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const TransactionFormScreen()),
-          );
+          Navigator.of(
+            context,
+          ).push(SlidePageRoute(builder: (_) => const TransactionFormScreen()));
         },
         child: const Icon(Icons.add),
       ),
@@ -146,22 +149,25 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 ),
               ),
               for (var i = 0; i < txs.length; i++)
-                _TransactionTile(
-                  key: ValueKey('transaction_item_${txs[i].id}'),
-                  transaction: txs[i],
-                  categoryName: txs[i].type == db.TransactionType.transfer
-                      ? 'Transfer'
-                      : (categoriesMap[txs[i].categoryId]?.name ??
-                            'Kategori #${txs[i].categoryId}'),
-                  showDivider: i != txs.length - 1,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            TransactionFormScreen(transaction: txs[i]),
-                      ),
-                    );
-                  },
+                SlideFadeInOnce(
+                  key: ValueKey('transaction_slide_${txs[i].id}'),
+                  child: _TransactionTile(
+                    key: ValueKey('transaction_item_${txs[i].id}'),
+                    transaction: txs[i],
+                    categoryName: txs[i].type == db.TransactionType.transfer
+                        ? 'Transfer'
+                        : (categoriesMap[txs[i].categoryId]?.name ??
+                              'Kategori #${txs[i].categoryId}'),
+                    showDivider: i != txs.length - 1,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        SlidePageRoute(
+                          builder: (_) =>
+                              TransactionFormScreen(transaction: txs[i]),
+                        ),
+                      );
+                    },
+                  ),
                 ),
             ],
           ),
@@ -200,9 +206,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               key: const ValueKey('empty_state_add_button'),
               onPressed: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const TransactionFormScreen(),
-                  ),
+                  SlidePageRoute(builder: (_) => const TransactionFormScreen()),
                 );
               },
               icon: const Icon(Icons.add),

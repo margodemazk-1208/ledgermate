@@ -3,8 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/dashed_add_card.dart';
+import '../../../core/presentation/widgets/skeleton_loader.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
@@ -32,19 +34,15 @@ class AssetsScreen extends ConsumerWidget {
             tooltip: 'Tambah Aset',
             icon: const Icon(Icons.add),
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AssetFormScreen()),
-              );
+              Navigator.of(
+                context,
+              ).push(SlidePageRoute(builder: (_) => const AssetFormScreen()));
             },
           ),
         ],
       ),
       body: summaryAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(
-            key: ValueKey('assets_loading_indicator'),
-          ),
-        ),
+        loading: () => const AssetsSkeletonList(),
         error: (err, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -77,7 +75,7 @@ class AssetsScreen extends ConsumerWidget {
         key: const ValueKey('add_asset_fab'),
         onPressed: () {
           Navigator.of(context)
-              .push(MaterialPageRoute(builder: (_) => const AssetFormScreen()));
+              .push(SlidePageRoute(builder: (_) => const AssetFormScreen()));
         },
         child: const Icon(Icons.add),
       ),
@@ -131,9 +129,9 @@ class AssetsScreen extends ConsumerWidget {
             FilledButton.icon(
               key: const ValueKey('empty_add_asset_button'),
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AssetFormScreen()),
-                );
+                Navigator.of(
+                  context,
+                ).push(SlidePageRoute(builder: (_) => const AssetFormScreen()));
               },
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.brandTeal,
@@ -289,9 +287,8 @@ class AssetsScreen extends ConsumerWidget {
           key: const ValueKey('assets_dashed_add_card'),
           label: 'Tambah Aset Baru',
           onTap: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const AssetFormScreen()));
+            Navigator.of(context)
+                .push(SlidePageRoute(builder: (_) => const AssetFormScreen()));
           },
         ),
       ],

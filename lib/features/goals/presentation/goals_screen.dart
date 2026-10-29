@@ -2,8 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/presentation/navigation/slide_page_route.dart';
+import '../../../core/presentation/widgets/animated_progress_bar.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/dashed_add_card.dart';
+import '../../../core/presentation/widgets/skeleton_loader.dart';
+import '../../../core/presentation/widgets/slide_fade_in_once.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
@@ -27,11 +31,7 @@ class GoalsScreen extends ConsumerWidget {
         ),
       ),
       body: summaryAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(
-            key: ValueKey('goals_loading_indicator'),
-          ),
-        ),
+        loading: () => const GoalsSkeletonList(),
         error: (err, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -94,7 +94,7 @@ class GoalsScreen extends ConsumerWidget {
                       key: const ValueKey('create_first_goal_button'),
                       onPressed: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(
+                          SlidePageRoute(
                             builder: (_) => const GoalFormScreen(),
                           ),
                         );
@@ -143,14 +143,17 @@ class GoalsScreen extends ConsumerWidget {
 
                 // Goals list
                 for (final proj in summary.projections)
-                  GoalCard(projection: proj),
+                  SlideFadeInOnce(
+                    key: ValueKey('goal_slide_${proj.goal.id}'),
+                    child: GoalCard(projection: proj),
+                  ),
                 const SizedBox(height: 4),
                 DashedAddCard(
                   key: const ValueKey('goals_dashed_add_card'),
                   label: 'Tambah Goal Baru',
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const GoalFormScreen()),
+                      SlidePageRoute(builder: (_) => const GoalFormScreen()),
                     );
                   },
                 ),
@@ -163,7 +166,7 @@ class GoalsScreen extends ConsumerWidget {
         key: const ValueKey('add_goal_fab'),
         onPressed: () {
           Navigator.of(context)
-              .push(MaterialPageRoute(builder: (_) => const GoalFormScreen()));
+              .push(SlidePageRoute(builder: (_) => const GoalFormScreen()));
         },
         child: const Icon(Icons.add),
       ),
@@ -214,13 +217,11 @@ class _GoalsOverviewCard extends StatelessWidget {
             const SizedBox(height: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
+              child: AnimatedProgressBar(
                 value: summary.overallProgress,
                 minHeight: 8,
                 backgroundColor: theme.dividerColor.withValues(alpha: 0.12),
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  AppColors.brandTeal,
-                ),
+                valueColor: AppColors.brandTeal,
               ),
             ),
             const SizedBox(height: 16),

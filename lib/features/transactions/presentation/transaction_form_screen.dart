@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/presentation/widgets/press_scale.dart';
+import '../../../core/presentation/widgets/success_toast.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
@@ -97,6 +99,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
     final success = await formNotifier.save();
     if (success && mounted) {
+      showSuccessToast(context, 'Transaksi berhasil disimpan');
       Navigator.of(context).pop(true);
     }
   }
@@ -114,12 +117,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Batal'),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.expenseRed,
+          PressScale(
+            child: FilledButton(
+              key: const ValueKey('transaction_delete_confirm_button'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.expenseRed,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Hapus'),
             ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Hapus'),
           ),
         ],
       ),
@@ -463,24 +469,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             ],
 
             // 6. Save Button (disabled while submitting or if amount invalid)
-            FilledButton(
-              key: const ValueKey('transaction_save_button'),
-              onPressed: formState.isSubmitting ? null : _onSave,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: formState.isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+            PressScale(
+              enabled: !formState.isSubmitting,
+              child: FilledButton(
+                key: const ValueKey('transaction_save_button'),
+                onPressed: formState.isSubmitting ? null : _onSave,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: formState.isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          isEdit ? 'Simpan Perubahan' : 'Simpan Transaksi',
+                          style: const TextStyle(fontSize: 16),
                         ),
-                      )
-                    : Text(
-                        isEdit ? 'Simpan Perubahan' : 'Simpan Transaksi',
-                        style: const TextStyle(fontSize: 16),
-                      ),
+                ),
               ),
             ),
 
@@ -491,15 +500,18 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               const SizedBox(height: 12),
               if (isToday) ...[
                 // Today transaction: delete is allowed
-                OutlinedButton.icon(
-                  key: const ValueKey('transaction_delete_button'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.expenseRed,
-                    side: const BorderSide(color: AppColors.expenseRed),
+                PressScale(
+                  enabled: !formState.isSubmitting,
+                  child: OutlinedButton.icon(
+                    key: const ValueKey('transaction_delete_button'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.expenseRed,
+                      side: const BorderSide(color: AppColors.expenseRed),
+                    ),
+                    onPressed: formState.isSubmitting ? null : _onDelete,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Hapus Transaksi'),
                   ),
-                  onPressed: formState.isSubmitting ? null : _onDelete,
-                  icon: const Icon(Icons.delete_outline),
-                  label: const Text('Hapus Transaksi'),
                 ),
               ] else ...[
                 // Older transaction: delete is blocked in UI (FR-03)

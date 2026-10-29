@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/wallet.dart';
+import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/icon_circle.dart';
+import '../../../core/presentation/widgets/press_scale.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
@@ -34,12 +36,14 @@ class WalletsScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Batal'),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.expenseRed,
+          PressScale(
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.expenseRed,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Hapus'),
             ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Hapus'),
           ),
         ],
       ),
@@ -113,7 +117,7 @@ class WalletsScreen extends ConsumerWidget {
             icon: const Icon(Icons.swap_horiz),
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const TransferFormScreen()),
+                SlidePageRoute(builder: (_) => const TransferFormScreen()),
               );
             },
           ),
@@ -170,7 +174,7 @@ class WalletsScreen extends ConsumerWidget {
                               ),
                               onPressed: () {
                                 Navigator.of(context).push(
-                                  MaterialPageRoute(
+                                  SlidePageRoute(
                                     builder: (_) => const TransferFormScreen(),
                                   ),
                                 );
@@ -188,7 +192,7 @@ class WalletsScreen extends ConsumerWidget {
                               ),
                               onPressed: () {
                                 Navigator.of(context).push(
-                                  MaterialPageRoute(
+                                  SlidePageRoute(
                                     builder: (_) => const WalletFormScreen(),
                                   ),
                                 );
@@ -253,7 +257,7 @@ class WalletsScreen extends ConsumerWidget {
                     balance: balances[w.id] ?? w.startingBalance,
                     onEdit: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(
+                        SlidePageRoute(
                           builder: (_) => WalletFormScreen(wallet: w),
                         ),
                       );
@@ -261,7 +265,7 @@ class WalletsScreen extends ConsumerWidget {
                     onDelete: () => _confirmDelete(context, ref, w),
                     onTransfer: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(
+                        SlidePageRoute(
                           builder: (_) =>
                               TransferFormScreen(initialSourceWalletId: w.id),
                         ),
@@ -292,9 +296,8 @@ class WalletsScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         key: const ValueKey('add_wallet_fab'),
         onPressed: () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const WalletFormScreen()));
+          Navigator.of(context)
+              .push(SlidePageRoute(builder: (_) => const WalletFormScreen()));
         },
         child: const Icon(Icons.add),
       ),

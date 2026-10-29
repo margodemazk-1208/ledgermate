@@ -4,8 +4,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/filter_pill.dart';
+import '../../../core/presentation/widgets/skeleton_loader.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/theme_provider.dart';
@@ -51,11 +53,7 @@ class AnalyticsScreen extends ConsumerWidget {
         ],
       ),
       body: summaryAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(
-            key: ValueKey('analytics_loading_indicator'),
-          ),
-        ),
+        loading: () => const AnalyticsSkeletonList(),
         error: (err, _) => Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -79,11 +77,7 @@ class AnalyticsScreen extends ConsumerWidget {
         ),
         data: (summary) {
           return momAsync.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(
-                key: ValueKey('analytics_mom_loading_indicator'),
-              ),
-            ),
+            loading: () => const AnalyticsSkeletonList(),
             error: (err, _) => Center(child: Text('Gagal memuat tren: $err')),
             data: (momSummary) {
               return ListView(
@@ -161,9 +155,9 @@ class AnalyticsScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         key: const ValueKey('analytics_add_transaction_fab'),
         onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const TransactionFormScreen()),
-          );
+          Navigator.of(
+            context,
+          ).push(SlidePageRoute(builder: (_) => const TransactionFormScreen()));
         },
         child: const Icon(Icons.add),
       ),

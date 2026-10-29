@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/asset.dart';
+import '../../../core/presentation/widgets/press_scale.dart';
+import '../../../core/presentation/widgets/success_toast.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
@@ -102,6 +104,7 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
           );
 
       if (mounted) {
+        showSuccessToast(context, 'Aset berhasil disimpan');
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -364,33 +367,36 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
               ],
 
               // Submit Button
-              FilledButton(
-                key: const ValueKey('save_asset_button'),
-                onPressed: _isSubmitting ? null : _handleSave,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.brandTeal,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              PressScale(
+                enabled: !_isSubmitting,
+                child: FilledButton(
+                  key: const ValueKey('save_asset_button'),
+                  onPressed: _isSubmitting ? null : _handleSave,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.brandTeal,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          isEdit ? 'Simpan Perubahan' : 'Tambah Aset',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
                 ),
-                child: _isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        isEdit ? 'Simpan Perubahan' : 'Tambah Aset',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                        ),
-                      ),
               ),
             ],
           ),

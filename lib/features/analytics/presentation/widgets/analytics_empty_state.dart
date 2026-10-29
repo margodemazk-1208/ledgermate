@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../transactions/presentation/transaction_form_screen.dart';
 
 /// Empty state widget per AGENTS.md antislop R-27:
@@ -63,9 +64,7 @@ class AnalyticsEmptyState extends StatelessWidget {
               key: const ValueKey('analytics_empty_catat_button'),
               onPressed: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const TransactionFormScreen(),
-                  ),
+                  SlidePageRoute(builder: (_) => const TransactionFormScreen()),
                 );
               },
               icon: const Icon(Icons.add, size: 18),

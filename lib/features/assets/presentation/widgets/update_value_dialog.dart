@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/database/asset.dart';
+import '../../../../core/presentation/widgets/press_scale.dart';
+import '../../../../core/presentation/widgets/success_toast.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/rupiah_formatter.dart';
 import '../../application/assets_providers.dart';
@@ -65,6 +67,7 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
           .read(assetsRepositoryProvider)
           .updateAssetCurrentValue(id: widget.asset.id, currentValue: newValue);
       if (mounted) {
+        showSuccessToast(context, 'Nilai aset berhasil diperbarui');
         Navigator.of(context).pop(true);
       }
     } catch (e) {
@@ -289,23 +292,26 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
               : () => Navigator.of(context).pop(false),
           child: const Text('Batal'),
         ),
-        FilledButton(
-          key: const ValueKey('save_update_value_button'),
-          onPressed: _isSubmitting ? null : _handleSubmit,
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.brandTeal,
-            foregroundColor: Colors.white,
+        PressScale(
+          enabled: !_isSubmitting,
+          child: FilledButton(
+            key: const ValueKey('save_update_value_button'),
+            onPressed: _isSubmitting ? null : _handleSubmit,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.brandTeal,
+              foregroundColor: Colors.white,
+            ),
+            child: _isSubmitting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('Simpan Pembaruan'),
           ),
-          child: _isSubmitting
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Text('Simpan Pembaruan'),
         ),
       ],
     );

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/presentation/widgets/press_scale.dart';
+import '../../../core/presentation/widgets/success_toast.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
@@ -89,13 +91,9 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
           );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Transfer ${formatRupiah(amount)} berhasil diproses.',
-            ),
-            backgroundColor: AppColors.savingsGreen,
-          ),
+        showSuccessToast(
+          context,
+          'Transfer ${formatRupiah(amount)} berhasil diproses',
         );
         Navigator.of(context).pop(true);
       }
@@ -339,25 +337,28 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
                   const SizedBox(height: 32),
 
                   // Submit button
-                  FilledButton.icon(
-                    key: const ValueKey('transfer_submit_button'),
-                    onPressed: _isSubmitting ? null : _submit,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.brandTeal,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                  PressScale(
+                    enabled: !_isSubmitting,
+                    child: FilledButton.icon(
+                      key: const ValueKey('transfer_submit_button'),
+                      onPressed: _isSubmitting ? null : _submit,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.brandTeal,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      icon: _isSubmitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.swap_horiz),
+                      label: const Text('Transfer Sekarang'),
                     ),
-                    icon: _isSubmitting
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.swap_horiz),
-                    label: const Text('Transfer Sekarang'),
                   ),
                 ],
               ),
