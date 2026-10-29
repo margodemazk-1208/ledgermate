@@ -30,12 +30,23 @@ const TransactionSchema = CollectionSchema(
       name: r'payCycleId',
       type: IsarType.long,
     ),
-    r'type': PropertySchema(
+    r'transferGroupId': PropertySchema(
       id: 5,
+      name: r'transferGroupId',
+      type: IsarType.string,
+    ),
+    r'transferPeerWalletId': PropertySchema(
+      id: 6,
+      name: r'transferPeerWalletId',
+      type: IsarType.long,
+    ),
+    r'type': PropertySchema(
+      id: 7,
       name: r'type',
       type: IsarType.byte,
       enumMap: _TransactiontypeEnumValueMap,
     ),
+    r'walletId': PropertySchema(id: 8, name: r'walletId', type: IsarType.long),
   },
 
   estimateSize: _transactionEstimateSize,
@@ -65,6 +76,12 @@ int _transactionEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  {
+    final value = object.transferGroupId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   return bytesCount;
 }
 
@@ -79,7 +96,10 @@ void _transactionSerialize(
   writer.writeDateTime(offsets[2], object.date);
   writer.writeString(offsets[3], object.notes);
   writer.writeLong(offsets[4], object.payCycleId);
-  writer.writeByte(offsets[5], object.type.index);
+  writer.writeString(offsets[5], object.transferGroupId);
+  writer.writeLong(offsets[6], object.transferPeerWalletId);
+  writer.writeByte(offsets[7], object.type.index);
+  writer.writeLong(offsets[8], object.walletId);
 }
 
 Transaction _transactionDeserialize(
@@ -95,9 +115,12 @@ Transaction _transactionDeserialize(
   object.id = id;
   object.notes = reader.readStringOrNull(offsets[3]);
   object.payCycleId = reader.readLongOrNull(offsets[4]);
+  object.transferGroupId = reader.readStringOrNull(offsets[5]);
+  object.transferPeerWalletId = reader.readLongOrNull(offsets[6]);
   object.type =
-      _TransactiontypeValueEnumMap[reader.readByteOrNull(offsets[5])] ??
+      _TransactiontypeValueEnumMap[reader.readByteOrNull(offsets[7])] ??
       TransactionType.income;
+  object.walletId = reader.readLong(offsets[8]);
   return object;
 }
 
@@ -119,18 +142,25 @@ P _transactionDeserializeProp<P>(
     case 4:
       return (reader.readLongOrNull(offset)) as P;
     case 5:
+      return (reader.readStringOrNull(offset)) as P;
+    case 6:
+      return (reader.readLongOrNull(offset)) as P;
+    case 7:
       return (_TransactiontypeValueEnumMap[reader.readByteOrNull(offset)] ??
               TransactionType.income)
           as P;
+    case 8:
+      return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
 }
 
-const _TransactiontypeEnumValueMap = {'income': 0, 'expense': 1};
+const _TransactiontypeEnumValueMap = {'income': 0, 'expense': 1, 'transfer': 2};
 const _TransactiontypeValueEnumMap = {
   0: TransactionType.income,
   1: TransactionType.expense,
+  2: TransactionType.transfer,
 };
 
 Id _transactionGetId(Transaction object) {
@@ -701,6 +731,241 @@ extension TransactionQueryFilter
     });
   }
 
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferGroupIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'transferGroupId'),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferGroupIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'transferGroupId'),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferGroupIdEqualTo(String? value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'transferGroupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferGroupIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'transferGroupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferGroupIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'transferGroupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferGroupIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'transferGroupId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferGroupIdStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'transferGroupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferGroupIdEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'transferGroupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferGroupIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'transferGroupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferGroupIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'transferGroupId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferGroupIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'transferGroupId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferGroupIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'transferGroupId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferPeerWalletIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'transferPeerWalletId'),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferPeerWalletIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'transferPeerWalletId'),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferPeerWalletIdEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'transferPeerWalletId',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferPeerWalletIdGreaterThan(int? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'transferPeerWalletId',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferPeerWalletIdLessThan(int? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'transferPeerWalletId',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  transferPeerWalletIdBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'transferPeerWalletId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
   QueryBuilder<Transaction, Transaction, QAfterFilterCondition> typeEqualTo(
     TransactionType value,
   ) {
@@ -751,6 +1016,61 @@ extension TransactionQueryFilter
       return query.addFilterCondition(
         FilterCondition.between(
           property: r'type',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition> walletIdEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'walletId', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  walletIdGreaterThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'walletId',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  walletIdLessThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'walletId',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition> walletIdBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'walletId',
           lower: lower,
           includeLower: includeLower,
           upper: upper,
@@ -829,6 +1149,33 @@ extension TransactionQuerySortBy
     });
   }
 
+  QueryBuilder<Transaction, Transaction, QAfterSortBy> sortByTransferGroupId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'transferGroupId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterSortBy>
+  sortByTransferGroupIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'transferGroupId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterSortBy>
+  sortByTransferPeerWalletId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'transferPeerWalletId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterSortBy>
+  sortByTransferPeerWalletIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'transferPeerWalletId', Sort.desc);
+    });
+  }
+
   QueryBuilder<Transaction, Transaction, QAfterSortBy> sortByType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.asc);
@@ -838,6 +1185,18 @@ extension TransactionQuerySortBy
   QueryBuilder<Transaction, Transaction, QAfterSortBy> sortByTypeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterSortBy> sortByWalletId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'walletId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterSortBy> sortByWalletIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'walletId', Sort.desc);
     });
   }
 }
@@ -916,6 +1275,33 @@ extension TransactionQuerySortThenBy
     });
   }
 
+  QueryBuilder<Transaction, Transaction, QAfterSortBy> thenByTransferGroupId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'transferGroupId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterSortBy>
+  thenByTransferGroupIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'transferGroupId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterSortBy>
+  thenByTransferPeerWalletId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'transferPeerWalletId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterSortBy>
+  thenByTransferPeerWalletIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'transferPeerWalletId', Sort.desc);
+    });
+  }
+
   QueryBuilder<Transaction, Transaction, QAfterSortBy> thenByType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.asc);
@@ -925,6 +1311,18 @@ extension TransactionQuerySortThenBy
   QueryBuilder<Transaction, Transaction, QAfterSortBy> thenByTypeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterSortBy> thenByWalletId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'walletId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterSortBy> thenByWalletIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'walletId', Sort.desc);
     });
   }
 }
@@ -963,9 +1361,33 @@ extension TransactionQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Transaction, Transaction, QDistinct> distinctByTransferGroupId({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(
+        r'transferGroupId',
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QDistinct>
+  distinctByTransferPeerWalletId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'transferPeerWalletId');
+    });
+  }
+
   QueryBuilder<Transaction, Transaction, QDistinct> distinctByType() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'type');
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QDistinct> distinctByWalletId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'walletId');
     });
   }
 }
@@ -1008,9 +1430,29 @@ extension TransactionQueryProperty
     });
   }
 
+  QueryBuilder<Transaction, String?, QQueryOperations>
+  transferGroupIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'transferGroupId');
+    });
+  }
+
+  QueryBuilder<Transaction, int?, QQueryOperations>
+  transferPeerWalletIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'transferPeerWalletId');
+    });
+  }
+
   QueryBuilder<Transaction, TransactionType, QQueryOperations> typeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'type');
+    });
+  }
+
+  QueryBuilder<Transaction, int, QQueryOperations> walletIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'walletId');
     });
   }
 }

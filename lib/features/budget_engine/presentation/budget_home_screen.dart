@@ -12,6 +12,7 @@ import '../../pay_cycle/presentation/pay_cycle_transition_screen.dart';
 import '../../settings/presentation/settings_screen.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../../transactions/presentation/transactions_screen.dart';
+import '../../wallets/presentation/wallets_screen.dart';
 import '../application/budget_providers.dart';
 
 /// M4 Smart Daily Budget Engine Home Dashboard.
@@ -387,8 +388,19 @@ class _DashboardBody extends StatelessWidget {
                 context,
               ).push(MaterialPageRoute(builder: (_) => const AssetsScreen()));
             },
-            icon: const Icon(Icons.account_balance_wallet_outlined),
+            icon: const Icon(Icons.savings_outlined),
             label: const Text('Kelola Aset & Investasi'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            key: const ValueKey('view_wallets_button'),
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const WalletsScreen()));
+            },
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            label: const Text('Kelola Dompet & Saldo'),
           ),
           const SizedBox(height: 60), // Room for extended FAB
         ],

@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../export_import/presentation/widgets/data_management_card.dart';
 import '../../notifications/data/notification_service.dart';
+import '../../wallets/presentation/wallets_screen.dart';
 import '../application/settings_providers.dart';
 
 /// Main Settings screen hosting Data Management (FR-08), Preferences (FR-09),
@@ -338,7 +339,11 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
-          // 4. Category Management Card (FR-09)
+          // 4. Wallets Management Card (FR-12, D16)
+          const _WalletsManagementCard(),
+          const SizedBox(height: 20),
+
+          // 5. Category Management Card (FR-09)
           const _CategoryManagementCard(),
           const SizedBox(height: 20),
 
@@ -711,6 +716,84 @@ class _CategoryManagementCard extends ConsumerWidget {
                 ),
               ),
               error: (e, _) => Text('Gagal memuat kategori: $e'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WalletsManagementCard extends StatelessWidget {
+  const _WalletsManagementCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      key: const ValueKey('settings_wallets_card'),
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.brandTeal.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_wallet,
+                    color: AppColors.brandTeal,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Kelola Dompet & Rekening',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Atur dompet, rekening bank, saldo awal & transfer (FR-12)',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.textTheme.bodySmall?.color?.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton.filledTonal(
+                  key: const ValueKey('settings_open_wallets_button'),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const WalletsScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.arrow_forward),
+                  tooltip: 'Buka Kelola Dompet',
+                ),
+              ],
             ),
           ],
         ),

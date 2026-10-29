@@ -22,7 +22,9 @@ class CsvSerializer {
           categoryMap[tx.categoryId] ?? 'Kategori #${tx.categoryId}';
       final typeLabel = tx.type == db.TransactionType.income
           ? 'Pemasukan'
-          : 'Pengeluaran';
+          : (tx.type == db.TransactionType.transfer
+                ? 'Transfer'
+                : 'Pengeluaran');
       final dateStr = tx.date.toIso8601String();
       final notes = tx.notes ?? '';
       final payCycleIdStr = tx.payCycleId?.toString() ?? '';

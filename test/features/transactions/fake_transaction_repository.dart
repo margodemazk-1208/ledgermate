@@ -85,6 +85,9 @@ class FakeTransactionRepository implements TransactionRepositoryBase {
     required DateTime date,
     String? notes,
     int? payCycleId,
+    int? walletId,
+    int? transferPeerWalletId,
+    String? transferGroupId,
   }) async {
     if (failNextSaveWith != null) {
       final err = failNextSaveWith!;
@@ -126,6 +129,9 @@ class FakeTransactionRepository implements TransactionRepositoryBase {
     tx.date = date;
     tx.notes = notes;
     tx.payCycleId = payCycleId;
+    tx.walletId = walletId ?? 1;
+    tx.transferPeerWalletId = transferPeerWalletId;
+    tx.transferGroupId = transferGroupId;
 
     savedCalls.add(tx);
     _notifyTransactions();

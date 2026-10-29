@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../../../core/database/transaction.dart' as db;
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/rupiah_formatter.dart';
+import '../../wallets/application/wallet_providers.dart';
+import '../../wallets/utils/wallet_icons.dart';
 import '../application/transaction_providers.dart';
 import '../data/transaction_repository.dart';
 
@@ -126,7 +128,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   Widget build(BuildContext context) {
     final formState = ref.watch(transactionFormProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
+    final walletsAsync = ref.watch(walletsStreamProvider);
     final isEdit = widget.transaction != null;
+
+    // Auto-select first wallet if none is selected yet and wallets are ready
+    walletsAsync.whenData((wallets) {
+      if (formState.walletId == null && wallets.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref
+              .read(transactionFormProvider.notifier)
+              .setWallet(wallets.first.id);
+        });
+      }
+    });
 
     // Auto-select first category if none is selected yet and categories are ready
     categoriesAsync.whenData((categories) {
@@ -151,7 +165,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Transaction Type Toggle (Pengeluaran vs Pemasukan)
+            // 1. Transaction Type Toggle (Pengeluaran vs Pemasukan vs Transfer)
             SegmentedButton<db.TransactionType>(
               segments: const [
                 ButtonSegment<db.TransactionType>(
@@ -163,6 +177,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   value: db.TransactionType.income,
                   label: Text('Pemasukan'),
                   icon: Icon(Icons.arrow_downward),
+                ),
+                ButtonSegment<db.TransactionType>(
+                  value: db.TransactionType.transfer,
+                  label: Text('Transfer'),
+                  icon: Icon(Icons.swap_horiz),
                 ),
               ],
               selected: {formState.type},
@@ -182,7 +201,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               inputFormatters: [RupiahInputFormatter()],
               onChanged: _onAmountChanged,
               decoration: InputDecoration(
-                labelText: 'Jumlah',
+                labelText: formState.type == db.TransactionType.transfer
+                    ? 'Nominal Transfer'
+                    : 'Jumlah',
                 prefixText: 'Rp ',
                 errorText: _amountError,
                 border: const OutlineInputBorder(),
@@ -190,43 +211,185 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             ),
             const SizedBox(height: 20),
 
-            // 3. Category Dropdown
-            categoriesAsync.when(
-              data: (categories) {
-                final selectedValue =
-                    categories.any((c) => c.id == formState.categoryId)
-                    ? formState.categoryId
-                    : (categories.isNotEmpty ? categories.first.id : null);
+            // 3. Wallet and Category pickers
+            if (formState.type == db.TransactionType.transfer) ...[
+              // Source Wallet
+              walletsAsync.when(
+                data: (wallets) {
+                  final selectedValue =
+                      wallets.any((w) => w.id == formState.walletId)
+                      ? formState.walletId
+                      : (wallets.isNotEmpty ? wallets.first.id : null);
 
-                return DropdownButtonFormField<int>(
-                  key: const ValueKey('transaction_category_picker'),
-                  initialValue: selectedValue,
-                  decoration: const InputDecoration(
-                    labelText: 'Kategori',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: categories.map((cat) {
-                    return DropdownMenuItem<int>(
-                      value: cat.id,
-                      child: Text(cat.name),
-                    );
-                  }).toList(),
-                  onChanged: (catId) {
-                    if (catId != null) {
-                      ref
-                          .read(transactionFormProvider.notifier)
-                          .setCategory(catId);
-                    }
-                  },
-                );
-              },
-              loading: () => const LinearProgressIndicator(),
-              error: (err, _) => Text(
-                'Gagal memuat kategori: $err',
-                style: const TextStyle(color: AppColors.expenseRed),
+                  return DropdownButtonFormField<int>(
+                    key: const ValueKey('transaction_wallet_picker'),
+                    initialValue: selectedValue,
+                    decoration: const InputDecoration(
+                      labelText: 'Dari Dompet (Sumber)',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: wallets.map((w) {
+                      return DropdownMenuItem<int>(
+                        value: w.id,
+                        child: Row(
+                          children: [
+                            Icon(getWalletIcon(w.icon), size: 18),
+                            const SizedBox(width: 8),
+                            Text(w.name),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (wid) {
+                      if (wid != null) {
+                        ref
+                            .read(transactionFormProvider.notifier)
+                            .setWallet(wid);
+                      }
+                    },
+                  );
+                },
+                loading: () => const LinearProgressIndicator(),
+                error: (err, _) => Text(
+                  'Gagal memuat dompet: $err',
+                  style: const TextStyle(color: AppColors.expenseRed),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
+
+              // Target Wallet
+              walletsAsync.when(
+                data: (wallets) {
+                  final targetWallets = wallets
+                      .where((w) => w.id != formState.walletId)
+                      .toList();
+                  final selectedTarget =
+                      targetWallets.any(
+                        (w) => w.id == formState.transferPeerWalletId,
+                      )
+                      ? formState.transferPeerWalletId
+                      : (targetWallets.isNotEmpty
+                            ? targetWallets.first.id
+                            : null);
+
+                  return DropdownButtonFormField<int>(
+                    key: const ValueKey('transaction_target_wallet_picker'),
+                    initialValue: selectedTarget,
+                    decoration: const InputDecoration(
+                      labelText: 'Ke Dompet (Tujuan)',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: targetWallets.map((w) {
+                      return DropdownMenuItem<int>(
+                        value: w.id,
+                        child: Row(
+                          children: [
+                            Icon(getWalletIcon(w.icon), size: 18),
+                            const SizedBox(width: 8),
+                            Text(w.name),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (wid) {
+                      if (wid != null) {
+                        ref
+                            .read(transactionFormProvider.notifier)
+                            .setTransferPeerWallet(wid);
+                      }
+                    },
+                  );
+                },
+                loading: () => const LinearProgressIndicator(),
+                error: (err, _) => Text(
+                  'Gagal memuat dompet tujuan: $err',
+                  style: const TextStyle(color: AppColors.expenseRed),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ] else ...[
+              // Regular Wallet picker
+              walletsAsync.when(
+                data: (wallets) {
+                  final selectedValue =
+                      wallets.any((w) => w.id == formState.walletId)
+                      ? formState.walletId
+                      : (wallets.isNotEmpty ? wallets.first.id : null);
+
+                  return DropdownButtonFormField<int>(
+                    key: const ValueKey('transaction_wallet_picker'),
+                    initialValue: selectedValue,
+                    decoration: const InputDecoration(
+                      labelText: 'Dompet',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: wallets.map((w) {
+                      return DropdownMenuItem<int>(
+                        value: w.id,
+                        child: Row(
+                          children: [
+                            Icon(getWalletIcon(w.icon), size: 18),
+                            const SizedBox(width: 8),
+                            Text(w.name),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (wid) {
+                      if (wid != null) {
+                        ref
+                            .read(transactionFormProvider.notifier)
+                            .setWallet(wid);
+                      }
+                    },
+                  );
+                },
+                loading: () => const LinearProgressIndicator(),
+                error: (err, _) => Text(
+                  'Gagal memuat dompet: $err',
+                  style: const TextStyle(color: AppColors.expenseRed),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Category Dropdown
+              categoriesAsync.when(
+                data: (categories) {
+                  final selectedValue =
+                      categories.any((c) => c.id == formState.categoryId)
+                      ? formState.categoryId
+                      : (categories.isNotEmpty ? categories.first.id : null);
+
+                  return DropdownButtonFormField<int>(
+                    key: const ValueKey('transaction_category_picker'),
+                    initialValue: selectedValue,
+                    decoration: const InputDecoration(
+                      labelText: 'Kategori',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: categories.map((cat) {
+                      return DropdownMenuItem<int>(
+                        value: cat.id,
+                        child: Text(cat.name),
+                      );
+                    }).toList(),
+                    onChanged: (catId) {
+                      if (catId != null) {
+                        ref
+                            .read(transactionFormProvider.notifier)
+                            .setCategory(catId);
+                      }
+                    },
+                  );
+                },
+                loading: () => const LinearProgressIndicator(),
+                error: (err, _) => Text(
+                  'Gagal memuat kategori: $err',
+                  style: const TextStyle(color: AppColors.expenseRed),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
 
             // 4. Date Picker
             InkWell(

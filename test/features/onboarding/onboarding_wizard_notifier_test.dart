@@ -61,13 +61,45 @@ void main() {
     notifier.goNext();
     expect(
       container.read(onboardingWizardProvider).step,
-      OnboardingStep.initialIncome,
+      OnboardingStep.walletSetup,
     );
   });
 
   test('Mode B skips straight past the interval/date requirement', () {
     final notifier = container.read(onboardingWizardProvider.notifier);
     notifier.selectFrequency(IncomeFrequency.daily);
+    notifier.goNext();
+    expect(
+      container.read(onboardingWizardProvider).step,
+      OnboardingStep.walletSetup,
+    );
+  });
+
+  test('walletSetup step validation and fields', () {
+    final notifier = container.read(onboardingWizardProvider.notifier);
+    notifier.selectFrequency(IncomeFrequency.daily);
+    notifier.goNext();
+    expect(
+      container.read(onboardingWizardProvider).step,
+      OnboardingStep.walletSetup,
+    );
+    expect(container.read(onboardingWizardProvider).canLeaveWalletStep, isTrue);
+
+    notifier.setWalletName('   ');
+    expect(
+      container.read(onboardingWizardProvider).canLeaveWalletStep,
+      isFalse,
+    );
+    notifier.goNext();
+    expect(
+      container.read(onboardingWizardProvider).step,
+      OnboardingStep.walletSetup,
+    );
+
+    notifier.setWalletName('Dompet Pribadi');
+    notifier.setWalletStartingBalance(500000);
+    notifier.setWalletIncludeInDailyBudget(false);
+    expect(container.read(onboardingWizardProvider).canLeaveWalletStep, isTrue);
     notifier.goNext();
     expect(
       container.read(onboardingWizardProvider).step,
@@ -90,6 +122,7 @@ void main() {
   test('initial income amount of 0 does not satisfy canLeaveIncomeStep', () {
     final notifier = container.read(onboardingWizardProvider.notifier);
     notifier.selectFrequency(IncomeFrequency.daily);
+    notifier.goNext();
     notifier.goNext();
     notifier.setInitialIncomeAmount(0);
     notifier.goNext();

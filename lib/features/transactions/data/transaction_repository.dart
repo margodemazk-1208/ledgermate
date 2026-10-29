@@ -3,9 +3,11 @@
 import 'package:isar_community/isar.dart';
 
 import '../../../core/database/category.dart';
+import '../../../core/database/isar_provider.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/database/wallet.dart';
 
 /// Exception thrown when attempting to delete a transaction that is not
 /// dated today (FR-03: "Delete dibatasi hanya untuk transaksi tanggal hari ini").
@@ -61,6 +63,9 @@ abstract class TransactionRepositoryBase {
     required DateTime date,
     String? notes,
     int? payCycleId,
+    int? walletId,
+    int? transferPeerWalletId,
+    String? transferGroupId,
   });
 
   Future<void> deleteTransaction(int id, {DateTime? referenceDate});
@@ -112,6 +117,9 @@ class TransactionRepository implements TransactionRepositoryBase {
     required DateTime date,
     String? notes,
     int? payCycleId,
+    int? walletId,
+    int? transferPeerWalletId,
+    String? transferGroupId,
   }) async {
     if (amount <= 0) {
       throw ArgumentError.value(
@@ -120,7 +128,7 @@ class TransactionRepository implements TransactionRepositoryBase {
         'Jumlah transaksi harus lebih besar dari nol.',
       );
     }
-    if (categoryId <= 0) {
+    if (type != db.TransactionType.transfer && categoryId <= 0) {
       throw ArgumentError.value(
         categoryId,
         'categoryId',
@@ -141,6 +149,29 @@ class TransactionRepository implements TransactionRepositoryBase {
       }
     }
 
+    int effectiveWalletId = walletId ?? 0;
+    if (effectiveWalletId <= 0) {
+      final firstWallet = await _isar.wallets
+          .where()
+          .sortByCreatedAt()
+          .findFirst();
+      if (firstWallet != null) {
+        effectiveWalletId = firstWallet.id;
+      } else {
+        final defaultWallet = Wallet()
+          ..name = defaultWalletName
+          ..icon = defaultWalletIcon
+          ..startingBalance = 0
+          ..includeInDailyBudget = true
+          ..createdAt = DateTime.now();
+        await _isar.writeTxn(() async {
+          final wid = await _isar.wallets.put(defaultWallet);
+          defaultWallet.id = wid;
+        });
+        effectiveWalletId = defaultWallet.id;
+      }
+    }
+
     return _isar.writeTxn(() async {
       final tx = (id != null && id > 0)
           ? (await _isar.transactions.get(id) ?? db.Transaction())
@@ -155,6 +186,9 @@ class TransactionRepository implements TransactionRepositoryBase {
       tx.date = date;
       tx.notes = notes?.trim().isEmpty == true ? null : notes?.trim();
       tx.payCycleId = effectivePayCycleId;
+      tx.walletId = effectiveWalletId;
+      tx.transferPeerWalletId = transferPeerWalletId;
+      tx.transferGroupId = transferGroupId;
 
       final savedId = await _isar.transactions.put(tx);
       tx.id = savedId;

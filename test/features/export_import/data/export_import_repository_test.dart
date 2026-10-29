@@ -8,6 +8,7 @@ import 'package:ledgermate/core/database/financial_goal.dart';
 import 'package:ledgermate/core/database/local_profile.dart';
 import 'package:ledgermate/core/database/pay_cycle.dart';
 import 'package:ledgermate/core/database/transaction.dart' as db;
+import 'package:ledgermate/core/database/wallet.dart';
 import 'package:ledgermate/features/export_import/data/export_import_repository.dart';
 import 'package:ledgermate/features/export_import/domain/backup_data.dart';
 
@@ -29,6 +30,7 @@ void main() {
       CategorySchema,
       FinancialGoalSchema,
       AssetSchema,
+      WalletSchema,
     ], directory: tempDir.path);
     repository = IsarExportImportRepository(
       isar: isar,

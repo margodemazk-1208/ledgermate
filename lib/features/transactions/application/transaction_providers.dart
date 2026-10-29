@@ -39,6 +39,9 @@ class TransactionFormState {
     this.type = db.TransactionType.expense,
     this.amount,
     this.categoryId,
+    this.walletId,
+    this.transferPeerWalletId,
+    this.transferGroupId,
     required this.date,
     this.notes,
     this.isSubmitting = false,
@@ -49,6 +52,9 @@ class TransactionFormState {
   final db.TransactionType type;
   final int? amount;
   final int? categoryId;
+  final int? walletId;
+  final int? transferPeerWalletId;
+  final String? transferGroupId;
   final DateTime date;
   final String? notes;
   final bool isSubmitting;
@@ -57,9 +63,17 @@ class TransactionFormState {
 
   bool get isEditMode => initialTransactionId != null;
 
-  bool get isValid =>
-      (amount != null && amount! > 0) &&
-      (categoryId != null && categoryId! > 0);
+  bool get isValid {
+    final hasAmount = amount != null && amount! > 0;
+    if (!hasAmount) return false;
+    if (type == db.TransactionType.transfer) {
+      return (walletId != null && walletId! > 0) &&
+          (transferPeerWalletId != null &&
+              transferPeerWalletId! > 0 &&
+              transferPeerWalletId != walletId);
+    }
+    return (categoryId != null && categoryId! > 0);
+  }
 
   /// Checks if this transaction is dated today (FR-03: today-only delete restriction).
   bool get canDelete {
@@ -71,6 +85,9 @@ class TransactionFormState {
     db.TransactionType? type,
     int? amount,
     int? categoryId,
+    int? walletId,
+    int? transferPeerWalletId,
+    String? transferGroupId,
     DateTime? date,
     String? notes,
     bool? isSubmitting,
@@ -82,6 +99,9 @@ class TransactionFormState {
       type: type ?? this.type,
       amount: amount ?? this.amount,
       categoryId: categoryId ?? this.categoryId,
+      walletId: walletId ?? this.walletId,
+      transferPeerWalletId: transferPeerWalletId ?? this.transferPeerWalletId,
+      transferGroupId: transferGroupId ?? this.transferGroupId,
       date: date ?? this.date,
       notes: notes ?? this.notes,
       isSubmitting: isSubmitting ?? this.isSubmitting,
@@ -104,6 +124,9 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
         type: tx.type,
         amount: tx.amount,
         categoryId: tx.categoryId,
+        walletId: tx.walletId,
+        transferPeerWalletId: tx.transferPeerWalletId,
+        transferGroupId: tx.transferGroupId,
         date: tx.date,
         notes: tx.notes,
         initialTransactionId: tx.id,
@@ -115,6 +138,17 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
 
   void setType(db.TransactionType type) {
     state = state.copyWith(type: type);
+  }
+
+  void setWallet(int walletId) {
+    state = state.copyWith(walletId: walletId, clearSubmitError: true);
+  }
+
+  void setTransferPeerWallet(int targetWalletId) {
+    state = state.copyWith(
+      transferPeerWalletId: targetWalletId,
+      clearSubmitError: true,
+    );
   }
 
   void setAmount(int? amount) {
@@ -136,9 +170,15 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
   /// Validates and persists the transaction via [TransactionRepositoryBase].
   Future<bool> save() async {
     if (!state.isValid) {
-      state = state.copyWith(
-        submitError: 'Mohon masukkan jumlah dan pilih kategori.',
-      );
+      if (state.type == db.TransactionType.transfer) {
+        state = state.copyWith(
+          submitError: 'Mohon masukkan nominal dan pilih dompet asal & tujuan yang berbeda.',
+        );
+      } else {
+        state = state.copyWith(
+          submitError: 'Mohon masukkan jumlah dan pilih kategori.',
+        );
+      }
       return false;
     }
 
@@ -150,9 +190,14 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
             id: state.initialTransactionId,
             type: state.type,
             amount: state.amount!,
-            categoryId: state.categoryId!,
+            categoryId: state.type == db.TransactionType.transfer
+                ? 0
+                : state.categoryId!,
             date: state.date,
             notes: state.notes,
+            walletId: state.walletId,
+            transferPeerWalletId: state.transferPeerWalletId,
+            transferGroupId: state.transferGroupId,
           );
       await ref.read(limitAlertHookProvider).onTransactionSaved();
       state = state.copyWith(isSubmitting: false);

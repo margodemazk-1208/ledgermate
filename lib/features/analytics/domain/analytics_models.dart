@@ -328,6 +328,7 @@ abstract final class AnalyticsCalculationEngine {
 
     for (final tx in transactions) {
       if (!range.contains(tx.date)) continue;
+      if (tx.type == db.TransactionType.transfer) continue;
 
       transactionCount++;
       if (tx.type == db.TransactionType.expense) {
@@ -396,13 +397,15 @@ abstract final class AnalyticsCalculationEngine {
     final prevExpenseByCat = <int, int>{};
 
     for (final tx in transactions) {
+      if (tx.type == db.TransactionType.transfer) continue;
+
       if (currentRange.contains(tx.date)) {
         totalCount++;
         if (tx.type == db.TransactionType.expense) {
           currentExpense += tx.amount;
           currentExpenseByCat[tx.categoryId] =
               (currentExpenseByCat[tx.categoryId] ?? 0) + tx.amount;
-        } else {
+        } else if (tx.type == db.TransactionType.income) {
           currentIncome += tx.amount;
         }
       } else if (prevRange.contains(tx.date)) {
@@ -411,7 +414,7 @@ abstract final class AnalyticsCalculationEngine {
           prevExpense += tx.amount;
           prevExpenseByCat[tx.categoryId] =
               (prevExpenseByCat[tx.categoryId] ?? 0) + tx.amount;
-        } else {
+        } else if (tx.type == db.TransactionType.income) {
           prevIncome += tx.amount;
         }
       }

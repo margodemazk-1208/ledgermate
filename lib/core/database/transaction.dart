@@ -2,12 +2,12 @@ import 'package:isar_community/isar.dart';
 
 part 'transaction.g.dart';
 
-/// Whether a [Transaction] adds to or subtracts from available balance
-/// (FR-02).
-enum TransactionType { income, expense }
+/// Whether a [Transaction] adds to, subtracts from, or transfers between
+/// wallets (FR-02, FR-13, D16).
+enum TransactionType { income, expense, transfer }
 
-/// A single recorded income or expense (FR-02/FR-03). `sync_status` from
-/// PRD v1 is deliberately absent — this app is offline-only, see
+/// A single recorded income, expense, or inter-wallet transfer (FR-02/FR-03/FR-13).
+/// `sync_status` from PRD v1 is deliberately absent — this app is offline-only, see
 /// `docs/PRD.md` §8 and §10 changelog.
 @collection
 class Transaction {
@@ -26,7 +26,8 @@ class Transaction {
   /// foreign keys to other collections' ids are stored as `int`. 0 is not a
   /// valid category id (Isar auto-increment starts at 1); the default is a
   /// deliberately-invalid sentinel so a transaction can never be persisted
-  /// without the caller setting a real category.
+  /// without the caller setting a real category (except for transfers where
+  /// category is optional/0).
   int categoryId = 0;
 
   DateTime date = DateTime.now();
@@ -39,4 +40,16 @@ class Transaction {
   /// (daily income) has no PayCycle concept, so its transactions leave this
   /// null.
   int? payCycleId;
+
+  /// FK to [Wallet.id] (v1.1, FR-12, D16). Required foreign key.
+  /// Pre-v1.1 legacy transactions are backfilled during migration to point to
+  /// the default "Dompet Utama" wallet.
+  int walletId = 0;
+
+  /// FK to destination [Wallet.id] (v1.1, FR-13, D16). Nullable:
+  /// only set when [type] == [TransactionType.transfer].
+  int? transferPeerWalletId;
+
+  /// Identifier grouping the transfer action or paired rows (v1.1, D16).
+  String? transferGroupId;
 }

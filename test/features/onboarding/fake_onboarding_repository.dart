@@ -16,6 +16,10 @@ class RecordedCompleteOnboardingCall {
     required this.nextPaydayDate,
     required this.initialIncomeAmount,
     required this.mandatoryExpenses,
+    this.walletName = 'Dompet Utama',
+    this.walletIcon = 'account_balance_wallet',
+    this.walletStartingBalance = 0,
+    this.walletIncludeInDailyBudget = true,
   });
 
   final IncomeFrequency incomeFrequency;
@@ -23,6 +27,10 @@ class RecordedCompleteOnboardingCall {
   final DateTime? nextPaydayDate;
   final int initialIncomeAmount;
   final List<MandatoryExpenseItem> mandatoryExpenses;
+  final String walletName;
+  final String walletIcon;
+  final int walletStartingBalance;
+  final bool walletIncludeInDailyBudget;
 }
 
 class FakeOnboardingRepository implements OnboardingRepositoryBase {
@@ -43,6 +51,10 @@ class FakeOnboardingRepository implements OnboardingRepositoryBase {
     DateTime? nextPaydayDate,
     required int initialIncomeAmount,
     required List<MandatoryExpenseItem> mandatoryExpenses,
+    String walletName = 'Dompet Utama',
+    String walletIcon = 'account_balance_wallet',
+    int walletStartingBalance = 0,
+    bool walletIncludeInDailyBudget = true,
   }) async {
     if (failWith != null) {
       final error = failWith!;
@@ -56,6 +68,10 @@ class FakeOnboardingRepository implements OnboardingRepositoryBase {
         nextPaydayDate: nextPaydayDate,
         initialIncomeAmount: initialIncomeAmount,
         mandatoryExpenses: mandatoryExpenses,
+        walletName: walletName,
+        walletIcon: walletIcon,
+        walletStartingBalance: walletStartingBalance,
+        walletIncludeInDailyBudget: walletIncludeInDailyBudget,
       ),
     );
   }

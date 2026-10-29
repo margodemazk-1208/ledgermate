@@ -50,6 +50,25 @@ class OnboardingWizardNotifier extends Notifier<OnboardingWizardState> {
     state = state.copyWith(nextPaydayDate: date);
   }
 
+  void setWalletName(String name) {
+    state = state.copyWith(walletName: name, clearSubmitError: true);
+  }
+
+  void setWalletIcon(String icon) {
+    state = state.copyWith(walletIcon: icon, clearSubmitError: true);
+  }
+
+  void setWalletStartingBalance(int balance) {
+    state = state.copyWith(
+      walletStartingBalance: balance,
+      clearSubmitError: true,
+    );
+  }
+
+  void setWalletIncludeInDailyBudget(bool include) {
+    state = state.copyWith(walletIncludeInDailyBudget: include);
+  }
+
   void setInitialIncomeAmount(int? amount) {
     state = state.copyWith(initialIncomeAmount: amount);
   }
@@ -71,6 +90,10 @@ class OnboardingWizardNotifier extends Notifier<OnboardingWizardState> {
     switch (state.step) {
       case OnboardingStep.incomeFrequency:
         if (state.canLeaveFrequencyStep) {
+          goToStep(OnboardingStep.walletSetup);
+        }
+      case OnboardingStep.walletSetup:
+        if (state.canLeaveWalletStep) {
           goToStep(OnboardingStep.initialIncome);
         }
       case OnboardingStep.initialIncome:
@@ -86,8 +109,10 @@ class OnboardingWizardNotifier extends Notifier<OnboardingWizardState> {
     switch (state.step) {
       case OnboardingStep.incomeFrequency:
         break;
-      case OnboardingStep.initialIncome:
+      case OnboardingStep.walletSetup:
         goToStep(OnboardingStep.incomeFrequency);
+      case OnboardingStep.initialIncome:
+        goToStep(OnboardingStep.walletSetup);
       case OnboardingStep.mandatoryExpenses:
         goToStep(OnboardingStep.initialIncome);
     }
@@ -115,6 +140,10 @@ class OnboardingWizardNotifier extends Notifier<OnboardingWizardState> {
             nextPaydayDate: state.nextPaydayDate,
             initialIncomeAmount: amount,
             mandatoryExpenses: state.expenses,
+            walletName: state.walletName,
+            walletIcon: state.walletIcon,
+            walletStartingBalance: state.walletStartingBalance,
+            walletIncludeInDailyBudget: state.walletIncludeInDailyBudget,
           );
       state = state.copyWith(isSubmitting: false);
       return true;

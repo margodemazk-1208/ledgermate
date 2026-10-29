@@ -5,6 +5,7 @@ import '../../../core/database/financial_goal.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/database/wallet.dart';
 
 /// Exception thrown when an import payload fails validation.
 class BackupValidationException implements Exception {
@@ -27,6 +28,7 @@ class BackupSummary {
     required this.transactionCount,
     required this.goalCount,
     required this.assetCount,
+    this.walletCount = 0,
   });
 
   final DateTime exportedAt;
@@ -36,6 +38,7 @@ class BackupSummary {
   final int transactionCount;
   final int goalCount;
   final int assetCount;
+  final int walletCount;
 
   int get totalRecords =>
       (hasProfile ? 1 : 0) +
@@ -43,7 +46,8 @@ class BackupSummary {
       categoryCount +
       transactionCount +
       goalCount +
-      assetCount;
+      assetCount +
+      walletCount;
 }
 
 /// In-memory representation of an entire LedgerMate database snapshot.
@@ -56,6 +60,7 @@ class BackupData {
     required this.transactions,
     required this.financialGoals,
     required this.assets,
+    this.wallets = const [],
     this.version = currentVersion,
     this.app = appIdentifier,
   });
@@ -72,6 +77,7 @@ class BackupData {
   final List<db.Transaction> transactions;
   final List<FinancialGoal> financialGoals;
   final List<Asset> assets;
+  final List<Wallet> wallets;
 
   BackupSummary get summary => BackupSummary(
     exportedAt: exportedAt,
@@ -81,6 +87,7 @@ class BackupData {
     transactionCount: transactions.length,
     goalCount: financialGoals.length,
     assetCount: assets.length,
+    walletCount: wallets.length,
   );
 
   Map<String, dynamic> toJson() {
@@ -95,6 +102,7 @@ class BackupData {
         'transactions': transactions.map(_transactionToJson).toList(),
         'financialGoals': financialGoals.map(_goalToJson).toList(),
         'assets': assets.map(_assetToJson).toList(),
+        'wallets': wallets.map(_walletToJson).toList(),
       },
     };
   }
@@ -142,6 +150,7 @@ class BackupData {
     final transactions = _parseList(data, 'transactions', _transactionFromJson);
     final goals = _parseList(data, 'financialGoals', _goalFromJson);
     final assets = _parseList(data, 'assets', _assetFromJson);
+    final wallets = _parseList(data, 'wallets', _walletFromJson);
 
     return BackupData(
       version: version,
@@ -153,6 +162,7 @@ class BackupData {
       transactions: transactions,
       financialGoals: goals,
       assets: assets,
+      wallets: wallets,
     );
   }
 
@@ -361,6 +371,9 @@ class BackupData {
       'date': tx.date.toIso8601String(),
       'notes': tx.notes,
       'payCycleId': tx.payCycleId,
+      'walletId': tx.walletId,
+      'transferPeerWalletId': tx.transferPeerWalletId,
+      'transferGroupId': tx.transferGroupId,
     };
   }
 
@@ -379,7 +392,41 @@ class BackupData {
     tx.date = _asDateTime(m, 'date', 'Transaction');
     tx.notes = m['notes']?.toString();
     tx.payCycleId = m['payCycleId'] is int ? m['payCycleId'] as int : null;
+    tx.walletId = m['walletId'] is int ? m['walletId'] as int : 0;
+    tx.transferPeerWalletId = m['transferPeerWalletId'] is int
+        ? m['transferPeerWalletId'] as int
+        : null;
+    tx.transferGroupId = m['transferGroupId']?.toString();
     return tx;
+  }
+
+  // --------------------------------------------------------------------------
+  // Wallet (v1.1, FR-12, D16)
+  // --------------------------------------------------------------------------
+  static Map<String, dynamic> _walletToJson(Wallet w) {
+    return {
+      'id': w.id,
+      'name': w.name,
+      'icon': w.icon,
+      'startingBalance': w.startingBalance,
+      'includeInDailyBudget': w.includeInDailyBudget,
+      'createdAt': w.createdAt.toIso8601String(),
+    };
+  }
+
+  static Wallet _walletFromJson(Map<String, dynamic> m) {
+    final w = Wallet();
+    if (m['id'] is int) w.id = m['id'] as int;
+    w.name = _asString(m, 'name', 'Wallet');
+    w.icon = m['icon']?.toString() ?? 'account_balance_wallet';
+    w.startingBalance = _asInt(m, 'startingBalance', 'Wallet', min: 0);
+    w.includeInDailyBudget = m['includeInDailyBudget'] is bool
+        ? m['includeInDailyBudget'] as bool
+        : true;
+    if (m['createdAt'] != null) {
+      w.createdAt = _asDateTime(m, 'createdAt', 'Wallet');
+    }
+    return w;
   }
 
   // --------------------------------------------------------------------------

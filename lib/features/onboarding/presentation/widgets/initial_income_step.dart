@@ -63,8 +63,8 @@ class _InitialIncomeStepState extends ConsumerState<InitialIncomeStep> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           OnboardingStepHeader(
-            stepIndex: 1,
-            totalSteps: 3,
+            stepIndex: 2,
+            totalSteps: 4,
             title: isPeriodic ? 'Gaji Siklus Ini' : 'Bekel Awal Hari Ini',
             subtitle: isPeriodic
                 ? 'Masukkan total gaji tetap untuk siklus gajian ini.'

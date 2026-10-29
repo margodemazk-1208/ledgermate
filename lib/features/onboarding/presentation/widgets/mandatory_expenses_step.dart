@@ -70,8 +70,8 @@ class _MandatoryExpensesStepState extends ConsumerState<MandatoryExpensesStep> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const OnboardingStepHeader(
-            stepIndex: 2,
-            totalSteps: 3,
+            stepIndex: 3,
+            totalSteps: 4,
             title: 'Pengeluaran Wajib',
             subtitle:
                 'Kos, cicilan, dll — opsional, tambahkan sebanyak yang '

@@ -34,9 +34,10 @@ class TransactionsScreen extends ConsumerWidget {
               return _TransactionTile(
                 key: ValueKey('transaction_item_${tx.id}'),
                 transaction: tx,
-                categoryName:
-                    categoriesMap[tx.categoryId]?.name ??
-                    'Kategori #${tx.categoryId}',
+                categoryName: tx.type == db.TransactionType.transfer
+                    ? 'Transfer'
+                    : (categoriesMap[tx.categoryId]?.name ??
+                          'Kategori #${tx.categoryId}'),
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -132,19 +133,24 @@ class _TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.type == db.TransactionType.expense;
+    final isTransfer = transaction.type == db.TransactionType.transfer;
     final amountFormatted = formatRupiah(transaction.amount);
     final dateFormatted = DateFormat('d MMM yyyy').format(transaction.date);
+
+    final color = isTransfer
+        ? AppColors.brandTeal
+        : (isExpense ? AppColors.expenseRed : AppColors.savingsGreen);
 
     return ListTile(
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       leading: CircleAvatar(
-        backgroundColor: isExpense
-            ? AppColors.expenseRed.withValues(alpha: 0.12)
-            : AppColors.savingsGreen.withValues(alpha: 0.12),
+        backgroundColor: color.withValues(alpha: 0.12),
         child: Icon(
-          isExpense ? Icons.arrow_upward : Icons.arrow_downward,
-          color: isExpense ? AppColors.expenseRed : AppColors.savingsGreen,
+          isTransfer
+              ? Icons.swap_horiz
+              : (isExpense ? Icons.arrow_upward : Icons.arrow_downward),
+          color: color,
           size: 20,
         ),
       ),
@@ -158,11 +164,11 @@ class _TransactionTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       trailing: Text(
-        '${isExpense ? '-' : '+'} $amountFormatted',
+        '${isTransfer ? '⇄ ' : (isExpense ? '- ' : '+ ')}$amountFormatted',
         style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 15,
-          color: isExpense ? AppColors.expenseRed : AppColors.savingsGreen,
+          color: color,
         ),
       ),
     );

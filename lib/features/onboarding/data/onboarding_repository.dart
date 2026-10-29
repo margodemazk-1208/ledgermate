@@ -7,6 +7,7 @@ import 'package:isar_community/isar.dart';
 
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
+import '../../../core/database/wallet.dart';
 
 /// Interface extracted so widget tests can override
 /// `onboardingRepositoryProvider` with an in-memory fake instead of a real
@@ -28,6 +29,10 @@ abstract class OnboardingRepositoryBase {
     DateTime? nextPaydayDate,
     required int initialIncomeAmount,
     required List<MandatoryExpenseItem> mandatoryExpenses,
+    String walletName = 'Dompet Utama',
+    String walletIcon = 'account_balance_wallet',
+    int walletStartingBalance = 0,
+    bool walletIncludeInDailyBudget = true,
   });
 }
 
@@ -60,6 +65,10 @@ class OnboardingRepository implements OnboardingRepositoryBase {
     DateTime? nextPaydayDate,
     required int initialIncomeAmount,
     required List<MandatoryExpenseItem> mandatoryExpenses,
+    String walletName = 'Dompet Utama',
+    String walletIcon = 'account_balance_wallet',
+    int walletStartingBalance = 0,
+    bool walletIncludeInDailyBudget = true,
   }) async {
     await _isar.writeTxn(() async {
       final existing = await _isar.localProfiles.where().findFirst();
@@ -98,6 +107,19 @@ class OnboardingRepository implements OnboardingRepositoryBase {
           ..variableIncomeTotal = 0
           ..mandatoryExpenses = mandatoryExpenses;
         await _isar.payCycles.put(cycle);
+      }
+
+      final walletCount = await _isar.wallets.count();
+      if (walletCount == 0) {
+        final w = Wallet()
+          ..name = walletName.trim().isEmpty
+              ? 'Dompet Utama'
+              : walletName.trim()
+          ..icon = walletIcon
+          ..startingBalance = walletStartingBalance
+          ..includeInDailyBudget = walletIncludeInDailyBudget
+          ..createdAt = DateTime.now();
+        await _isar.wallets.put(w);
       }
     });
   }

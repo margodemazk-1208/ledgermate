@@ -6,6 +6,7 @@ import '../application/onboarding_wizard_state.dart';
 import 'widgets/income_frequency_step.dart';
 import 'widgets/initial_income_step.dart';
 import 'widgets/mandatory_expenses_step.dart';
+import 'widgets/wallet_setup_step.dart';
 
 /// Hosts the 3-step Onboarding Wizard (FR-01). Gates entry to Home —
 /// `app.dart` only shows this screen while
@@ -38,6 +39,7 @@ class OnboardingScreen extends ConsumerWidget {
                   child: switch (state.step) {
                     OnboardingStep.incomeFrequency =>
                       const IncomeFrequencyStep(),
+                    OnboardingStep.walletSetup => const WalletSetupStep(),
                     OnboardingStep.initialIncome => const InitialIncomeStep(),
                     OnboardingStep.mandatoryExpenses =>
                       const MandatoryExpensesStep(),
@@ -61,6 +63,7 @@ class _WizardNavBar extends StatelessWidget {
 
   bool get _canGoNext => switch (state.step) {
     OnboardingStep.incomeFrequency => state.canLeaveFrequencyStep,
+    OnboardingStep.walletSetup => state.canLeaveWalletStep,
     OnboardingStep.initialIncome => state.canLeaveIncomeStep,
     OnboardingStep.mandatoryExpenses => state.canFinish,
   };

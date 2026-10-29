@@ -7,6 +7,7 @@ import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
 import '../../../core/formulas/daily_budget_formulas.dart';
+import '../../wallets/application/wallet_providers.dart';
 import '../data/budget_repository.dart';
 
 final budgetRepositoryProvider = Provider<BudgetRepositoryBase>((ref) {
@@ -64,9 +65,15 @@ DailyBudgetSummary computeDailyBudgetSummary({
   PayCycle? latestCycle,
   required List<db.Transaction> transactions,
   required List<FinancialGoal> goals,
+  Set<int>? includedWalletIds,
   DateTime? referenceNow,
 }) {
   final now = referenceNow ?? DateTime.now();
+
+  bool isIncluded(db.Transaction tx) {
+    if (includedWalletIds == null) return true;
+    return includedWalletIds.contains(tx.walletId);
+  }
 
   // Convert Isar FinancialGoal models to pure GoalAllocationInput
   final goalInputs = goals.map((g) {
@@ -106,9 +113,26 @@ DailyBudgetSummary computeDailyBudgetSummary({
     var recordedExpenses = 0;
     for (final tx in cycleTxs) {
       if (tx.type == db.TransactionType.income) {
-        additionalIncome += tx.amount;
-      } else {
-        recordedExpenses += tx.amount;
+        if (isIncluded(tx)) {
+          additionalIncome += tx.amount;
+        }
+      } else if (tx.type == db.TransactionType.expense) {
+        if (isIncluded(tx)) {
+          recordedExpenses += tx.amount;
+        }
+      } else if (tx.type == db.TransactionType.transfer) {
+        final fromIncluded =
+            includedWalletIds == null ||
+            includedWalletIds.contains(tx.walletId);
+        final toIncluded =
+            includedWalletIds == null ||
+            (tx.transferPeerWalletId != null &&
+                includedWalletIds.contains(tx.transferPeerWalletId));
+        if (fromIncluded && !toIncluded) {
+          recordedExpenses += tx.amount;
+        } else if (!fromIncluded && toIncluded) {
+          additionalIncome += tx.amount;
+        }
       }
     }
 
@@ -150,9 +174,26 @@ DailyBudgetSummary computeDailyBudgetSummary({
     for (final tx in transactions) {
       if (isSameCalendarDay(tx.date, now)) {
         if (tx.type == db.TransactionType.income) {
-          bekelHariIni += tx.amount;
-        } else {
-          pengeluaranHariIni += tx.amount;
+          if (isIncluded(tx)) {
+            bekelHariIni += tx.amount;
+          }
+        } else if (tx.type == db.TransactionType.expense) {
+          if (isIncluded(tx)) {
+            pengeluaranHariIni += tx.amount;
+          }
+        } else if (tx.type == db.TransactionType.transfer) {
+          final fromIncluded =
+              includedWalletIds == null ||
+              includedWalletIds.contains(tx.walletId);
+          final toIncluded =
+              includedWalletIds == null ||
+              (tx.transferPeerWalletId != null &&
+                  includedWalletIds.contains(tx.transferPeerWalletId));
+          if (fromIncluded && !toIncluded) {
+            pengeluaranHariIni += tx.amount;
+          } else if (!fromIncluded && toIncluded) {
+            bekelHariIni += tx.amount;
+          }
         }
       }
     }
@@ -213,11 +254,18 @@ final dailyBudgetSummaryProvider = Provider<AsyncValue<DailyBudgetSummary>>((
     return const AsyncValue.loading();
   }
 
+  final walletsAsync = ref.watch(walletsStreamProvider);
+  final wallets = walletsAsync.value;
+  final includedWalletIds = wallets != null && wallets.isNotEmpty
+      ? wallets.where((w) => w.includeInDailyBudget).map((w) => w.id).toSet()
+      : null;
+
   final summary = computeDailyBudgetSummary(
     profile: profile,
     latestCycle: cycleAsync.value,
     transactions: txsAsync.value ?? const [],
     goals: goalsAsync.value ?? const [],
+    includedWalletIds: includedWalletIds,
   );
 
   return AsyncValue.data(summary);

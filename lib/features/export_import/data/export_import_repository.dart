@@ -7,9 +7,11 @@ import 'package:path_provider/path_provider.dart';
 import '../../../core/database/asset.dart';
 import '../../../core/database/category.dart';
 import '../../../core/database/financial_goal.dart';
+import '../../../core/database/isar_provider.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/database/wallet.dart';
 import '../domain/backup_data.dart';
 import '../domain/csv_serializer.dart';
 
@@ -56,6 +58,7 @@ class IsarExportImportRepository implements ExportImportRepository {
     final transactions = await isar.transactions.where().findAll();
     final goals = await isar.financialGoals.where().findAll();
     final assets = await isar.assets.where().findAll();
+    final wallets = await isar.wallets.where().findAll();
 
     return BackupData(
       exportedAt: DateTime.now(),
@@ -65,6 +68,7 @@ class IsarExportImportRepository implements ExportImportRepository {
       transactions: transactions,
       financialGoals: goals,
       assets: assets,
+      wallets: wallets,
     );
   }
 
@@ -151,6 +155,7 @@ class IsarExportImportRepository implements ExportImportRepository {
       await isar.transactions.clear();
       await isar.financialGoals.clear();
       await isar.assets.clear();
+      await isar.wallets.clear();
 
       if (backupData.profiles.isNotEmpty) {
         await isar.localProfiles.putAll(backupData.profiles);
@@ -170,7 +175,12 @@ class IsarExportImportRepository implements ExportImportRepository {
       if (backupData.assets.isNotEmpty) {
         await isar.assets.putAll(backupData.assets);
       }
+      if (backupData.wallets.isNotEmpty) {
+        await isar.wallets.putAll(backupData.wallets);
+      }
     });
+
+    await migrateIsarSchema(isar);
   }
 
   Future<Directory> _resolveExportDirectory() async {

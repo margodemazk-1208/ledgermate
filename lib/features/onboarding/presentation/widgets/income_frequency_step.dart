@@ -25,7 +25,7 @@ class IncomeFrequencyStep extends ConsumerWidget {
         children: [
           const OnboardingStepHeader(
             stepIndex: 0,
-            totalSteps: 3,
+            totalSteps: 4,
             title: 'Pola Pendapatanmu',
             subtitle: 'Pilih yang paling cocok dengan cara kamu menerima uang.',
           ),

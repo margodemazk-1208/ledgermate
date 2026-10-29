@@ -64,6 +64,18 @@ void main() {
     );
     expect(tester.widget<FilledButton>(nextButtonFinder).onPressed, isNotNull);
 
+    // Step 1 -> Step 2: Wallet Setup
+    await tester.tap(nextButtonFinder);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Atur Dompet Pertamamu'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const ValueKey('onboarding_wallet_name_field')),
+      'Dompet Utama',
+    );
+    await tester.pumpAndSettle();
+
+    // Step 2 -> Step 3: Income
     await tester.tap(nextButtonFinder);
     await tester.pumpAndSettle();
 
@@ -88,7 +100,7 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('onboarding_back_button')));
     await tester.pumpAndSettle();
-    expect(find.text('Pola Pendapatanmu'), findsOneWidget);
+    expect(find.text('Atur Dompet Pertamamu'), findsOneWidget);
     await tester.tap(nextButtonFinder);
     await tester.pumpAndSettle();
 
@@ -184,6 +196,10 @@ void main() {
     await tester.tap(nextButtonFinder);
     await tester.pumpAndSettle();
 
+    expect(find.text('Atur Dompet Pertamamu'), findsOneWidget);
+    await tester.tap(nextButtonFinder);
+    await tester.pumpAndSettle();
+
     expect(find.text('Gaji Siklus Ini'), findsOneWidget);
     await tester.enterText(
       find.byKey(const ValueKey('initial_income_field')),
@@ -215,6 +231,8 @@ void main() {
       const ValueKey('onboarding_next_button'),
     );
     await tester.tap(find.byKey(const ValueKey('mode_card_harian')));
+    await tester.pumpAndSettle();
+    await tester.tap(nextButtonFinder);
     await tester.pumpAndSettle();
     await tester.tap(nextButtonFinder);
     await tester.pumpAndSettle();

@@ -48,8 +48,15 @@ void main() {
     await tester.tap(find.text('OK'));
     await tester.pumpAndSettle();
 
+    // Step 1 -> Step 2 (wallet setup)
     await tester.tap(find.byKey(const ValueKey('onboarding_next_button')));
     await tester.pumpAndSettle();
+
+    // Step 2 (wallet setup) -> Step 3 (income)
+    await tester.tap(find.byKey(const ValueKey('onboarding_next_button')));
+    await tester.pumpAndSettle();
+
+    // Step 3: enter income
     await tester.enterText(
       find.byKey(const ValueKey('initial_income_field')),
       '3000000',
