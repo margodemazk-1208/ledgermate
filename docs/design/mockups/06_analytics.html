@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>LedgerMate - Analytics</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="frame">
+  <div class="header">
+    <div class="logo script">Analytics</div>
+    <div class="date">Kamis: 29-Oct-26</div>
+  </div>
+
+  <div style="display:flex; gap:8px; margin-bottom:18px;">
+    <div class="pill" style="background:transparent; border:1px solid var(--border); color:var(--muted);">Harian</div>
+    <div class="pill" style="background:transparent; border:1px solid var(--border); color:var(--muted);">Mingguan</div>
+    <div class="pill" style="background:var(--burgundy); color:#fff;">Bulanan</div>
+  </div>
+
+  <div class="card">
+    <div class="card-row" style="margin-bottom:16px;">
+      <span class="section-title script">Pengeluaran per Kategori</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:20px;">
+      <svg width="110" height="110" viewBox="0 0 36 36">
+        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#2a2a2a" stroke-width="4"/>
+        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#9c5c62" stroke-width="4" stroke-dasharray="38 62" stroke-dashoffset="25"/>
+        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#9a9a94" stroke-width="4" stroke-dasharray="26 74" stroke-dashoffset="-13"/>
+        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#5c5c58" stroke-width="4" stroke-dasharray="36 64" stroke-dashoffset="-39"/>
+      </svg>
+      <div style="flex:1;">
+        <div class="card-row" style="margin-bottom:8px;"><span class="list-meta">&#9679; Makanan</span><span class="list-title">38%</span></div>
+        <div class="card-row" style="margin-bottom:8px;"><span class="list-meta">&#9679; Transportasi</span><span class="list-title">26%</span></div>
+        <div class="card-row"><span class="list-meta">&#9679; Lainnya</span><span class="list-title">36%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-row" style="margin-bottom:16px;">
+      <span class="section-title script">Tren Bulan ke Bulan</span>
+    </div>
+    <div style="display:flex; align-items:flex-end; gap:12px; height:120px; padding:0 4px;">
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;">
+        <div style="width:100%; display:flex; gap:4px; align-items:flex-end; height:90px;">
+          <div style="flex:1; background:#3a3a3a; height:70%; border-radius:4px 4px 0 0;"></div>
+          <div style="flex:1; background:var(--burgundy-soft); height:90%; border-radius:4px 4px 0 0;"></div>
+        </div>
+        <span class="card-label" style="font-size:10px;">Sep</span>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;">
+        <div style="width:100%; display:flex; gap:4px; align-items:flex-end; height:90px;">
+          <div style="flex:1; background:#3a3a3a; height:55%; border-radius:4px 4px 0 0;"></div>
+          <div style="flex:1; background:var(--burgundy-soft); height:65%; border-radius:4px 4px 0 0;"></div>
+        </div>
+        <span class="card-label" style="font-size:10px;">Okt</span>
+      </div>
+    </div>
+    <div class="card-row" style="margin-top:14px;">
+      <span class="list-meta">&#9679; Pengeluaran &nbsp; &#9679; Pemasukan</span>
+      <span style="color:var(--up); font-size:12px;">+12% vs bulan lalu</span>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg><span class="script">Home</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16v16H4zM4 10h16M9 4v16"/></svg><span class="script">Transaction</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg><span class="script">Goals</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 21V9l8-6 8 6v12M9 21v-6h6v6"/></svg><span class="script">Asset</span></div>
+    <div class="nav-item active"><div class="nav-underline"></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19V10M10 19V4M16 19v-7M4 19h16"/></svg><span class="script">Analysis</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M4 7h4M4 12h7M4 17h4M16 7h4M13 12h7M16 17h4"/></svg><span class="script">Settings</span></div>
+  </div>
+</div>
+</body>
+</html>

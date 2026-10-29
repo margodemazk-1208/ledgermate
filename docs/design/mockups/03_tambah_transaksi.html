@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>LedgerMate - Tambah Transaksi</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="frame" style="padding-bottom:40px;">
+  <div class="header">
+    <div class="logo script">Catat Transaksi</div>
+    <div class="date">&times; Tutup</div>
+  </div>
+
+  <div class="toggle-group" style="margin-bottom:24px;">
+    <div class="toggle-option active">Pengeluaran</div>
+    <div class="toggle-option">Pemasukan</div>
+  </div>
+
+  <div style="text-align:center; margin-bottom:28px;">
+    <span class="field-label" style="display:block; margin-bottom:10px;">JUMLAH</span>
+    <div style="font-size:40px; color:#fff; font-weight:700;">Rp 45.000</div>
+  </div>
+
+  <div style="margin-bottom:18px;">
+    <span class="field-label">DOMPET</span>
+    <div class="card-row card" style="padding:14px 16px; margin-bottom:0;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="#e9e8e4" stroke-width="1.5"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg></div>
+        <span class="list-title">Tunai</span>
+      </div>
+      <span style="color:var(--muted);">&#9662;</span>
+    </div>
+  </div>
+
+  <div style="margin-bottom:18px;">
+    <span class="field-label">KATEGORI</span>
+    <div class="card-row card" style="padding:14px 16px; margin-bottom:0;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="#e9e8e4" stroke-width="1.5"><path d="M3 10h18M7 15h4M3 6h18v12H3z"/></svg></div>
+        <span class="list-title">Makanan</span>
+      </div>
+      <span style="color:var(--muted);">&#9662;</span>
+    </div>
+  </div>
+
+  <div style="margin-bottom:18px;">
+    <span class="field-label">TANGGAL</span>
+    <input class="field-input" value="29 Oktober 2026" readonly>
+  </div>
+
+  <div style="margin-bottom:28px;">
+    <span class="field-label">CATATAN (OPSIONAL)</span>
+    <input class="field-input" placeholder="mis. makan siang bareng temen">
+  </div>
+
+  <button class="btn-primary">Simpan Transaksi</button>
+</div>
+</body>
+</html>

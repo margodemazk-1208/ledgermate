@@ -41,5 +41,14 @@ Milestones map 1:1 to FR/BR ids in `docs/PRD.md`. Each milestone = one unit of w
 - [x] **M12 — Multi-Wallet System** (FR-12, FR-13, BR-04, D16, v1.1 — post release)
   New `Wallet` collection + data migration for existing `Transaction` rows, wallet CRUD UI, inter-wallet transfer, budget-engine wallet scoping (`includeInDailyBudget`). See D16 for full reasoning — this reopens frozen v1.0.0 scope with explicit user approval.
 
+- [ ] **M13 — Visual Reconstruction (v1.2)** (D17)
+  Rebuild every screen's visuals (Home, Transaksi, Tambah Transaksi, Goals, Aset, Analytics, Settings, Wallets) to match `docs/design/mockups/` exactly: dark monochrome base + doff burgundy accent, Playfair Display italic for labels/brand, Space Mono for all numeric/data text. No new features, no logic changes — pure presentation-layer rework on top of the existing M0-M12 data/business logic.
+
+- [ ] **M14 — Motion & Micro-interactions (v1.2)** (D17)
+  Implement the full Motion spec from `docs/DESIGN.md` §Motion: slide navigation, count-up/down budget number, staggered FAB speed-dial, animated list inserts, animated progress bars, scale+haptic button feedback, skeleton loading shimmer, crafted save-confirmation toast. Gated on M13 (motion is layered onto the new visual system, not the old one).
+
+- [ ] **M15 — Performance Testing & Optimization**
+  Measure and report: cold launch time, Isar read/write latency under realistic data volumes, frame timing/jank during motion-heavy interactions (M14), APK size, memory footprint. Fix anything that regresses below the NFR §6.1 targets (<50ms save, <1.5s cold launch) or introduces visible jank from M14's animations. Produces a performance report artifact. Gated on M14 (tests the final animated UI, not an intermediate state).
+
 ## Non-goals (do not implement without a new PRD revision)
 See `docs/PRD.md` §3.2 Out-of-Scope and `docs/EXTENDING.md`.

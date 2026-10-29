@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>LedgerMate - FAB Overlay</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="frame">
+  <div class="header">
+    <div class="logo script">LedgerMate</div>
+    <div class="date">Kamis: 29-Oct-26</div>
+  </div>
+
+  <div class="card">
+    <div class="card-row">
+      <span class="card-label">Total Saldo</span>
+      <span class="card-value">Rp. 254.000.000</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-row">
+      <span class="card-label">Jatah Hari Ini</span>
+      <span class="card-value">Rp. 256.000</span>
+    </div>
+  </div>
+
+  <!-- dim overlay -->
+  <div style="position:absolute; inset:0; background:rgba(0,0,0,0.6); z-index:5;"></div>
+
+  <!-- speed dial stack -->
+  <div style="position:absolute; right:20px; bottom:180px; display:flex; flex-direction:column; align-items:flex-end; gap:14px; z-index:10;">
+
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="pill" style="background:#1e1e1e; border:1px solid var(--border); color:#fff;">Tambah Aset Baru</div>
+      <div class="icon-circle" style="width:44px; height:44px; background:#262626; border:1px solid var(--border);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#e9e8e4" stroke-width="1.5"><path d="M4 21V9l8-6 8 6v12M9 21v-6h6v6"/></svg></div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="pill" style="background:#1e1e1e; border:1px solid var(--border); color:#fff;">Tambah Goal Baru</div>
+      <div class="icon-circle" style="width:44px; height:44px; background:#262626; border:1px solid var(--border);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#e9e8e4" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="pill" style="background:#1e1e1e; border:1px solid var(--border); color:#fff;">Transfer Antar Dompet</div>
+      <div class="icon-circle" style="width:44px; height:44px; background:#262626; border:1px solid var(--border);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#e9e8e4" stroke-width="1.5"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg></div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="pill" style="background:#f2f2f0; color:#121212; font-weight:700;">Catat Pemasukan</div>
+      <div class="icon-circle" style="width:44px; height:44px; background:#f2f2f0; border:none;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#121212" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="pill" style="background:#f2f2f0; color:#121212; font-weight:700;">Catat Pengeluaran</div>
+      <div class="icon-circle" style="width:44px; height:44px; background:#f2f2f0; border:none;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#121212" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+    </div>
+
+  </div>
+
+  <!-- rotated (x) fab -->
+  <div class="fab" style="z-index:11; transform:rotate(45deg); bottom:112px;">+</div>
+
+  <div class="bottom-nav" style="z-index:1;">
+    <div class="nav-item active"><div class="nav-underline"></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg><span class="script">Home</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16v16H4zM4 10h16M9 4v16"/></svg><span class="script">Transaction</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg><span class="script">Goals</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 21V9l8-6 8 6v12M9 21v-6h6v6"/></svg><span class="script">Asset</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19V10M10 19V4M16 19v-7M4 19h16"/></svg><span class="script">Analysis</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M4 7h4M4 12h7M4 17h4M16 7h4M13 12h7M16 17h4"/></svg><span class="script">Settings</span></div>
+  </div>
+</div>
+</body>
+</html>
