@@ -102,7 +102,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(TransactionFormScreen), findsOneWidget);
-      expect(find.text('Tambah Transaksi'), findsOneWidget);
+      expect(find.text('Catat Transaksi'), findsOneWidget);
     });
 
     testWidgets('FAB navigates to TransactionFormScreen', (tester) async {
@@ -115,7 +115,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(TransactionFormScreen), findsOneWidget);
-      expect(find.text('Tambah Transaksi'), findsOneWidget);
+      expect(find.text('Catat Transaksi'), findsOneWidget);
     });
 
     testWidgets(

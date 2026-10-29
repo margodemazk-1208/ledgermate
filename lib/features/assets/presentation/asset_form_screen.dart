@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/asset.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
 import '../application/assets_providers.dart';
 
@@ -128,7 +129,12 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
     final isGain = gainLoss >= 0;
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Edit Aset' : 'Tambah Aset')),
+      appBar: AppBar(
+        title: Text(
+          isEdit ? 'Edit Aset' : 'Tambah Aset',
+          style: AppTypography.script(fontSize: 20),
+        ),
+      ),
       body: SafeArea(
         child: Form(
           key: _formKey,

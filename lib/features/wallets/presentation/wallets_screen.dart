@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/wallet.dart';
+import '../../../core/presentation/widgets/icon_circle.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
 import '../application/wallet_providers.dart';
 import '../data/wallet_repository.dart';
@@ -103,7 +105,7 @@ class WalletsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kelola Dompet'),
+        title: Text('Kelola Dompet', style: AppTypography.script(fontSize: 20)),
         actions: [
           IconButton(
             key: const ValueKey('wallets_transfer_appbar_button'),
@@ -140,7 +142,8 @@ class WalletsScreen extends ConsumerWidget {
                     children: [
                       Text(
                         'Total Saldo (Kekayaan Bersih)',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: AppTypography.mono(
+                          fontSize: 13,
                           color: theme.textTheme.bodySmall?.color,
                         ),
                       ),
@@ -149,7 +152,7 @@ class WalletsScreen extends ConsumerWidget {
                         formatRupiah(totalSaldo),
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: AppColors.brandTeal,
+                          color: AppColors.burgundy,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -181,7 +184,7 @@ class WalletsScreen extends ConsumerWidget {
                             child: FilledButton.icon(
                               key: const ValueKey('wallets_quick_add_button'),
                               style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.brandTeal,
+                                backgroundColor: AppColors.burgundy,
                               ),
                               onPressed: () {
                                 Navigator.of(context).push(
@@ -286,17 +289,14 @@ class WalletsScreen extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         key: const ValueKey('add_wallet_fab'),
         onPressed: () {
           Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (_) => const WalletFormScreen()));
         },
-        backgroundColor: AppColors.brandTeal,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah Dompet'),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -338,18 +338,11 @@ class _WalletItemCard extends StatelessWidget {
           child: Row(
             children: [
               // Wallet Icon container
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.brandTeal.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  getWalletIcon(wallet.icon),
-                  color: AppColors.brandTeal,
-                  size: 26,
-                ),
+              IconCircle(
+                icon: getWalletIcon(wallet.icon),
+                size: 48,
+                color: AppColors.burgundy,
+                background: AppColors.burgundy.withValues(alpha: 0.12),
               ),
               const SizedBox(width: 14),
 
@@ -360,9 +353,7 @@ class _WalletItemCard extends StatelessWidget {
                   children: [
                     Text(
                       wallet.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTypography.script(fontSize: 16),
                     ),
                     const SizedBox(height: 4),
                     Row(

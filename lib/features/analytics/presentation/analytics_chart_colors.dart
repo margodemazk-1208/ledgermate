@@ -1,23 +1,24 @@
 // Chart color palette and theme helpers for M8 Visual Analytics (FR-07).
-// Follows docs/DESIGN.md and AGENTS.md antislop guidelines:
-// - No decorative neon gradients
-// - Grounded in LedgerMate brand teal and semantic status colors
-// - High contrast in both dark and light modes
+// Recolored for M13 (v1.2) per docs/design/mockups/06_analytics.html's inline
+// SVG stroke values (#9c5c62/#9a9a94/#5c5c58) — muted burgundy/grey tones
+// matching the dark-monochrome-plus-burgundy-accent system (docs/DESIGN.md),
+// not an ad-hoc rainbow. High contrast maintained in both dark and light modes.
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 
 abstract final class AnalyticsChartColors {
-  /// Deliberate category colors: calm, distinct, not an ad-hoc rainbow.
+  /// Deliberate category colors lifted from the mockup's pie-chart strokes,
+  /// extended with the existing semantic/brand palette for >3 categories.
   static const List<Color> categoryPalette = [
-    AppColors.brandTeal, // Color(0xFF0FA37F) - primary/food
-    AppColors.warningAmber, // Color(0xFFF5A623) - transport
-    Color(0xFF6366F1), // Indigo - bills/utilities
-    Color(0xFFEC4899), // Rose - entertainment/leisure
-    Color(0xFF8B5CF6), // Violet - shopping
-    Color(0xFF14B8A6), // Cyan - health
-    Color(0xFF3B82F6), // Blue - education
-    Color(0xFF64748B), // Slate - others/miscellaneous
+    Color(0xFF9C5C62), // muted burgundy — primary/food (06_analytics.html)
+    Color(0xFF9A9A94), // warm grey — transport (06_analytics.html)
+    Color(0xFF5C5C58), // dark grey — bills/utilities (06_analytics.html)
+    AppColors.burgundySoft, // soft burgundy — entertainment/leisure
+    AppColors.warningAmber, // amber — shopping
+    Color(0xFF6B7280), // slate — health
+    AppColors.burgundyDeep, // deep burgundy — education
+    Color(0xFF3F3F3B), // near-black grey — others/miscellaneous
   ];
 
   /// Maps category to a stable, deterministic color by id or name.
@@ -25,15 +26,15 @@ abstract final class AnalyticsChartColors {
     if (name != null) {
       switch (name.trim().toLowerCase()) {
         case 'makan':
-          return AppColors.brandTeal;
+          return categoryPalette[0];
         case 'transport':
-          return AppColors.warningAmber;
+          return categoryPalette[1];
         case 'hiburan':
-          return const Color(0xFFEC4899);
+          return categoryPalette[3];
         case 'tagihan':
-          return const Color(0xFF6366F1);
+          return categoryPalette[2];
         case 'lainnya':
-          return const Color(0xFF64748B);
+          return categoryPalette[7];
       }
     }
     final index = (categoryId - 1).abs() % categoryPalette.length;
@@ -41,7 +42,7 @@ abstract final class AnalyticsChartColors {
   }
 
   /// Bar color for current month in Month-over-Month charts.
-  static const Color currentMonthBar = AppColors.brandTeal;
+  static const Color currentMonthBar = AppColors.burgundySoft;
 
   /// Bar color for previous month in Month-over-Month charts.
   /// Muted tone so current month has clear visual hierarchy.

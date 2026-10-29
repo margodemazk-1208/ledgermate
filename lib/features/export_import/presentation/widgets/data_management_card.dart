@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../application/export_import_providers.dart';
 import 'restore_confirmation_dialog.dart';
 
@@ -51,9 +52,7 @@ class DataManagementCard extends ConsumerWidget {
                     children: [
                       Text(
                         'Cadangkan & Pulihkan Data',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppTypography.script(fontSize: 17),
                       ),
                       const SizedBox(height: 2),
                       Text(

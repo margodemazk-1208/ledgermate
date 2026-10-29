@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/presentation/widgets/icon_circle.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/rupiah_formatter.dart';
 import '../../application/assets_providers.dart';
 import '../asset_form_screen.dart';
@@ -16,6 +18,27 @@ class AssetCard extends ConsumerWidget {
 
   String _formatDateTime(DateTime dt) {
     return DateFormat('d MMM yyyy, HH:mm', 'id_ID').format(dt);
+  }
+
+  /// Maps the free-text asset type to a representative icon for the
+  /// `.icon-circle` badge — purely cosmetic, never used for business logic.
+  IconData _iconForType(String type) {
+    final lower = type.toLowerCase();
+    if (lower.contains('emas') || lower.contains('logam')) {
+      return Icons.hourglass_bottom;
+    }
+    if (lower.contains('saham') ||
+        lower.contains('reksadana') ||
+        lower.contains('investasi')) {
+      return Icons.show_chart;
+    }
+    if (lower.contains('properti') || lower.contains('tanah')) {
+      return Icons.home_work_outlined;
+    }
+    if (lower.contains('kripto')) {
+      return Icons.currency_bitcoin;
+    }
+    return Icons.inventory_2_outlined;
   }
 
   Future<void> _handleDelete(BuildContext context, WidgetRef ref) async {
@@ -68,10 +91,12 @@ class AssetCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header: Name, Type Badge, and Actions
+            // Header: Icon, Name, Type Badge, and Actions
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                IconCircle(icon: _iconForType(item.type), size: 40),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,9 +104,7 @@ class AssetCard extends ConsumerWidget {
                       Text(
                         key: ValueKey('asset_name_${item.id}'),
                         item.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: AppTypography.script(fontSize: 15),
                       ),
                       const SizedBox(height: 6),
                       Container(

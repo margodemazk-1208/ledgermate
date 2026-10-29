@@ -3,13 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/presentation/widgets/app_bottom_nav.dart';
+import '../../../core/presentation/widgets/dashed_add_card.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
-import '../../analytics/presentation/analytics_screen.dart';
-import '../../budget_engine/presentation/budget_home_screen.dart';
-import '../../goals/presentation/goals_screen.dart';
-import '../../settings/presentation/settings_screen.dart';
-import '../../transactions/presentation/transactions_screen.dart';
 import '../application/assets_providers.dart';
 import 'asset_form_screen.dart';
 import 'widgets/asset_card.dart';
@@ -24,7 +22,10 @@ class AssetsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Aset & Investasi'),
+        title: Text(
+          'Aset & Investasi',
+          style: AppTypography.script(fontSize: 20),
+        ),
         actions: [
           IconButton(
             key: const ValueKey('appbar_add_asset_button'),
@@ -72,92 +73,19 @@ class AssetsScreen extends ConsumerWidget {
           return _buildAssetsList(context, summary);
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         key: const ValueKey('add_asset_fab'),
         onPressed: () {
           Navigator.of(context)
               .push(MaterialPageRoute(builder: (_) => const AssetFormScreen()));
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah Aset'),
+        child: const Icon(Icons.add),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        key: const ValueKey('assets_bottom_nav_bar'),
+      bottomNavigationBar: const AppBottomNav(
+        key: ValueKey('assets_bottom_nav_bar'),
         currentIndex: 3,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.brandTeal,
-        unselectedItemColor: theme.textTheme.bodySmall?.color?.withValues(
-          alpha: 0.6,
-        ),
-        onTap: (index) => _handleBottomNavTap(context, index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long_outlined),
-            activeIcon: Icon(Icons.receipt_long),
-            label: 'Transaksi',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.flag_outlined),
-            activeIcon: Icon(Icons.flag),
-            label: 'Goals',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            activeIcon: Icon(Icons.account_balance_wallet),
-            label: 'Aset',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.pie_chart_outline),
-            activeIcon: Icon(Icons.pie_chart),
-            label: 'Analitik',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Pengaturan',
-          ),
-        ],
       ),
     );
-  }
-
-  void _handleBottomNavTap(BuildContext context, int index) {
-    if (index == 3) return; // Already on Assets tab
-
-    switch (index) {
-      case 0:
-        // Navigate back to Home
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const BudgetHomeScreen()),
-          (route) => false,
-        );
-        break;
-      case 1:
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const TransactionsScreen()),
-        );
-        break;
-      case 2:
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const GoalsScreen()),
-        );
-        break;
-      case 4:
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
-        );
-        break;
-      case 5:
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const SettingsScreen()),
-        );
-        break;
-    }
   }
 
   Widget _buildEmptyState(BuildContext context) {
@@ -356,6 +284,15 @@ class AssetsScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 12),
             child: AssetCard(item: item),
           ),
+        ),
+        DashedAddCard(
+          key: const ValueKey('assets_dashed_add_card'),
+          label: 'Tambah Aset Baru',
+          onTap: () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const AssetFormScreen()));
+          },
         ),
       ],
     );

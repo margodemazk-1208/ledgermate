@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/database/local_profile.dart';
+import '../../../core/database/transaction.dart' as db;
+import '../../../core/presentation/widgets/app_bottom_nav.dart';
+import '../../../core/presentation/widgets/fab_speed_dial.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/theme_provider.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
-import '../../analytics/presentation/analytics_screen.dart';
-import '../../assets/presentation/assets_screen.dart';
-import '../../goals/presentation/goals_screen.dart';
 import '../../pay_cycle/presentation/pay_cycle_transition_screen.dart';
-import '../../settings/presentation/settings_screen.dart';
-import '../../transactions/presentation/transaction_form_screen.dart';
+import '../../transactions/application/transaction_providers.dart';
 import '../../transactions/presentation/transactions_screen.dart';
-import '../../wallets/presentation/wallets_screen.dart';
+import '../../wallets/application/wallet_providers.dart';
+import '../../wallets/utils/wallet_icons.dart';
 import '../application/budget_providers.dart';
 
 /// M4 Smart Daily Budget Engine Home Dashboard.
+///
+/// Visuals rebuilt for M13 (v1.2) per `docs/design/mockups/renders/00_*`/`01_*`
+/// (the only screen without a dedicated clean HTML mockup — judgment call
+/// derived from the two Figma sketches + the shared `style.css` token system).
 ///
 /// Identity motif (docs/DESIGN.md):
 /// The daily safe-spend number ("Uang Jajan Aman Hari Ini") is ALWAYS the
@@ -27,65 +32,27 @@ class BudgetHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final budgetAsync = ref.watch(dailyBudgetSummaryProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('LedgerMate'),
-        actions: [
-          IconButton(
-            key: const ValueKey('theme_toggle_button'),
-            tooltip: isDark
-                ? 'Beralih ke mode terang'
-                : 'Beralih ke mode gelap',
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () {
-              ref
-                  .read(themeModeProvider.notifier)
-                  .set(isDark ? ThemeMode.light : ThemeMode.dark);
-            },
-          ),
-          IconButton(
-            key: const ValueKey('appbar_goals_button'),
-            tooltip: 'Target Tabungan',
-            icon: const Icon(Icons.flag_outlined),
-            onPressed: () {
-              Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const GoalsScreen()));
-            },
-          ),
-          IconButton(
-            key: const ValueKey('appbar_assets_button'),
-            tooltip: 'Aset & Investasi',
-            icon: const Icon(Icons.account_balance_wallet_outlined),
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const AssetsScreen()));
-            },
-          ),
-          IconButton(
-            key: const ValueKey('appbar_analytics_button'),
-            tooltip: 'Visual Analitik',
-            icon: const Icon(Icons.pie_chart_outline),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
-              );
-            },
-          ),
-          IconButton(
-            key: const ValueKey('appbar_transactions_button'),
-            tooltip: 'Riwayat Transaksi',
-            icon: const Icon(Icons.receipt_long),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const TransactionsScreen()),
-              );
-            },
-          ),
-        ],
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text('LedgerMate', style: AppTypography.script(fontSize: 22)),
+            Text(
+              DateFormat('EEEE: dd-MMM-yy', 'id_ID').format(DateTime.now()),
+              style: AppTypography.mono(
+                fontSize: 11,
+                color: theme.textTheme.bodySmall?.color,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
       ),
       body: budgetAsync.when(
         data: (summary) => _DashboardBody(summary: summary),
@@ -116,104 +83,30 @@ class BudgetHomeScreen extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const ValueKey('add_transaction_fab'),
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const TransactionFormScreen()),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Catat Transaksi'),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        key: const ValueKey('budget_home_bottom_nav_bar'),
-        currentIndex: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.brandTeal,
-        unselectedItemColor: theme.textTheme.bodySmall?.color?.withValues(
-          alpha: 0.6,
-        ),
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              break;
-            case 1:
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const TransactionsScreen()),
-              );
-              break;
-            case 2:
-              Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const GoalsScreen()));
-              break;
-            case 3:
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const AssetsScreen()));
-              break;
-            case 4:
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
-              );
-              break;
-            case 5:
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long_outlined),
-            activeIcon: Icon(Icons.receipt_long),
-            label: 'Transaksi',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.flag_outlined),
-            activeIcon: Icon(Icons.flag),
-            label: 'Goals',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            activeIcon: Icon(Icons.account_balance_wallet),
-            label: 'Aset',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.pie_chart_outline),
-            activeIcon: Icon(Icons.pie_chart),
-            label: 'Analitik',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Pengaturan',
-          ),
-        ],
-      ),
+      floatingActionButton: const FabSpeedDial(),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 0),
     );
   }
 }
 
-class _DashboardBody extends StatelessWidget {
+class _DashboardBody extends ConsumerWidget {
   const _DashboardBody({required this.summary});
 
   final DailyBudgetSummary summary;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isPositive = summary.isPositive;
-    final focalColor = isPositive ? AppColors.brandTeal : AppColors.expenseRed;
+    final focalColor = isPositive ? AppColors.burgundy : AppColors.expenseRed;
+
+    final totalSaldoAsync = ref.watch(totalSaldoProvider);
+    final walletsAsync = ref.watch(walletsStreamProvider);
+    final balances =
+        ref.watch(walletBalancesProvider).value ?? const <int, int>{};
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -228,9 +121,7 @@ class _DashboardBody extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: theme.dividerColor.withValues(alpha: 0.2),
-                  ),
+                  border: Border.all(color: theme.dividerColor),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -247,8 +138,10 @@ class _DashboardBody extends StatelessWidget {
                       summary.incomeFrequency == IncomeFrequency.periodic
                           ? 'Mode Periodik'
                           : 'Mode Harian (Bekel)',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                      style: AppTypography.mono(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: theme.textTheme.bodyMedium?.color,
                       ),
                     ),
                   ],
@@ -258,151 +151,90 @@ class _DashboardBody extends StatelessWidget {
           ),
           if (summary.isCycleExpired) ...[
             const SizedBox(height: 16),
-            Container(
-              key: const ValueKey('cycle_transition_banner'),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.expenseRed.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppColors.expenseRed.withValues(alpha: 0.4),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.warning_amber_rounded,
-                        color: AppColors.expenseRed,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          summary.incomeFrequency == IncomeFrequency.periodic
-                              ? 'Siklus Gajian Berakhir'
-                              : 'Rollover Harian Dibutuhkan',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.expenseRed,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    summary.incomeFrequency == IncomeFrequency.periodic
-                        ? 'Jadwal gajian telah tercapai. Mulai siklus baru untuk memperbarui Uang Jajan Aman.'
-                        : 'Hari baru telah tiba. Konfirmasi carry-over saldo untuk memulai hari ini.',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    key: const ValueKey('cycle_transition_button'),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const PayCycleTransitionScreen(),
-                        ),
-                      );
-                    },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.expenseRed,
-                      foregroundColor: Colors.white,
-                    ),
-                    icon: const Icon(Icons.arrow_forward, size: 16),
-                    label: Text(
-                      summary.incomeFrequency == IncomeFrequency.periodic
-                          ? 'Mulai Siklus Baru'
-                          : 'Rollover Hari Ini',
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _CycleTransitionBanner(summary: summary),
           ],
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // Focal Point Header: Uang Jajan Aman Hari Ini
-          Text(
-            'Uang Jajan Aman Hari Ini',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
+          // Total Saldo card (net worth across all wallets, FR-12/D16)
+          _SimpleValueCard(
+            key: const ValueKey('home_total_saldo_card'),
+            label: 'Total Saldo',
+            value: formatRupiah(totalSaldoAsync.value ?? 0),
+          ),
+          const SizedBox(height: 16),
+
+          // Per-wallet balance cards (M12 Wallet data — fully user-defined,
+          // not fixed Tunai/E-Wallet/Bank types per D16).
+          walletsAsync.when(
+            data: (wallets) => wallets.isEmpty
+                ? const SizedBox.shrink()
+                : SizedBox(
+                    height: 84,
+                    child: ListView.separated(
+                      key: const ValueKey('home_wallet_cards_row'),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: wallets.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 10),
+                      itemBuilder: (context, i) {
+                        final w = wallets[i];
+                        return _WalletMiniCard(
+                          name: w.name,
+                          icon: getWalletIcon(w.icon),
+                          balance: balances[w.id] ?? w.startingBalance,
+                        );
+                      },
+                    ),
+                  ),
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
+          ),
+          const SizedBox(height: 20),
+
+          // Focal Point: Uang Jajan Aman Hari Ini (identity motif)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: theme.dividerColor),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Jatah Hari Ini',
+                  style: AppTypography.mono(
+                    fontSize: 13,
+                    letterSpacing: 0.5,
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    key: const ValueKey('daily_safe_spend_number'),
+                    formatRupiah(summary.uangJajanAmanHariIni),
+                    style: theme.textTheme.displayLarge?.copyWith(
+                      color: focalColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(_subtitleText(summary), style: theme.textTheme.bodyMedium),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-
-          // THE FOCAL POINT NUMBER (docs/DESIGN.md identity motif)
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              key: const ValueKey('daily_safe_spend_number'),
-              formatRupiah(summary.uangJajanAmanHariIni),
-              style: theme.textTheme.displayLarge?.copyWith(
-                color: focalColor,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // Subtitle context
-          Text(_subtitleText(summary), style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
 
           // Breakdown card
           _BreakdownCard(summary: summary),
           const SizedBox(height: 20),
 
-          // Quick link to full transactions
-          OutlinedButton.icon(
-            key: const ValueKey('view_transactions_button'),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const TransactionsScreen()),
-              );
-            },
-            icon: const Icon(Icons.list_alt),
-            label: const Text('Lihat Riwayat Transaksi'),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            key: const ValueKey('view_goals_button'),
-            onPressed: () {
-              Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const GoalsScreen()));
-            },
-            icon: const Icon(Icons.flag_outlined),
-            label: const Text('Kelola Target Tabungan'),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            key: const ValueKey('view_assets_button'),
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const AssetsScreen()));
-            },
-            icon: const Icon(Icons.savings_outlined),
-            label: const Text('Kelola Aset & Investasi'),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            key: const ValueKey('view_wallets_button'),
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const WalletsScreen()));
-            },
-            icon: const Icon(Icons.account_balance_wallet_outlined),
-            label: const Text('Kelola Dompet & Saldo'),
-          ),
-          const SizedBox(height: 60), // Room for extended FAB
+          // Rincian Transaksi preview (nominal-only, per clarified minimalism)
+          const _RincianTransaksiCard(),
         ],
       ),
     );
@@ -420,6 +252,189 @@ class _DashboardBody extends StatelessWidget {
   }
 }
 
+class _CycleTransitionBanner extends StatelessWidget {
+  const _CycleTransitionBanner({required this.summary});
+
+  final DailyBudgetSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      key: const ValueKey('cycle_transition_banner'),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.expenseRed.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.expenseRed.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: AppColors.expenseRed,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  summary.incomeFrequency == IncomeFrequency.periodic
+                      ? 'Siklus Gajian Berakhir'
+                      : 'Rollover Harian Dibutuhkan',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.expenseRed,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            summary.incomeFrequency == IncomeFrequency.periodic
+                ? 'Jadwal gajian telah tercapai. Mulai siklus baru untuk memperbarui Uang Jajan Aman.'
+                : 'Hari baru telah tiba. Konfirmasi carry-over saldo untuk memulai hari ini.',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            key: const ValueKey('cycle_transition_button'),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const PayCycleTransitionScreen(),
+                ),
+              );
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.expenseRed,
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.arrow_forward, size: 16),
+            label: Text(
+              summary.incomeFrequency == IncomeFrequency.periodic
+                  ? 'Mulai Siklus Baru'
+                  : 'Rollover Hari Ini',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// `.card .card-row` pattern per style.css — label left, bold value right.
+class _SimpleValueCard extends StatelessWidget {
+  const _SimpleValueCard({super.key, required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: AppTypography.mono(
+              fontSize: 13,
+              letterSpacing: 0.5,
+              color: theme.textTheme.bodySmall?.color,
+            ),
+          ),
+          Text(
+            value,
+            style: AppTypography.mono(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WalletMiniCard extends StatelessWidget {
+  const _WalletMiniCard({
+    required this.name,
+    required this.icon,
+    required this.balance,
+  });
+
+  final String name;
+  final IconData icon;
+  final int balance;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      width: 140,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF2E2E2E)
+                      : const Color(0xFFEBEBEA),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 13),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  name,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.mono(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            formatRupiah(balance),
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.mono(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BreakdownCard extends StatelessWidget {
   const _BreakdownCard({required this.summary});
 
@@ -431,77 +446,72 @@ class _BreakdownCard extends StatelessWidget {
     final modeA = summary.modeA;
     final modeB = summary.modeB;
 
-    return Card(
-      elevation: 0,
-      color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.15)),
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.dividerColor),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Rincian Perhitungan',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Rincian Perhitungan',
+            style: AppTypography.script(fontSize: 16),
+          ),
+          const SizedBox(height: 16),
+          if (modeA != null) ...[
+            _MetricRow(
+              label: 'Sisa Saldo Siklus',
+              value: formatRupiah(modeA.remainingBalance),
             ),
-            const SizedBox(height: 16),
-            if (modeA != null) ...[
-              _MetricRow(
-                label: 'Sisa Saldo Siklus',
-                value: formatRupiah(modeA.remainingBalance),
-              ),
-              const Divider(height: 20),
-              _MetricRow(
-                label: 'Jatah Kotor / Hari',
-                value: formatRupiah(modeA.dailySpendingAllowance),
-              ),
-              const Divider(height: 20),
-              _MetricRow(
-                label: 'Tabungan Goal / Hari',
-                value: '- ${formatRupiah(modeA.dailySavingsReserve)}',
-                valueColor: modeA.dailySavingsReserve > 0
-                    ? AppColors.savingsGreen
-                    : null,
-              ),
-            ] else if (modeB != null) ...[
-              _MetricRow(
-                label: 'Saldo Carry-Over Kemarin',
-                value: formatRupiah(modeB.saldoCarryOver),
-              ),
-              const Divider(height: 20),
-              _MetricRow(
-                label: 'Bekel Masuk Hari Ini',
-                value: '+ ${formatRupiah(modeB.bekelHariIni)}',
-              ),
-              const Divider(height: 20),
-              _MetricRow(
-                label: 'Pengeluaran Wajib Hari Ini',
-                value: '- ${formatRupiah(modeB.pengeluaranWajibHariIni)}',
-              ),
-              const Divider(height: 20),
-              _MetricRow(
-                label: 'Pengeluaran Dicatat Hari Ini',
-                value: '- ${formatRupiah(modeB.pengeluaranHariIni)}',
-                valueColor: modeB.pengeluaranHariIni > 0
-                    ? AppColors.expenseRed
-                    : null,
-              ),
-              const Divider(height: 20),
-              _MetricRow(
-                label: 'Tabungan Goal / Hari',
-                value: '- ${formatRupiah(modeB.dailySavingsReserve)}',
-                valueColor: modeB.dailySavingsReserve > 0
-                    ? AppColors.savingsGreen
-                    : null,
-              ),
-            ],
+            const Divider(height: 20),
+            _MetricRow(
+              label: 'Jatah Kotor / Hari',
+              value: formatRupiah(modeA.dailySpendingAllowance),
+            ),
+            const Divider(height: 20),
+            _MetricRow(
+              label: 'Tabungan Goal / Hari',
+              value: '- ${formatRupiah(modeA.dailySavingsReserve)}',
+              valueColor: modeA.dailySavingsReserve > 0
+                  ? AppColors.savingsGreen
+                  : null,
+            ),
+          ] else if (modeB != null) ...[
+            _MetricRow(
+              label: 'Saldo Carry-Over Kemarin',
+              value: formatRupiah(modeB.saldoCarryOver),
+            ),
+            const Divider(height: 20),
+            _MetricRow(
+              label: 'Bekel Masuk Hari Ini',
+              value: '+ ${formatRupiah(modeB.bekelHariIni)}',
+            ),
+            const Divider(height: 20),
+            _MetricRow(
+              label: 'Pengeluaran Wajib Hari Ini',
+              value: '- ${formatRupiah(modeB.pengeluaranWajibHariIni)}',
+            ),
+            const Divider(height: 20),
+            _MetricRow(
+              label: 'Pengeluaran Dicatat Hari Ini',
+              value: '- ${formatRupiah(modeB.pengeluaranHariIni)}',
+              valueColor: modeB.pengeluaranHariIni > 0
+                  ? AppColors.expenseRed
+                  : null,
+            ),
+            const Divider(height: 20),
+            _MetricRow(
+              label: 'Tabungan Goal / Hari',
+              value: '- ${formatRupiah(modeB.dailySavingsReserve)}',
+              valueColor: modeB.dailySavingsReserve > 0
+                  ? AppColors.savingsGreen
+                  : null,
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -523,11 +533,176 @@ class _MetricRow extends StatelessWidget {
         Text(label, style: theme.textTheme.bodyMedium),
         Text(
           value,
-          style: theme.textTheme.bodyLarge?.copyWith(
+          style: AppTypography.mono(
+            fontSize: 14,
             fontWeight: FontWeight.w600,
             color: valueColor ?? theme.textTheme.bodyLarge?.color,
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Rincian Transaksi preview per `renders/01_*`: Pemasukan / Pengeluaran
+/// columns, nominal-only rows (no description/date — deliberate minimalism),
+/// "Lihat Selengkapnya" deep-links to the full Transaksi list.
+class _RincianTransaksiCard extends ConsumerWidget {
+  const _RincianTransaksiCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final txsAsync = ref.watch(transactionsStreamProvider);
+    final txs = txsAsync.value ?? const <db.Transaction>[];
+
+    final income = txs
+        .where((t) => t.type == db.TransactionType.income)
+        .take(3)
+        .toList();
+    final expense = txs
+        .where((t) => t.type == db.TransactionType.expense)
+        .take(3)
+        .toList();
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Rincian Transaksi',
+                style: AppTypography.script(fontSize: 16),
+              ),
+              InkWell(
+                key: const ValueKey('home_view_all_transactions_link'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const TransactionsScreen(),
+                    ),
+                  );
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Lihat Selengkapnya',
+                      style: AppTypography.mono(
+                        fontSize: 11,
+                        color: theme.textTheme.bodySmall?.color,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward,
+                      size: 12,
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (txsAsync.isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (txsAsync.hasError)
+            Text(
+              'Gagal memuat ringkasan transaksi.',
+              style: theme.textTheme.bodySmall,
+            )
+          else if (txs.isEmpty)
+            Text(
+              'Belum ada transaksi tercatat.',
+              style: theme.textTheme.bodySmall,
+            )
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _RincianColumn(
+                    label: 'Pemasukan',
+                    amounts: income.map((t) => t.amount).toList(),
+                    color: AppColors.savingsGreen,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _RincianColumn(
+                    label: 'Pengeluaran',
+                    amounts: expense.map((t) => t.amount).toList(),
+                    color: AppColors.expenseRed,
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RincianColumn extends StatelessWidget {
+  const _RincianColumn({
+    required this.label,
+    required this.amounts,
+    required this.color,
+  });
+
+  final String label;
+  final List<int> amounts;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: AppColors.whitePill,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            label,
+            style: AppTypography.mono(
+              fontSize: 11,
+              color: const Color(0xFF15150F),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        if (amounts.isEmpty)
+          Text('Belum ada', style: theme.textTheme.bodySmall)
+        else
+          for (var i = 0; i < amounts.length; i++)
+            Padding(
+              padding: EdgeInsets.only(bottom: i == amounts.length - 1 ? 0 : 8),
+              child: Text(
+                formatRupiah(amounts[i]),
+                style: AppTypography.mono(
+                  fontSize: 13,
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
       ],
     );
   }

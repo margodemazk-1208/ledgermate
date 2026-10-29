@@ -98,7 +98,7 @@ void main() {
           await tester.pumpWidget(createTestWidget());
           await tester.pumpAndSettle();
 
-          expect(find.text('Pengaturan'), findsOneWidget);
+          expect(find.widgetWithText(AppBar, 'Pengaturan'), findsOneWidget);
           expect(
             find.byKey(const ValueKey('data_management_card')),
             findsOneWidget,

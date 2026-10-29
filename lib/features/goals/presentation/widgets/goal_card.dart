@@ -232,42 +232,48 @@ class GoalCard extends ConsumerWidget {
             const SizedBox(height: 14),
 
             // Actions row (R-26: every interactive element has real behavior)
+            // Two full-width pill actions per 04_goals.html: outlined
+            // "Tarik dari Goal" + filled burgundy "Edit".
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                // FR-06c: Tarik dari Goal action
-                OutlinedButton.icon(
-                  key: ValueKey('withdraw_goal_button_${goal.id}'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  onPressed: goal.currentAmount > 0
-                      ? () {
-                          showDialog(
-                            context: context,
-                            builder: (_) => WithdrawDialog(goal: goal),
-                          );
-                        }
-                      : null,
-                  icon: const Icon(Icons.outbox, size: 16),
-                  label: const Text('Tarik'),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  key: ValueKey('edit_goal_button_${goal.id}'),
-                  tooltip: 'Edit Target',
-                  icon: const Icon(Icons.edit_outlined, size: 20),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => GoalFormScreen(goal: goal),
+                Expanded(
+                  child: OutlinedButton(
+                    key: ValueKey('withdraw_goal_button_${goal.id}'),
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
                       ),
-                    );
-                  },
+                    ),
+                    onPressed: goal.currentAmount > 0
+                        ? () {
+                            showDialog(
+                              context: context,
+                              builder: (_) => WithdrawDialog(goal: goal),
+                            );
+                          }
+                        : null,
+                    child: const Text('Tarik dari Goal'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    key: ValueKey('edit_goal_button_${goal.id}'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.burgundy,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => GoalFormScreen(goal: goal),
+                        ),
+                      );
+                    },
+                    child: const Text('Edit'),
+                  ),
                 ),
                 IconButton(
                   key: ValueKey('delete_goal_button_${goal.id}'),

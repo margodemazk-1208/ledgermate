@@ -49,7 +49,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Pola Pendapatanmu'), findsOneWidget);
-    expect(find.text('Uang Jajan Aman Hari Ini'), findsNothing);
+    expect(find.text('Jatah Hari Ini'), findsNothing);
   });
 
   testWidgets('onboarding complete shows the Budget Home dashboard', (
@@ -70,7 +70,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Uang Jajan Aman Hari Ini'), findsOneWidget);
+    expect(find.text('Jatah Hari Ini'), findsOneWidget);
     expect(find.text('Rp 150.000'), findsOneWidget);
     expect(find.text('Pola Pendapatanmu'), findsNothing);
   });

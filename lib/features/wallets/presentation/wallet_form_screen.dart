@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/wallet.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
 import '../application/wallet_providers.dart';
 import '../utils/wallet_icons.dart';
@@ -87,7 +88,12 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Edit Dompet' : 'Tambah Dompet')),
+      appBar: AppBar(
+        title: Text(
+          isEdit ? 'Edit Dompet' : 'Tambah Dompet',
+          style: AppTypography.script(fontSize: 20),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(

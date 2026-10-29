@@ -12,8 +12,8 @@ import 'package:ledgermate/features/budget_engine/application/budget_providers.d
 import 'package:ledgermate/features/budget_engine/presentation/budget_home_screen.dart';
 import 'package:ledgermate/features/pay_cycle/application/pay_cycle_providers.dart';
 import 'package:ledgermate/features/pay_cycle/presentation/pay_cycle_transition_screen.dart';
+import 'package:ledgermate/features/transactions/application/transaction_providers.dart';
 import 'package:ledgermate/features/transactions/presentation/transaction_form_screen.dart';
-import 'package:ledgermate/features/transactions/presentation/transactions_screen.dart';
 
 import '../analytics/fake_analytics_repository.dart';
 import '../pay_cycle/fake_pay_cycle_repository.dart';
@@ -96,6 +96,9 @@ void main() {
         analyticsRepositoryProvider.overrideWithValue(
           FakeAnalyticsRepository(),
         ),
+        // Home (M13) also renders Total Saldo/wallet cards/Rincian Transaksi
+        // preview — deterministic empty data for these UI-only assertions.
+        transactionsStreamProvider.overrideWith((ref) => Stream.value([])),
       ],
       child: Consumer(
         builder: (context, ref, _) {
@@ -120,7 +123,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Mode Periodik'), findsOneWidget);
-      expect(find.text('Uang Jajan Aman Hari Ini'), findsOneWidget);
+      // Label wording per docs/design/mockups (renders/01_*): "Jatah Hari Ini"
+      // replaces the pre-M13 "Uang Jajan Aman Hari Ini" label text.
+      expect(find.text('Jatah Hari Ini'), findsOneWidget);
 
       // Identity motif check: daily safe-spend number is present
       final focalFinder = find.byKey(const ValueKey('daily_safe_spend_number'));
@@ -212,23 +217,44 @@ void main() {
       },
     );
 
-    testWidgets('Theme toggle button changes theme mode', (tester) async {
-      await tester.pumpWidget(
-        buildTestWidget(
-          budgetValue: const AsyncValue.data(modeASummary),
-          themeMode: ThemeMode.dark,
-        ),
-      );
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Theme toggle via Settings path is unaffected by this screen (moved off AppBar per mockup header)',
+      (tester) async {
+        // Home's AppBar is now the minimal mockup header (logo + date only,
+        // per docs/design/mockups) — the quick theme-toggle action moved
+        // entirely to Settings (already has a dedicated dark-mode switch),
+        // so there is no in-AppBar toggle left to test here.
+        await tester.pumpWidget(
+          buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('theme_toggle_button')), findsNothing);
+      },
+    );
 
-      final toggleFinder = find.byKey(const ValueKey('theme_toggle_button'));
-      expect(toggleFinder, findsOneWidget);
+    testWidgets(
+      'FAB opens speed-dial overlay, Catat Pengeluaran navigates to TransactionFormScreen (antislop R-26)',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(toggleFinder);
-      await tester.pumpAndSettle();
-    });
+        final fab = find.byKey(const ValueKey('home_fab_speed_dial'));
+        expect(fab, findsOneWidget);
+        await tester.tap(fab);
+        await tester.pumpAndSettle();
 
-    testWidgets('FAB navigates to TransactionFormScreen (antislop R-26)', (
+        final expenseOption = find.byKey(const ValueKey('fab_option_expense'));
+        expect(expenseOption, findsOneWidget);
+        await tester.tap(expenseOption);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(TransactionFormScreen), findsOneWidget);
+      },
+    );
+
+    testWidgets('Bottom nav renders all 6 tabs with Home active', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -236,44 +262,16 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final fab = find.byKey(const ValueKey('add_transaction_fab'));
-      expect(fab, findsOneWidget);
-      await tester.tap(fab);
-      await tester.pumpAndSettle();
-
-      expect(find.byType(TransactionFormScreen), findsOneWidget);
-    });
-
-    testWidgets('Appbar action navigates to TransactionsScreen', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
-      );
-      await tester.pumpAndSettle();
-
-      final button = find.byKey(const ValueKey('appbar_transactions_button'));
-      expect(button, findsOneWidget);
-      await tester.tap(button);
-      await tester.pumpAndSettle();
-
-      expect(find.byType(TransactionsScreen), findsOneWidget);
-    });
-
-    testWidgets('Appbar action navigates to AnalyticsScreen (M8 FR-07)', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
-      );
-      await tester.pumpAndSettle();
-
-      final button = find.byKey(const ValueKey('appbar_analytics_button'));
-      expect(button, findsOneWidget);
-      await tester.tap(button);
-      await tester.pumpAndSettle();
-
-      expect(find.byType(AnalyticsScreen), findsOneWidget);
+      for (final label in [
+        'Home',
+        'Transaksi',
+        'Goals',
+        'Aset',
+        'Analitik',
+        'Pengaturan',
+      ]) {
+        expect(find.text(label), findsOneWidget);
+      }
     });
 
     testWidgets('Bottom nav item 4 navigates to AnalyticsScreen (M8 FR-07)', (

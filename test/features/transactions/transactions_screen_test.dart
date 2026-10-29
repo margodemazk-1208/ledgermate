@@ -103,7 +103,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('add_transaction_fab')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Tambah Transaksi'), findsOneWidget);
+      expect(find.text('Catat Transaksi'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('transaction_save_button')),
         findsOneWidget,
@@ -118,7 +118,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('empty_state_add_button')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Tambah Transaksi'), findsOneWidget);
+      expect(find.text('Catat Transaksi'), findsOneWidget);
     });
 
     testWidgets('tapping transaction item navigates to edit mode', (
@@ -154,7 +154,7 @@ void main() {
     ) async {
       await pumpScreen(tester, home: const TransactionFormScreen());
 
-      expect(find.text('Tambah Transaksi'), findsOneWidget);
+      expect(find.text('Catat Transaksi'), findsOneWidget);
 
       // Enter amount
       await tester.enterText(

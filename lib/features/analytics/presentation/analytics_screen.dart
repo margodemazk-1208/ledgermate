@@ -4,7 +4,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/presentation/widgets/app_bottom_nav.dart';
+import '../../../core/presentation/widgets/filter_pill.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../transactions/presentation/transaction_form_screen.dart';
 import '../application/analytics_providers.dart';
@@ -28,7 +31,10 @@ class AnalyticsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Visual Analitik'),
+        title: Text(
+          'Visual Analitik',
+          style: AppTypography.script(fontSize: 18),
+        ),
         actions: [
           IconButton(
             key: const ValueKey('analytics_theme_toggle_button'),
@@ -152,16 +158,16 @@ class AnalyticsScreen extends ConsumerWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         key: const ValueKey('analytics_add_transaction_fab'),
         onPressed: () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const TransactionFormScreen()),
           );
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Catat Transaksi'),
+        child: const Icon(Icons.add),
       ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 4),
     );
   }
 }
@@ -177,37 +183,27 @@ class _PeriodFilterSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SegmentedButton<PeriodFilter>(
-        key: const ValueKey('analytics_period_segmented_button'),
-        segments: const [
-          ButtonSegment(
-            value: PeriodFilter.daily,
-            label: Text('Harian'),
-            icon: Icon(Icons.today, size: 16),
-          ),
-          ButtonSegment(
-            value: PeriodFilter.weekly,
-            label: Text('Mingguan'),
-            icon: Icon(Icons.view_week_outlined, size: 16),
-          ),
-          ButtonSegment(
-            value: PeriodFilter.monthly,
-            label: Text('Bulanan'),
-            icon: Icon(Icons.calendar_month_outlined, size: 16),
-          ),
-        ],
-        selected: {selectedFilter},
-        onSelectionChanged: (newSelection) {
-          if (newSelection.isNotEmpty) {
-            onFilterChanged(newSelection.first);
-          }
-        },
-        style: ButtonStyle(
-          visualDensity: VisualDensity.compact,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        FilterPill(
+          label: 'Harian',
+          selected: selectedFilter == PeriodFilter.daily,
+          onTap: () => onFilterChanged(PeriodFilter.daily),
         ),
-      ),
+        const SizedBox(width: 8),
+        FilterPill(
+          label: 'Mingguan',
+          selected: selectedFilter == PeriodFilter.weekly,
+          onTap: () => onFilterChanged(PeriodFilter.weekly),
+        ),
+        const SizedBox(width: 8),
+        FilterPill(
+          label: 'Bulanan',
+          selected: selectedFilter == PeriodFilter.monthly,
+          onTap: () => onFilterChanged(PeriodFilter.monthly),
+        ),
+      ],
     );
   }
 }

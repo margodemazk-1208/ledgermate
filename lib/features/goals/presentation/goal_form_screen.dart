@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/database/financial_goal.dart';
 import '../../../core/formulas/daily_budget_formulas.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
 import '../../budget_engine/application/budget_providers.dart';
 import '../application/goals_providers.dart';
@@ -183,7 +184,10 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Edit Target Tabungan' : 'Tambah Target Baru'),
+        title: Text(
+          isEditing ? 'Edit Target Tabungan' : 'Tambah Target Baru',
+          style: AppTypography.script(fontSize: 18),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),

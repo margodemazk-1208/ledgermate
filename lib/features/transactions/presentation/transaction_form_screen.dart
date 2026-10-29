@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/transaction.dart' as db;
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
 import '../../wallets/application/wallet_providers.dart';
 import '../../wallets/utils/wallet_icons.dart';
@@ -12,9 +13,14 @@ import '../data/transaction_repository.dart';
 
 /// Screen for adding a new transaction or editing an existing one (FR-02, FR-03).
 class TransactionFormScreen extends ConsumerStatefulWidget {
-  const TransactionFormScreen({super.key, this.transaction});
+  const TransactionFormScreen({super.key, this.transaction, this.initialType});
 
   final db.Transaction? transaction;
+
+  /// Pre-selects the Pengeluaran/Pemasukan toggle for a brand-new transaction
+  /// (e.g. opened from the Home FAB speed-dial's "Catat Pemasukan" option).
+  /// Ignored when editing an existing [transaction].
+  final db.TransactionType? initialType;
 
   @override
   ConsumerState<TransactionFormScreen> createState() =>
@@ -33,6 +39,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     // Initialize notifier state for edit or add
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(transactionFormProvider.notifier).init(tx);
+      if (tx == null && widget.initialType != null) {
+        ref.read(transactionFormProvider.notifier).setType(widget.initialType!);
+      }
     });
 
     _amountController = TextEditingController(
@@ -158,7 +167,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEdit ? 'Edit Transaksi' : 'Tambah Transaksi'),
+        title: Text(
+          isEdit ? 'Edit Transaksi' : 'Catat Transaksi',
+          style: AppTypography.script(fontSize: 20),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -166,48 +178,56 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 1. Transaction Type Toggle (Pengeluaran vs Pemasukan vs Transfer)
-            SegmentedButton<db.TransactionType>(
-              segments: const [
-                ButtonSegment<db.TransactionType>(
-                  value: db.TransactionType.expense,
-                  label: Text('Pengeluaran'),
-                  icon: Icon(Icons.arrow_upward),
-                ),
-                ButtonSegment<db.TransactionType>(
-                  value: db.TransactionType.income,
-                  label: Text('Pemasukan'),
-                  icon: Icon(Icons.arrow_downward),
-                ),
-                ButtonSegment<db.TransactionType>(
-                  value: db.TransactionType.transfer,
-                  label: Text('Transfer'),
-                  icon: Icon(Icons.swap_horiz),
-                ),
-              ],
-              selected: {formState.type},
-              onSelectionChanged: (selected) {
-                ref
-                    .read(transactionFormProvider.notifier)
-                    .setType(selected.first);
+            // Custom toggle-group per style.css `.toggle-group`/`.toggle-option`
+            // (the mockup shows a 2-way toggle; this app also supports Transfer
+            // per FR-13/D16, so a 3-way segment keeps the same visual language).
+            _TypeToggleGroup(
+              selected: formState.type,
+              onChanged: (type) {
+                ref.read(transactionFormProvider.notifier).setType(type);
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 28),
 
-            // 2. Amount field (Rupiah formatted, live validate)
-            TextField(
-              key: const ValueKey('transaction_amount_field'),
-              controller: _amountController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [RupiahInputFormatter()],
-              onChanged: _onAmountChanged,
-              decoration: InputDecoration(
-                labelText: formState.type == db.TransactionType.transfer
-                    ? 'Nominal Transfer'
-                    : 'Jumlah',
-                prefixText: 'Rp ',
-                errorText: _amountError,
-                border: const OutlineInputBorder(),
-              ),
+            // 2. Amount field — large centered display per 03_tambah_transaksi.html
+            Column(
+              children: [
+                Text(
+                  formState.type == db.TransactionType.transfer
+                      ? 'NOMINAL TRANSFER'
+                      : 'JUMLAH',
+                  style: AppTypography.mono(
+                    fontSize: 11,
+                    letterSpacing: 0.8,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  key: const ValueKey('transaction_amount_field'),
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [RupiahInputFormatter()],
+                  onChanged: _onAmountChanged,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.mono(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  decoration: InputDecoration(
+                    filled: false,
+                    prefixText: 'Rp ',
+                    prefixStyle: AppTypography.mono(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    errorText: _amountError,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
 
@@ -515,6 +535,82 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// `.toggle-group`/`.toggle-option` pattern per style.css: equal-flex
+/// segments, selected = burgundy fill. Mirrors SegmentedButton's selection
+/// behavior/text so existing `find.text('Pemasukan')`-style test taps work.
+class _TypeToggleGroup extends StatelessWidget {
+  const _TypeToggleGroup({required this.selected, required this.onChanged});
+
+  final db.TransactionType selected;
+  final ValueChanged<db.TransactionType> onChanged;
+
+  static const _options = [
+    (db.TransactionType.expense, 'Pengeluaran', Icons.arrow_upward),
+    (db.TransactionType.income, 'Pemasukan', Icons.arrow_downward),
+    (db.TransactionType.transfer, 'Transfer', Icons.swap_horiz),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? AppColors.darkSurface2
+            : AppColors.lightSurface2,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          for (final (type, label, icon) in _options)
+            Expanded(
+              child: InkWell(
+                onTap: () => onChanged(type),
+                borderRadius: BorderRadius.circular(10),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: selected == type
+                        ? AppColors.burgundy
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        icon,
+                        size: 16,
+                        color: selected == type
+                            ? Colors.white
+                            : theme.textTheme.bodySmall?.color,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        label,
+                        style: AppTypography.mono(
+                          fontSize: 12,
+                          fontWeight: selected == type
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                          color: selected == type
+                              ? Colors.white
+                              : theme.textTheme.bodySmall?.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

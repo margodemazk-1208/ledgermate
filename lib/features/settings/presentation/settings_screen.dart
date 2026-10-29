@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/category.dart';
 import '../../../core/database/local_profile.dart';
+import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../export_import/presentation/widgets/data_management_card.dart';
 import '../../notifications/data/notification_service.dart';
@@ -36,7 +38,9 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       key: const ValueKey('settings_screen'),
-      appBar: AppBar(title: const Text('Pengaturan')),
+      appBar: AppBar(
+        title: Text('Pengaturan', style: AppTypography.script(fontSize: 20)),
+      ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         children: [
@@ -81,9 +85,7 @@ class SettingsScreen extends ConsumerWidget {
                           children: [
                             Text(
                               'Tampilan & Bahasa',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: AppTypography.script(fontSize: 17),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -206,9 +208,7 @@ class SettingsScreen extends ConsumerWidget {
                           children: [
                             Text(
                               'Notifikasi & Pengingat',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: AppTypography.script(fontSize: 17),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -384,9 +384,7 @@ class SettingsScreen extends ConsumerWidget {
                           children: [
                             Text(
                               'Tentang LedgerMate',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: AppTypography.script(fontSize: 17),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -417,6 +415,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 5),
     );
   }
 }
@@ -612,9 +611,7 @@ class _CategoryManagementCard extends ConsumerWidget {
                     children: [
                       Text(
                         'Kelola Kategori',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppTypography.script(fontSize: 17),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -767,9 +764,7 @@ class _WalletsManagementCard extends StatelessWidget {
                     children: [
                       Text(
                         'Kelola Dompet & Rekening',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppTypography.script(fontSize: 17),
                       ),
                       const SizedBox(height: 2),
                       Text(

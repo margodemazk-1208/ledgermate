@@ -2,7 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/presentation/widgets/app_bottom_nav.dart';
+import '../../../core/presentation/widgets/dashed_add_card.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
 import '../application/goals_providers.dart';
 import 'goal_form_screen.dart';
@@ -17,7 +20,12 @@ class GoalsScreen extends ConsumerWidget {
     final summaryAsync = ref.watch(goalsOverviewSummaryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Target Tabungan')),
+      appBar: AppBar(
+        title: Text(
+          'Target Tabungan',
+          style: AppTypography.script(fontSize: 20),
+        ),
+      ),
       body: summaryAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(
@@ -136,20 +144,30 @@ class GoalsScreen extends ConsumerWidget {
                 // Goals list
                 for (final proj in summary.projections)
                   GoalCard(projection: proj),
+                const SizedBox(height: 4),
+                DashedAddCard(
+                  key: const ValueKey('goals_dashed_add_card'),
+                  label: 'Tambah Goal Baru',
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const GoalFormScreen()),
+                    );
+                  },
+                ),
               ],
             ),
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         key: const ValueKey('add_goal_fab'),
         onPressed: () {
           Navigator.of(context)
               .push(MaterialPageRoute(builder: (_) => const GoalFormScreen()));
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah Target'),
+        child: const Icon(Icons.add),
       ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
     );
   }
 }
@@ -181,15 +199,14 @@ class _GoalsOverviewCard extends StatelessWidget {
               children: [
                 Text(
                   'Total Progres Tabungan',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: AppTypography.script(fontSize: 16),
                 ),
                 Text(
                   '$percent%',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: AppColors.brandTeal,
+                  style: AppTypography.mono(
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
+                    color: AppColors.burgundy,
                   ),
                 ),
               ],

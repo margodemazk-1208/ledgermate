@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
 import '../application/wallet_providers.dart';
 import '../utils/wallet_icons.dart';
@@ -130,7 +131,12 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
     final balances = balancesAsync.value ?? const <int, int>{};
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Transfer Antar Dompet')),
+      appBar: AppBar(
+        title: Text(
+          'Transfer Antar Dompet',
+          style: AppTypography.script(fontSize: 18),
+        ),
+      ),
       body: walletsAsync.when(
         data: (wallets) {
           if (wallets.length < 2) {
