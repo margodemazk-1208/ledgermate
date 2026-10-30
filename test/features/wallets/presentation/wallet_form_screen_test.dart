@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ledgermate/core/database/wallet.dart';
+import 'package:ledgermate/core/l10n/app_localizations.dart';
 import 'package:ledgermate/features/wallets/application/wallet_providers.dart';
 import 'package:ledgermate/features/wallets/presentation/wallet_form_screen.dart';
 
@@ -17,7 +18,12 @@ void main() {
   Widget createTestWidget({Wallet? wallet}) {
     return ProviderScope(
       overrides: [walletRepositoryProvider.overrideWithValue(fakeRepo)],
-      child: MaterialApp(home: WalletFormScreen(wallet: wallet)),
+      child: MaterialApp(
+        locale: const Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: WalletFormScreen(wallet: wallet),
+      ),
     );
   }
 
@@ -123,6 +129,9 @@ void main() {
       return ProviderScope(
         overrides: [walletRepositoryProvider.overrideWithValue(fakeRepo)],
         child: MaterialApp(
+          locale: const Locale('id'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Builder(
             builder: (context) => Scaffold(
               body: Center(

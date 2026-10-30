@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ledgermate/core/database/transaction.dart' as db;
 import 'package:ledgermate/core/database/wallet.dart';
+import 'package:ledgermate/core/l10n/app_localizations.dart';
 import 'package:ledgermate/features/transactions/application/transaction_providers.dart';
 import 'package:ledgermate/features/wallets/application/wallet_providers.dart';
 import 'package:ledgermate/features/wallets/presentation/transfer_form_screen.dart';
@@ -48,6 +49,9 @@ void main() {
         theme: ThemeData.light(useMaterial3: true),
         darkTheme: ThemeData.dark(useMaterial3: true),
         themeMode: themeMode,
+        locale: const Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: const WalletsScreen(),
       ),
     );

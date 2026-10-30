@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/app_localizations.dart';
 import '../application/onboarding_providers.dart';
 import '../application/onboarding_wizard_state.dart';
 import 'widgets/income_frequency_step.dart';
@@ -22,8 +23,11 @@ class OnboardingScreen extends ConsumerWidget {
     ref.listen(onboardingWizardProvider, (previous, next) {
       if (next.submitError != null &&
           next.submitError != previous?.submitError) {
+        final message = next.submitError == incompleteOnboardingDataErrorCode
+            ? AppLocalizations.of(context)!.onboardingScreenIncompleteDataError
+            : next.submitError!;
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(next.submitError!)));
+            .showSnackBar(SnackBar(content: Text(message)));
       }
     });
 
@@ -99,7 +103,9 @@ class _WizardNavBar extends StatelessWidget {
             TextButton(
               key: const ValueKey('onboarding_back_button'),
               onPressed: state.isSubmitting ? null : notifier.goBack,
-              child: const Text('Kembali'),
+              child: Text(
+                AppLocalizations.of(context)!.onboardingScreenBackButton,
+              ),
             )
           else
             const SizedBox.shrink(),
@@ -121,7 +127,13 @@ class _WizardNavBar extends StatelessWidget {
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Text(_isLastStep ? 'Selesai' : 'Lanjut'),
+                : Text(
+                    _isLastStep
+                        ? AppLocalizations.of(context)!
+                              .onboardingScreenFinishButton
+                        : AppLocalizations.of(context)!
+                              .onboardingScreenNextButton,
+                  ),
           ),
         ],
       ),

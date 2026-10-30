@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/utils/rupiah_formatter.dart';
 import '../../../wallets/utils/wallet_icons.dart';
 import '../../application/onboarding_providers.dart';
@@ -44,7 +45,9 @@ class _WalletSetupStepState extends ConsumerState<WalletSetupStep> {
     final notifier = ref.read(onboardingWizardProvider.notifier);
     notifier.setWalletName(val);
     setState(() {
-      _nameError = val.trim().isEmpty ? 'Nama dompet tidak boleh kosong' : null;
+      _nameError = val.trim().isEmpty
+          ? AppLocalizations.of(context)!.walletSetupStepNameEmptyError
+          : null;
     });
   }
 
@@ -53,12 +56,15 @@ class _WalletSetupStepState extends ConsumerState<WalletSetupStep> {
     final parsed = parseRupiah(val) ?? 0;
     notifier.setWalletStartingBalance(parsed);
     setState(() {
-      _balanceError = parsed < 0 ? 'Saldo awal tidak boleh negatif' : null;
+      _balanceError = parsed < 0
+          ? AppLocalizations.of(context)!.walletSetupStepNegativeBalanceError
+          : null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final state = ref.watch(onboardingWizardProvider);
     final notifier = ref.read(onboardingWizardProvider.notifier);
     final colorScheme = Theme.of(context).colorScheme;
@@ -68,28 +74,26 @@ class _WalletSetupStepState extends ConsumerState<WalletSetupStep> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const OnboardingStepHeader(
+          OnboardingStepHeader(
             stepIndex: 1,
             totalSteps: 4,
-            title: 'Atur Dompet Pertamamu',
-            subtitle:
-                'Dompet tempat menyimpan uangmu (misal: Tunai, Rekening Bank, E-Wallet). '
-                'Kamu bisa menambah dompet lain nanti.',
+            title: l10n.walletSetupStepTitle,
+            subtitle: l10n.walletSetupStepSubtitle,
           ),
           const SizedBox(height: 24),
           TextFormField(
             key: const ValueKey('onboarding_wallet_name_field'),
             controller: _nameController,
             decoration: InputDecoration(
-              labelText: 'Nama Dompet',
-              hintText: 'Misal: Dompet Utama, Tunai, Rekening BCA',
+              labelText: l10n.walletSetupStepNameFieldLabel,
+              hintText: l10n.walletSetupStepNameFieldHint,
               errorText: _nameError,
             ),
             onChanged: _onNameChanged,
           ),
           const SizedBox(height: 20),
           Text(
-            'Pilih Ikon Dompet',
+            l10n.walletSetupStepIconPickerLabel,
             style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 10),
@@ -141,10 +145,10 @@ class _WalletSetupStepState extends ConsumerState<WalletSetupStep> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(
-              labelText: 'Saldo Awal',
+              labelText: l10n.walletSetupStepStartingBalanceLabel,
               prefixText: 'Rp ',
               hintText: '0',
-              helperText: 'Saldo riil yang ada di dompet ini saat mulai menggunakan aplikasi.',
+              helperText: l10n.walletSetupStepStartingBalanceHelper,
               errorText: _balanceError,
             ),
             onChanged: _onBalanceChanged,
@@ -154,10 +158,8 @@ class _WalletSetupStepState extends ConsumerState<WalletSetupStep> {
             margin: EdgeInsets.zero,
             child: SwitchListTile(
               key: const ValueKey('onboarding_wallet_include_budget_switch'),
-              title: const Text('Sertakan dalam Budget Harian'),
-              subtitle: const Text(
-                'Uang di dompet ini akan dihitung ke dalam Uang Jajan Aman Hari Ini (BR-04).',
-              ),
+              title: Text(l10n.walletSetupStepIncludeBudgetTitle),
+              subtitle: Text(l10n.walletSetupStepIncludeBudgetSubtitle),
               value: state.walletIncludeInDailyBudget,
               onChanged: notifier.setWalletIncludeInDailyBudget,
             ),

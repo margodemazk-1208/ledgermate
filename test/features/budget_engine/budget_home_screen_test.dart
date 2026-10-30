@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:ledgermate/core/database/local_profile.dart';
 import 'package:ledgermate/core/formulas/daily_budget_formulas.dart';
+import 'package:ledgermate/core/l10n/app_localizations.dart';
 import 'package:ledgermate/core/presentation/widgets/skeleton_loader.dart';
 import 'package:ledgermate/core/theme/app_colors.dart';
 import 'package:ledgermate/core/theme/theme_provider.dart';
@@ -107,6 +108,9 @@ void main() {
             themeMode: ref.watch(themeModeProvider),
             theme: ref.watch(lightThemeProvider),
             darkTheme: ref.watch(darkThemeProvider),
+            locale: const Locale('id'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: const BudgetHomeScreen(),
           );
         },
@@ -512,6 +516,10 @@ void main() {
                   themeMode: ref.watch(themeModeProvider),
                   theme: ref.watch(lightThemeProvider),
                   darkTheme: ref.watch(darkThemeProvider),
+                  locale: const Locale('id'),
+                  localizationsDelegates:
+                      AppLocalizations.localizationsDelegates,
+                  supportedLocales: AppLocalizations.supportedLocales,
                   home: const BudgetHomeScreen(),
                 );
               },

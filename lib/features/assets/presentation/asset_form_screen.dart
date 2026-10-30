@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/asset.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/widgets/press_scale.dart';
 import '../../../core/presentation/widgets/success_toast.dart';
 import '../../../core/presentation/widgets/unsaved_changes_guard.dart';
@@ -40,14 +41,19 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
     if (!_dirty) setState(() => _dirty = true);
   }
 
-  static const _commonTypes = [
-    'Emas',
-    'Saham',
-    'Reksadana',
-    'Kripto',
-    'Properti',
-    'Deposito',
-    'Lainnya',
+  /// Common-type suggestion chips: pairs a fixed Indonesian storage value
+  /// (matches the data model / existing saved assets, which are always
+  /// stored in Indonesian regardless of UI language) with its localized
+  /// display label — tapping a chip fills `_typeController` with the
+  /// Indonesian value, consistent across ID/EN UI.
+  List<({String value, String label})> _commonTypes(AppLocalizations l10n) => [
+    (value: 'Emas', label: l10n.assetFormScreenTypeGold),
+    (value: 'Saham', label: l10n.assetFormScreenTypeStocks),
+    (value: 'Reksadana', label: l10n.assetFormScreenTypeMutualFund),
+    (value: 'Kripto', label: l10n.assetFormScreenTypeCrypto),
+    (value: 'Properti', label: l10n.assetFormScreenTypeProperty),
+    (value: 'Deposito', label: l10n.assetFormScreenTypeDeposit),
+    (value: 'Lainnya', label: l10n.assetFormScreenTypeOther),
   ];
 
   @override
@@ -88,17 +94,18 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
     // D18/M17 bug #8: re-entrancy guard against double-tap.
     if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
+    final l10n = AppLocalizations.of(context)!;
 
     final purchase = _getPurchaseValue();
     final current = _getCurrentValue();
 
     if (purchase == null || purchase <= 0) {
-      setState(() => _formError = 'Modal awal harus lebih besar dari 0.');
+      setState(() => _formError = l10n.assetFormScreenPurchaseRequiredError);
       return;
     }
     if (current == null || current < 0) {
       setState(
-        () => _formError = 'Nilai sekarang tidak boleh kosong atau negatif.',
+        () => _formError = l10n.assetFormScreenCurrentValueRequiredError,
       );
       return;
     }
@@ -120,7 +127,7 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
           );
 
       if (mounted) {
-        showSuccessToast(context, 'Aset berhasil disimpan');
+        showSuccessToast(context, l10n.assetFormScreenSaveSuccessToast);
         _dirty = false;
         Navigator.of(context).pop();
       }
@@ -128,7 +135,7 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
       if (mounted) {
         setState(() {
           _isSubmitting = false;
-          _formError = 'Gagal menyimpan aset: $e';
+          _formError = l10n.assetFormScreenSaveError(e);
         });
       }
     }
@@ -137,6 +144,7 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isEdit = widget.asset != null;
     final purchase = _getPurchaseValue();
     final current = _getCurrentValue();
@@ -147,13 +155,16 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
         ? (gainLoss / purchase) * 100
         : 0.0;
     final isGain = gainLoss >= 0;
+    final sign = isGain ? '+' : '';
 
     return UnsavedChangesGuard(
       isDirty: () => _dirty,
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            isEdit ? 'Edit Aset' : 'Tambah Aset',
+            isEdit
+                ? l10n.assetFormScreenEditTitle
+                : l10n.assetFormScreenAddTitle,
             style: AppTypography.script(fontSize: 20),
           ),
         ),
@@ -165,7 +176,7 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
               children: [
                 // Name
                 Text(
-                  'Nama Aset',
+                  l10n.assetFormScreenNameLabel,
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -174,14 +185,13 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
                 TextFormField(
                   key: const ValueKey('asset_name_input'),
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    hintText:
-                        'misal: Emas Antam 10g, BBCA, Reksadana Pasar Uang',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: l10n.assetFormScreenNameHint,
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
-                      return 'Nama aset tidak boleh kosong.';
+                      return l10n.assetFormScreenNameEmptyError;
                     }
                     return null;
                   },
@@ -190,7 +200,7 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
 
                 // Type
                 Text(
-                  'Tipe Aset',
+                  l10n.assetFormScreenTypeLabel,
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -199,13 +209,13 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
                 TextFormField(
                   key: const ValueKey('asset_type_input'),
                   controller: _typeController,
-                  decoration: const InputDecoration(
-                    hintText: 'misal: Emas, Saham, Reksadana, Kripto',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: l10n.assetFormScreenTypeHint,
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
-                      return 'Tipe aset tidak boleh kosong.';
+                      return l10n.assetFormScreenTypeEmptyError;
                     }
                     return null;
                   },
@@ -215,13 +225,13 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
                 Wrap(
                   spacing: 6,
                   runSpacing: 4,
-                  children: _commonTypes.map((t) {
+                  children: _commonTypes(l10n).map((t) {
                     return ActionChip(
-                      label: Text(t, style: theme.textTheme.labelSmall),
+                      label: Text(t.label, style: theme.textTheme.labelSmall),
                       visualDensity: VisualDensity.compact,
                       onPressed: () {
                         setState(() {
-                          _typeController.text = t;
+                          _typeController.text = t.value;
                         });
                       },
                     );
@@ -231,7 +241,7 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
 
                 // Purchase value
                 Text(
-                  'Modal Awal / Nilai Beli (Rp)',
+                  l10n.assetFormScreenPurchaseValueLabel,
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -251,8 +261,9 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
                   validator: (val) => validateRupiahAmount(
                     val,
                     allowZero: false,
-                    emptyMessage: 'Modal awal tidak boleh kosong.',
-                    invalidMessage: 'Modal awal harus lebih besar dari 0.',
+                    emptyMessage: l10n.assetFormScreenPurchaseValueEmptyError,
+                    invalidMessage:
+                        l10n.assetFormScreenPurchaseValueInvalidError,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -262,7 +273,7 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Nilai Sekarang (Rp)',
+                      l10n.assetFormScreenCurrentValueLabel,
                       style: theme.textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -280,7 +291,7 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
                       style: TextButton.styleFrom(
                         visualDensity: VisualDensity.compact,
                       ),
-                      child: const Text('Sama dg modal'),
+                      child: Text(l10n.assetFormScreenCopyFromPurchaseButton),
                     ),
                   ],
                 ),
@@ -299,8 +310,9 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
                   validator: (val) => validateRupiahAmount(
                     val,
                     allowZero: true,
-                    emptyMessage: 'Nilai sekarang tidak boleh kosong.',
-                    invalidMessage: 'Nilai sekarang tidak boleh negatif.',
+                    emptyMessage: l10n.assetFormScreenCurrentValueEmptyError,
+                    invalidMessage:
+                        l10n.assetFormScreenCurrentValueNegativeError,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -329,13 +341,13 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Estimasi Gain / Loss:',
+                          l10n.assetFormScreenGainLossPreviewLabel,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         Text(
-                          '${isGain ? '+' : ''}${formatRupiah(gainLoss)} (${isGain ? '+' : ''}${returnPercent.toStringAsFixed(1)}%)',
+                          '$sign${formatRupiah(gainLoss)} ($sign${returnPercent.toStringAsFixed(1)}%)',
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: isGain
@@ -369,7 +381,7 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '100% Offline. Nilai aset diperbarui secara manual oleh Anda kapan saja (D8).',
+                          l10n.assetFormScreenOfflineNotice,
                           style: theme.textTheme.bodySmall,
                         ),
                       ),
@@ -412,7 +424,9 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
                             ),
                           )
                         : Text(
-                            isEdit ? 'Simpan Perubahan' : 'Tambah Aset',
+                            isEdit
+                                ? l10n.assetFormScreenSaveChangesButton
+                                : l10n.assetFormScreenAddButton,
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 16,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../database/transaction.dart' as db;
+import '../../l10n/app_localizations.dart';
 import '../../motion/motion_durations.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
@@ -23,10 +24,12 @@ class FabSpeedDial extends StatelessWidget {
   const FabSpeedDial({super.key});
 
   Future<void> _open(BuildContext context) async {
+    final barrierLabel = AppLocalizations.of(context)!
+        .fabSpeedDialCloseBarrierLabel;
     await showGeneralDialog<void>(
       context: context,
       barrierDismissible: false,
-      barrierLabel: 'Tutup',
+      barrierLabel: barrierLabel,
       barrierColor: Colors.black.withValues(alpha: 0.6),
       transitionDuration: Duration.zero,
       pageBuilder: (dialogContext, _, _) => const _SpeedDialOverlay(),
@@ -111,6 +114,7 @@ class _SpeedDialOverlayState extends State<_SpeedDialOverlay>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
@@ -136,7 +140,7 @@ class _SpeedDialOverlayState extends State<_SpeedDialOverlay>
                   ),
                   child: _SpeedDialOption(
                     key: const ValueKey('fab_option_add_asset'),
-                    label: 'Tambah Aset Baru',
+                    label: l10n.fabSpeedDialAddAssetLabel,
                     icon: Icons.account_balance_outlined,
                     dark: true,
                     onTap: () => _openScreen(context, const AssetFormScreen()),
@@ -150,7 +154,7 @@ class _SpeedDialOverlayState extends State<_SpeedDialOverlay>
                   ),
                   child: _SpeedDialOption(
                     key: const ValueKey('fab_option_add_goal'),
-                    label: 'Tambah Goal Baru',
+                    label: l10n.fabSpeedDialAddGoalLabel,
                     icon: Icons.track_changes_outlined,
                     dark: true,
                     onTap: () => _openScreen(context, const GoalFormScreen()),
@@ -164,7 +168,7 @@ class _SpeedDialOverlayState extends State<_SpeedDialOverlay>
                   ),
                   child: _SpeedDialOption(
                     key: const ValueKey('fab_option_transfer'),
-                    label: 'Transfer Antar Dompet',
+                    label: l10n.fabSpeedDialTransferLabel,
                     icon: Icons.swap_horiz,
                     dark: true,
                     onTap: () =>
@@ -179,7 +183,7 @@ class _SpeedDialOverlayState extends State<_SpeedDialOverlay>
                   ),
                   child: _SpeedDialOption(
                     key: const ValueKey('fab_option_income'),
-                    label: 'Catat Pemasukan',
+                    label: l10n.fabSpeedDialIncomeLabel,
                     // M19: was `arrow_upward`, mirrored vs. the convention
                     // used everywhere else (transaction list rows +
                     // transaction form's type toggle both use
@@ -203,7 +207,7 @@ class _SpeedDialOverlayState extends State<_SpeedDialOverlay>
                   ),
                   child: _SpeedDialOption(
                     key: const ValueKey('fab_option_expense'),
-                    label: 'Catat Pengeluaran',
+                    label: l10n.fabSpeedDialExpenseLabel,
                     // M19: was `arrow_downward` — see note above.
                     icon: Icons.arrow_upward,
                     dark: false,

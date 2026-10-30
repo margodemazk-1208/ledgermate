@@ -21,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:ledgermate/core/database/transaction.dart' as db;
+import 'package:ledgermate/core/l10n/app_localizations.dart';
 import 'package:ledgermate/core/theme/app_theme.dart';
 import 'package:ledgermate/core/theme/app_typography.dart';
 import 'package:ledgermate/features/transactions/application/transaction_providers.dart';
@@ -155,6 +156,9 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.dark,
+          locale: const Locale('id'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: const TransactionsScreen(),
         ),
       ),
@@ -189,6 +193,9 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.light,
+          locale: const Locale('id'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: const TransactionsScreen(),
         ),
       ),

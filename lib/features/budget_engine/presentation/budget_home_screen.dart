@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/navigation/app_shell.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
@@ -35,6 +36,7 @@ class BudgetHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final budgetAsync = ref.watch(dailyBudgetSummaryProvider);
 
     return Scaffold(
@@ -86,7 +88,7 @@ class BudgetHomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Gagal memuat budget: $error',
+                  l10n.homeScreenLoadError(error),
                   style: theme.textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -109,6 +111,7 @@ class _DashboardBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isPositive = summary.isPositive;
     // M19/D18 contrast fix: dark-mode burgundy text directly on the card
     // surface measured ~2.2:1 (D18 audit) — `burgundyText` swaps in a
@@ -154,8 +157,8 @@ class _DashboardBody extends ConsumerWidget {
                     const SizedBox(width: 6),
                     Text(
                       summary.incomeFrequency == IncomeFrequency.periodic
-                          ? 'Mode Periodik'
-                          : 'Mode Harian (Bekel)',
+                          ? l10n.homeScreenModePeriodicBadge
+                          : l10n.homeScreenModeDailyBadge,
                       style: AppTypography.mono(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -183,7 +186,7 @@ class _DashboardBody extends ConsumerWidget {
                 )
               : _SimpleValueCard(
                   key: const ValueKey('home_total_saldo_card'),
-                  label: 'Total Saldo',
+                  label: l10n.homeScreenTotalSaldoLabel,
                   value: formatRupiah(totalSaldoAsync.value ?? 0),
                 ),
           const SizedBox(height: 16),
@@ -234,7 +237,7 @@ class _DashboardBody extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Jatah Hari Ini',
+                  l10n.homeScreenDailyAllowanceLabel,
                   style: AppTypography.mono(
                     fontSize: 13,
                     letterSpacing: 0.5,
@@ -255,7 +258,10 @@ class _DashboardBody extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(_subtitleText(summary), style: theme.textTheme.bodyMedium),
+                Text(
+                  _subtitleText(l10n, summary),
+                  style: theme.textTheme.bodyMedium,
+                ),
               ],
             ),
           ),
@@ -272,13 +278,16 @@ class _DashboardBody extends ConsumerWidget {
     );
   }
 
-  static String _subtitleText(DailyBudgetSummary summary) {
+  static String _subtitleText(
+    AppLocalizations l10n,
+    DailyBudgetSummary summary,
+  ) {
     if (summary.incomeFrequency == IncomeFrequency.periodic &&
         summary.modeA != null) {
       final days = summary.modeA!.remainingDays;
-      return 'Sisa $days hari sampai jadwal payday berikutnya';
+      return l10n.homeScreenSubtitleRemainingDays(days);
     } else if (summary.modeB != null) {
-      return 'Akumulasi carry-over kemarin & bekel hari ini';
+      return l10n.homeScreenSubtitleCarryOver;
     }
     return '';
   }
@@ -292,6 +301,7 @@ class _CycleTransitionBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       key: const ValueKey('cycle_transition_banner'),
       padding: const EdgeInsets.all(16),
@@ -314,8 +324,8 @@ class _CycleTransitionBanner extends StatelessWidget {
               Expanded(
                 child: Text(
                   summary.incomeFrequency == IncomeFrequency.periodic
-                      ? 'Siklus Gajian Berakhir'
-                      : 'Rollover Harian Dibutuhkan',
+                      ? l10n.homeScreenCycleExpiredPeriodicTitle
+                      : l10n.homeScreenCycleExpiredDailyTitle,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppColors.expenseRedText(theme.brightness),
@@ -327,8 +337,8 @@ class _CycleTransitionBanner extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             summary.incomeFrequency == IncomeFrequency.periodic
-                ? 'Jadwal gajian telah tercapai. Mulai siklus baru untuk memperbarui Uang Jajan Aman.'
-                : 'Hari baru telah tiba. Konfirmasi carry-over saldo untuk memulai hari ini.',
+                ? l10n.homeScreenCycleExpiredPeriodicMessage
+                : l10n.homeScreenCycleExpiredDailyMessage,
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -348,8 +358,8 @@ class _CycleTransitionBanner extends StatelessWidget {
             icon: const Icon(Icons.arrow_forward, size: 16),
             label: Text(
               summary.incomeFrequency == IncomeFrequency.periodic
-                  ? 'Mulai Siklus Baru'
-                  : 'Rollover Hari Ini',
+                  ? l10n.homeScreenStartNewCycleButton
+                  : l10n.homeScreenRolloverTodayButton,
             ),
           ),
         ],
@@ -536,6 +546,7 @@ class _BreakdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final modeA = summary.modeA;
     final modeB = summary.modeB;
 
@@ -550,23 +561,23 @@ class _BreakdownCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Rincian Perhitungan',
+            l10n.homeScreenBreakdownTitle,
             style: AppTypography.script(fontSize: 16),
           ),
           const SizedBox(height: 16),
           if (modeA != null) ...[
             _MetricRow(
-              label: 'Sisa Saldo Siklus',
+              label: l10n.homeScreenRemainingCycleBalanceLabel,
               value: formatRupiah(modeA.remainingBalance),
             ),
             const Divider(height: 20),
             _MetricRow(
-              label: 'Jatah Kotor / Hari',
+              label: l10n.homeScreenGrossDailyAllowanceLabel,
               value: formatRupiah(modeA.dailySpendingAllowance),
             ),
             const Divider(height: 20),
             _MetricRow(
-              label: 'Tabungan Goal / Hari',
+              label: l10n.homeScreenGoalSavingsDailyLabel,
               value: '- ${formatRupiah(modeA.dailySavingsReserve)}',
               valueColor: modeA.dailySavingsReserve > 0
                   ? AppColors.savingsGreenText(theme.brightness)
@@ -574,22 +585,22 @@ class _BreakdownCard extends StatelessWidget {
             ),
           ] else if (modeB != null) ...[
             _MetricRow(
-              label: 'Saldo Carry-Over Kemarin',
+              label: l10n.homeScreenYesterdayCarryOverLabel,
               value: formatRupiah(modeB.saldoCarryOver),
             ),
             const Divider(height: 20),
             _MetricRow(
-              label: 'Bekel Masuk Hari Ini',
+              label: l10n.homeScreenTodayAllowanceInLabel,
               value: '+ ${formatRupiah(modeB.bekelHariIni)}',
             ),
             const Divider(height: 20),
             _MetricRow(
-              label: 'Pengeluaran Wajib Hari Ini',
+              label: l10n.homeScreenMandatoryExpenseTodayLabel,
               value: '- ${formatRupiah(modeB.pengeluaranWajibHariIni)}',
             ),
             const Divider(height: 20),
             _MetricRow(
-              label: 'Pengeluaran Dicatat Hari Ini',
+              label: l10n.homeScreenRecordedExpenseTodayLabel,
               value: '- ${formatRupiah(modeB.pengeluaranHariIni)}',
               valueColor: modeB.pengeluaranHariIni > 0
                   ? AppColors.expenseRedText(theme.brightness)
@@ -597,7 +608,7 @@ class _BreakdownCard extends StatelessWidget {
             ),
             const Divider(height: 20),
             _MetricRow(
-              label: 'Tabungan Goal / Hari',
+              label: l10n.homeScreenGoalSavingsDailyLabel,
               value: '- ${formatRupiah(modeB.dailySavingsReserve)}',
               valueColor: modeB.dailySavingsReserve > 0
                   ? AppColors.savingsGreenText(theme.brightness)
@@ -663,6 +674,7 @@ class _RincianTransaksiCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final txsAsync = ref.watch(transactionsStreamProvider);
     final txs = txsAsync.value ?? const <db.Transaction>[];
 
@@ -690,7 +702,7 @@ class _RincianTransaksiCard extends ConsumerWidget {
             children: [
               Flexible(
                 child: Text(
-                  'Rincian Transaksi',
+                  l10n.homeScreenTransactionSummaryTitle,
                   style: AppTypography.script(fontSize: 16),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -710,7 +722,7 @@ class _RincianTransaksiCard extends ConsumerWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        'Lihat Selengkapnya',
+                        l10n.homeScreenViewAllLink,
                         style: AppTypography.mono(
                           fontSize: 11,
                           color: theme.textTheme.bodySmall?.color,
@@ -738,12 +750,12 @@ class _RincianTransaksiCard extends ConsumerWidget {
             )
           else if (txsAsync.hasError)
             Text(
-              'Gagal memuat ringkasan transaksi.',
+              l10n.homeScreenTransactionSummaryLoadError,
               style: theme.textTheme.bodySmall,
             )
           else if (txs.isEmpty)
             Text(
-              'Belum ada transaksi tercatat.',
+              l10n.homeScreenNoTransactionsYet,
               style: theme.textTheme.bodySmall,
             )
           else
@@ -752,7 +764,7 @@ class _RincianTransaksiCard extends ConsumerWidget {
               children: [
                 Expanded(
                   child: _RincianColumn(
-                    label: 'Pemasukan',
+                    label: l10n.homeScreenIncomeColumnLabel,
                     amounts: income.map((t) => t.amount).toList(),
                     color: AppColors.savingsGreenText(theme.brightness),
                   ),
@@ -760,7 +772,7 @@ class _RincianTransaksiCard extends ConsumerWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _RincianColumn(
-                    label: 'Pengeluaran',
+                    label: l10n.homeScreenExpenseColumnLabel,
                     amounts: expense.map((t) => t.amount).toList(),
                     color: AppColors.expenseRedText(theme.brightness),
                   ),
@@ -787,6 +799,7 @@ class _RincianColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -807,7 +820,7 @@ class _RincianColumn extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         if (amounts.isEmpty)
-          Text('Belum ada', style: theme.textTheme.bodySmall)
+          Text(l10n.homeScreenNoneYet, style: theme.textTheme.bodySmall)
         else
           for (var i = 0; i < amounts.length; i++)
             Padding(

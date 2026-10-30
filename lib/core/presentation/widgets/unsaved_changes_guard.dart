@@ -5,29 +5,29 @@
 // instead of each screen inventing its own.
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart' show AppLocalizations;
+
 /// Shows a confirmation dialog asking the user whether to discard unsaved
 /// changes. Returns `true` if the user chose to discard (i.e. the caller
 /// should proceed with popping), `false`/`null` otherwise.
 Future<bool> confirmDiscardChanges(BuildContext context) async {
+  final l10n = AppLocalizations.of(context)!;
   final result = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
       key: const ValueKey('discard_changes_dialog'),
-      title: const Text('Buang Perubahan?'),
-      content: const Text(
-        'Kamu memiliki perubahan yang belum disimpan. Yakin ingin keluar '
-        'tanpa menyimpan?',
-      ),
+      title: Text(l10n.unsavedChangesGuardDialogTitle),
+      content: Text(l10n.unsavedChangesGuardDialogContent),
       actions: [
         TextButton(
           key: const ValueKey('discard_changes_cancel_button'),
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('Lanjut Edit'),
+          child: Text(l10n.unsavedChangesGuardContinueEditingButton),
         ),
         FilledButton(
           key: const ValueKey('discard_changes_confirm_button'),
           onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text('Buang Perubahan'),
+          child: Text(l10n.unsavedChangesGuardDiscardButton),
         ),
       ],
     ),

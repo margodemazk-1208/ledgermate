@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../application/export_import_providers.dart';
@@ -13,6 +14,7 @@ class DataManagementCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final state = ref.watch(exportImportNotifierProvider);
     final notifier = ref.read(exportImportNotifierProvider.notifier);
 
@@ -51,12 +53,12 @@ class DataManagementCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Cadangkan & Pulihkan Data',
+                        l10n.dataManagementCardTitle,
                         style: AppTypography.script(fontSize: 17),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Format JSON & CSV (100% Offline, FR-08)',
+                        l10n.dataManagementCardSubtitle,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.textTheme.bodySmall?.color?.withValues(
                             alpha: 0.7,
@@ -70,7 +72,7 @@ class DataManagementCard extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Cadangkan seluruh database secara berkala atau pindahkan data finansial ke perangkat baru tanpa koneksi server.',
+              l10n.dataManagementCardDescription,
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
@@ -84,9 +86,9 @@ class DataManagementCard extends ConsumerWidget {
                   color: AppColors.brandTeal.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    SizedBox(
+                    const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
@@ -94,8 +96,8 @@ class DataManagementCard extends ConsumerWidget {
                         key: ValueKey('export_import_progress_indicator'),
                       ),
                     ),
-                    SizedBox(width: 12),
-                    Text('Sedang memproses data...'),
+                    const SizedBox(width: 12),
+                    Text(l10n.dataManagementCardProcessingMessage),
                   ],
                 ),
               ),
@@ -127,7 +129,7 @@ class DataManagementCard extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Ekspor Berhasil!',
+                            l10n.dataManagementCardExportSuccessTitle,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: AppColors.savingsGreen,
                               fontWeight: FontWeight.bold,
@@ -184,17 +186,19 @@ class DataManagementCard extends ConsumerWidget {
             _buildActionTile(
               context: context,
               icon: Icons.data_object_outlined,
-              title: 'Cadangkan Database (JSON)',
-              subtitle: 'Simpan semua koleksi (profil, gajian, kategori, transaksi, goals, aset) ke file JSON.',
+              title: l10n.dataManagementCardExportJsonTitle,
+              subtitle: l10n.dataManagementCardExportJsonSubtitle,
               buttonKey: const ValueKey('export_json_button'),
-              buttonLabel: 'Cadangkan (JSON)',
+              buttonLabel: l10n.dataManagementCardExportJsonButton,
               isLoading: state.isLoading,
               onPressed: () async {
                 final path = await notifier.exportJson();
                 if (path != null && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('File cadangan tersimpan di:\n$path'),
+                      content: Text(
+                        l10n.dataManagementCardExportJsonSuccessToast(path),
+                      ),
                     ),
                   );
                 }
@@ -206,17 +210,19 @@ class DataManagementCard extends ConsumerWidget {
             _buildActionTile(
               context: context,
               icon: Icons.table_chart_outlined,
-              title: 'Ekspor Riwayat Transaksi (CSV)',
-              subtitle: 'Format tabel CSV RFC 4180 dengan header berbahasa Indonesia untuk spreadsheet.',
+              title: l10n.dataManagementCardExportCsvTitle,
+              subtitle: l10n.dataManagementCardExportCsvSubtitle,
               buttonKey: const ValueKey('export_csv_button'),
-              buttonLabel: 'Ekspor CSV',
+              buttonLabel: l10n.dataManagementCardExportCsvButton,
               isLoading: state.isLoading,
               onPressed: () async {
                 final path = await notifier.exportCsv();
                 if (path != null && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Tabel transaksi CSV tersimpan di:\n$path'),
+                      content: Text(
+                        l10n.dataManagementCardExportCsvSuccessToast(path),
+                      ),
                     ),
                   );
                 }
@@ -228,10 +234,10 @@ class DataManagementCard extends ConsumerWidget {
             _buildActionTile(
               context: context,
               icon: Icons.settings_backup_restore_outlined,
-              title: 'Pulihkan Data (JSON)',
-              subtitle: 'Pilih file .json cadangan untuk mengembalikan seluruh database ke kondisi tersimpan.',
+              title: l10n.dataManagementCardRestoreTitle,
+              subtitle: l10n.dataManagementCardRestoreSubtitle,
               buttonKey: const ValueKey('restore_backup_button'),
-              buttonLabel: 'Pilih File Cadangan',
+              buttonLabel: l10n.dataManagementCardRestoreButton,
               isLoading: state.isLoading,
               isDestructive: true,
               onPressed: () async {
@@ -253,9 +259,9 @@ class DataManagementCard extends ConsumerWidget {
                         );
                         if (success && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                            SnackBar(
                               content: Text(
-                                'Database lokal berhasil dipulihkan dari cadangan.',
+                                l10n.dataManagementCardRestoreSuccessToast,
                               ),
                             ),
                           );

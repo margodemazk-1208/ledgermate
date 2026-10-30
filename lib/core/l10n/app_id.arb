@@ -12,5 +12,1131 @@
   "payCycleAlert": "Siklus Gajian Baru",
   "goalMilestoneAlert": "Milestone Target Tabungan",
   "categoryManagement": "Kelola Kategori",
-  "aboutTitle": "Tentang LedgerMate"
+  "aboutTitle": "Tentang LedgerMate",
+  "appRootDataLoadErrorMessage": "Gagal memuat data: {error}",
+  "@appRootDataLoadErrorMessage": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "initialIncomeStepPeriodicTitle": "Gaji Siklus Ini",
+  "initialIncomeStepDailyTitle": "Bekel Awal Hari Ini",
+  "initialIncomeStepPeriodicSubtitle": "Masukkan total gaji tetap untuk siklus gajian ini.",
+  "initialIncomeStepDailySubtitle": "Masukkan uang yang sudah kamu pegang untuk mulai hari ini.",
+  "initialIncomeStepEmptyAmountError": "Jumlah tidak boleh kosong",
+  "initialIncomeStepInvalidAmountError": "Jumlah tidak boleh negatif atau nol",
+  "initialIncomeStepPeriodicLabel": "Gaji tetap",
+  "initialIncomeStepDailyLabel": "Jumlah awal",
+  "incomeFrequencyStepTitle": "Pola Pendapatanmu",
+  "incomeFrequencyStepSubtitle": "Pilih yang paling cocok dengan cara kamu menerima uang.",
+  "incomeFrequencyStepPeriodicTitle": "Periodik",
+  "incomeFrequencyStepPeriodicDescription": "Gajian lump-sum di tanggal tertentu — mingguan, 2 mingguan, bulanan, atau custom.",
+  "incomeFrequencyStepDailyTitle": "Harian",
+  "incomeFrequencyStepDailyDescription": "Bekel/income diterima tiap hari (termasuk jadwal nggak rata) — tanpa tanggal gajian tetap.",
+  "incomeFrequencyStepIntervalLabel": "Interval",
+  "incomeFrequencyStepNextPaydayLabel": "Tanggal income berikutnya",
+  "incomeFrequencyStepPickDate": "Pilih tanggal",
+  "incomeFrequencyStepIntervalWeekly": "Mingguan",
+  "incomeFrequencyStepIntervalBiweekly": "2 Mingguan",
+  "incomeFrequencyStepIntervalMonthly": "Bulanan",
+  "incomeFrequencyStepIntervalCustom": "Custom",
+  "mandatoryExpensesStepTitle": "Pengeluaran Wajib",
+  "mandatoryExpensesStepSubtitle": "Kos, cicilan, dll — opsional, tambahkan sebanyak yang kamu perlukan.",
+  "mandatoryExpensesStepEmptyMessage": "Belum ada pengeluaran wajib ditambahkan.",
+  "mandatoryExpensesStepNameEmptyError": "Nama tidak boleh kosong",
+  "mandatoryExpensesStepAmountEmptyError": "Jumlah tidak boleh kosong",
+  "mandatoryExpensesStepInvalidAmountError": "Jumlah tidak boleh negatif atau nol",
+  "mandatoryExpensesStepDeleteTooltip": "Hapus Pengeluaran",
+  "mandatoryExpensesStepNameFieldLabel": "Nama pengeluaran",
+  "mandatoryExpensesStepAmountFieldLabel": "Jumlah",
+  "mandatoryExpensesStepAddButton": "Tambah pengeluaran",
+  "walletSetupStepTitle": "Atur Dompet Pertamamu",
+  "walletSetupStepSubtitle": "Dompet tempat menyimpan uangmu (misal: Tunai, Rekening Bank, E-Wallet). Kamu bisa menambah dompet lain nanti.",
+  "walletSetupStepNameFieldLabel": "Nama Dompet",
+  "walletSetupStepNameFieldHint": "Misal: Dompet Utama, Tunai, Rekening BCA",
+  "walletSetupStepNameEmptyError": "Nama dompet tidak boleh kosong",
+  "walletSetupStepIconPickerLabel": "Pilih Ikon Dompet",
+  "walletSetupStepStartingBalanceLabel": "Saldo Awal",
+  "walletSetupStepStartingBalanceHelper": "Saldo riil yang ada di dompet ini saat mulai menggunakan aplikasi.",
+  "walletSetupStepNegativeBalanceError": "Saldo awal tidak boleh negatif",
+  "walletSetupStepIncludeBudgetTitle": "Sertakan dalam Budget Harian",
+  "walletSetupStepIncludeBudgetSubtitle": "Uang di dompet ini akan dihitung ke dalam Uang Jajan Aman Hari Ini (BR-04).",
+  "onboardingScreenBackButton": "Kembali",
+  "onboardingScreenFinishButton": "Selesai",
+  "onboardingScreenNextButton": "Lanjut",
+  "onboardingScreenIncompleteDataError": "Data belum lengkap — kembali ke langkah sebelumnya.",
+  "realismWarningDialogTitle": "Target Mungkin Terlalu Berat",
+  "realismWarningDialogImpactMessage": "Jika target ini disimpan, total alokasi tabungan harian Anda menjadi {amount}/hari.",
+  "@realismWarningDialogImpactMessage": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "realismWarningDialogNegativeBudgetMessage": "Hal ini akan mendorong Uang Jajan Aman Hari Ini ke angka negatif: {amount}/hari.",
+  "@realismWarningDialogNegativeBudgetMessage": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "realismWarningDialogHint": "Memperpanjang tanggal target akan menurunkan porsi tabungan harian sehingga anggaran harian tetap aman.",
+  "realismWarningDialogExtendButton": "Perpanjang tanggal target",
+  "realismWarningDialogProceedButton": "Lanjut, saya paham risikonya",
+  "unsavedChangesGuardDialogTitle": "Buang Perubahan?",
+  "unsavedChangesGuardDialogContent": "Kamu memiliki perubahan yang belum disimpan. Yakin ingin keluar tanpa menyimpan?",
+  "unsavedChangesGuardContinueEditingButton": "Lanjut Edit",
+  "unsavedChangesGuardDiscardButton": "Buang Perubahan",
+  "databaseErrorScreenTitle": "Gagal Memuat Data Lokal",
+  "databaseErrorScreenDescription": "LedgerMate tidak dapat membuka database lokal di perangkat ini. Ini bisa terjadi akibat penyimpanan penuh atau proses yang terganggu saat terakhir menyimpan data.",
+  "databaseErrorScreenSuggestion": "Coba: (1) pastikan ruang penyimpanan perangkat cukup, lalu tekan \"Coba Lagi\"; (2) jika masih gagal, restart aplikasi sepenuhnya. Data tidak akan hilang kecuali aplikasi di-uninstall.",
+  "databaseErrorScreenRetryButton": "Coba Lagi",
+  "appBottomNavHomeLabel": "Home",
+  "appBottomNavTransactionsLabel": "Transaksi",
+  "appBottomNavGoalsLabel": "Goals",
+  "appBottomNavAssetsLabel": "Aset",
+  "appBottomNavAnalyticsLabel": "Analitik",
+  "appBottomNavSettingsLabel": "Pengaturan",
+  "fabSpeedDialCloseBarrierLabel": "Tutup",
+  "fabSpeedDialAddAssetLabel": "Tambah Aset Baru",
+  "fabSpeedDialAddGoalLabel": "Tambah Goal Baru",
+  "fabSpeedDialTransferLabel": "Transfer Antar Dompet",
+  "fabSpeedDialIncomeLabel": "Catat Pemasukan",
+  "fabSpeedDialExpenseLabel": "Catat Pengeluaran",
+  "goalsScreenTitle": "Target Tabungan",
+  "goalsScreenLoadError": "Gagal memuat target tabungan: {error}",
+  "@goalsScreenLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "goalsScreenEmptyTitle": "Belum Ada Target Tabungan",
+  "goalsScreenEmptyMessage": "Buat target finansial untuk melacak estimasi tercapai dan menyisihkan dana harian secara otomatis.",
+  "goalsScreenCreateFirstButton": "Buat Target Pertama",
+  "goalsScreenActiveListHeader": "Daftar Target Aktif ({count})",
+  "@goalsScreenActiveListHeader": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsScreenCompletedCountLabel": "{count} selesai",
+  "@goalsScreenCompletedCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalsScreenAddGoalCardLabel": "Tambah Goal Baru",
+  "goalsOverviewCardTitle": "Total Progres Tabungan",
+  "goalsOverviewCardCollectedLabel": "Terkumpul",
+  "goalsOverviewCardTargetLabel": "Total Target",
+  "goalsOverviewCardDailyReserveLabel": "Cadangan/Hari",
+  "goalFormScreenEditTitle": "Edit Target Tabungan",
+  "goalFormScreenAddTitle": "Tambah Target Baru",
+  "goalFormScreenNameLabel": "Nama Target",
+  "goalFormScreenNameHint": "Misal: Laptop Baru, Dana Darurat",
+  "goalFormScreenNameEmptyError": "Nama target tidak boleh kosong",
+  "goalFormScreenTargetAmountLabel": "Target Nominal",
+  "goalFormScreenTargetAmountError": "Target nominal harus lebih besar dari 0",
+  "goalFormScreenCurrentAmountLabel": "Saldo Awal / Sudah Terkumpul",
+  "goalFormScreenCurrentAmountHelper": "Isi jika sudah mulai menabung sebelum target ini dibuat",
+  "goalFormScreenCurrentAmountNegativeError": "Saldo tidak boleh negatif",
+  "goalFormScreenTargetDateTitle": "Target Tanggal Tercapai",
+  "goalFormScreenManualAllocationTitle": "Override Alokasi Harian Manual",
+  "goalFormScreenManualAllocationSubtitle": "Tetapkan nominal tabungan harian tetap, bukan hasil hitungan otomatis formula.",
+  "goalFormScreenManualAllocationFieldLabel": "Nominal Alokasi Harian (Rp/hari)",
+  "goalFormScreenManualAllocationHelper": "Nominal ini langsung menggantikan kalkulasi formula otomatis",
+  "goalFormScreenManualAllocationError": "Masukkan alokasi harian yang lebih besar dari 0",
+  "goalFormScreenTargetAmountRequiredError": "Target nominal harus lebih besar dari 0.",
+  "goalFormScreenTargetDateError": "Tanggal target harus lebih dari hari ini.",
+  "goalFormScreenSaveSuccessToast": "Target tabungan berhasil disimpan",
+  "goalFormScreenSaveError": "Gagal menyimpan target: {error}",
+  "@goalFormScreenSaveError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "goalFormScreenUpdateButton": "Perbarui Target",
+  "goalFormScreenSaveButton": "Simpan Target",
+  "goalCardDeleteDialogTitle": "Hapus Target?",
+  "goalCardDeleteDialogMessage": "Apakah Anda yakin ingin menghapus target \"{goalName}\"? Tindakan ini tidak dapat dibatalkan.",
+  "@goalCardDeleteDialogMessage": {
+    "placeholders": {
+      "goalName": {
+        "type": "String"
+      }
+    }
+  },
+  "goalCardCancelButton": "Batal",
+  "goalCardDeleteButton": "Hapus",
+  "goalCardTargetDateLabel": "Target: {date}",
+  "@goalCardTargetDateLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "goalCardCompletedBadge": "Tercapai",
+  "goalCardManualOverrideBadge": "Override Manual",
+  "goalCardTargetAmountLabel": "{targetAmount} ({percent}%)",
+  "@goalCardTargetAmountLabel": {
+    "placeholders": {
+      "targetAmount": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "goalCardCompletedMessage": "Target telah terpenuhi sepenuhnya!",
+  "goalCardEstimatedCompletionMessage": "Estimasi tercapai: {date}",
+  "@goalCardEstimatedCompletionMessage": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "goalCardNoEstimateMessage": "Belum ada estimasi (alokasi 0)",
+  "goalCardDoneLabel": "Selesai",
+  "goalCardDailyAllocationLabel": "{amount}/hari",
+  "@goalCardDailyAllocationLabel": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "goalCardWithdrawButton": "Tarik dari Goal",
+  "goalCardEditButton": "Edit",
+  "goalCardDeleteTooltip": "Hapus Target",
+  "withdrawDialogInvalidAmountError": "Nominal harus lebih besar dari 0.",
+  "withdrawDialogExceedsBalanceError": "Nominal melebihi tabungan saat ini.",
+  "withdrawDialogConfirmTitle": "Konfirmasi Penarikan",
+  "withdrawDialogConfirmMessage": "Tarik {amount} dari target \"{goalName}\"?\n\nSaldo target akan berkurang dan nominal ini akan otomatis kembali ke saldo aktif periode berjalan.",
+  "@withdrawDialogConfirmMessage": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "goalName": {
+        "type": "String"
+      }
+    }
+  },
+  "withdrawDialogCancelButton": "Batal",
+  "withdrawDialogConfirmSubmitButton": "Tarik Sekarang",
+  "withdrawDialogSuccessToast": "Penarikan {amount} berhasil",
+  "@withdrawDialogSuccessToast": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "withdrawDialogGenericError": "Gagal melakukan penarikan: {error}",
+  "@withdrawDialogGenericError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "withdrawDialogTitle": "Tarik dari Goal",
+  "withdrawDialogTargetLabel": "Target: {goalName}",
+  "@withdrawDialogTargetLabel": {
+    "placeholders": {
+      "goalName": {
+        "type": "String"
+      }
+    }
+  },
+  "withdrawDialogAvailableLabel": "Tersedia saat ini: {amount}",
+  "@withdrawDialogAvailableLabel": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "withdrawDialogAmountFieldLabel": "Nominal Penarikan",
+  "withdrawDialogInvalidAmountValidator": "Masukkan nominal yang valid",
+  "withdrawDialogExceedsBalanceValidator": "Melebihi saldo terkumpul",
+  "withdrawDialogChipAll": "Semua",
+  "withdrawDialogSubmitButton": "Lanjut Tarik",
+  "assetsScreenTitle": "Aset & Investasi",
+  "assetsScreenAddTooltip": "Tambah Aset",
+  "assetsScreenLoadError": "Gagal memuat data aset: {error}",
+  "@assetsScreenLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "assetsScreenEmptyTitle": "Belum Ada Aset Terdaftar",
+  "assetsScreenEmptyMessage": "Pantau nilai kekayaan bersih (net-worth) Anda secara mandiri. Catat aset seperti emas, saham, reksadana, atau kripto dengan pembaruan manual 100% offline.",
+  "assetsScreenAddFirstButton": "Tambah Aset Pertama",
+  "assetsScreenPortfolioTotalLabel": "Total Portofolio Aset",
+  "assetsScreenAssetCountBadge": "{count} Aset",
+  "@assetsScreenAssetCountBadge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assetsScreenTotalPurchaseLabel": "Total Modal Awal",
+  "assetsScreenTotalGainLabel": "Total Keuntungan",
+  "assetsScreenGainLossSummary": "{sign}{amount} ({sign}{percent}%)",
+  "@assetsScreenGainLossSummary": {
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "assetsScreenListHeader": "Daftar Aset ({count})",
+  "@assetsScreenListHeader": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assetsScreenAddCardLabel": "Tambah Aset Baru",
+  "assetCardDeleteDialogTitle": "Hapus Aset?",
+  "assetCardDeleteDialogMessage": "Apakah Anda yakin ingin menghapus aset \"{assetName}\"? Tindakan ini tidak dapat dibatalkan.",
+  "@assetCardDeleteDialogMessage": {
+    "placeholders": {
+      "assetName": {
+        "type": "String"
+      }
+    }
+  },
+  "assetCardCancelButton": "Batal",
+  "assetCardDeleteButton": "Hapus",
+  "assetCardEditTooltip": "Edit Lengkap",
+  "assetCardDeleteTooltip": "Hapus Aset",
+  "assetCardPurchaseValueLabel": "Modal Awal",
+  "assetCardCurrentValueLabel": "Nilai Sekarang",
+  "assetCardGainLossLabel": "Keuntungan / Kerugian",
+  "assetCardGainLossValue": "{sign}{amount} ({sign}{percent}%)",
+  "@assetCardGainLossValue": {
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "assetCardLastUpdatedLabel": "Update: {date}",
+  "@assetCardLastUpdatedLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "assetCardUpdateValueButton": "Update Nilai",
+  "assetFormScreenEditTitle": "Edit Aset",
+  "assetFormScreenAddTitle": "Tambah Aset",
+  "assetFormScreenNameLabel": "Nama Aset",
+  "assetFormScreenNameHint": "misal: Emas Antam 10g, BBCA, Reksadana Pasar Uang",
+  "assetFormScreenNameEmptyError": "Nama aset tidak boleh kosong.",
+  "assetFormScreenTypeLabel": "Tipe Aset",
+  "assetFormScreenTypeHint": "misal: Emas, Saham, Reksadana, Kripto",
+  "assetFormScreenTypeEmptyError": "Tipe aset tidak boleh kosong.",
+  "assetFormScreenPurchaseValueLabel": "Modal Awal / Nilai Beli (Rp)",
+  "assetFormScreenPurchaseValueEmptyError": "Modal awal tidak boleh kosong.",
+  "assetFormScreenPurchaseValueInvalidError": "Modal awal harus lebih besar dari 0.",
+  "assetFormScreenCurrentValueLabel": "Nilai Sekarang (Rp)",
+  "assetFormScreenCopyFromPurchaseButton": "Sama dg modal",
+  "assetFormScreenCurrentValueEmptyError": "Nilai sekarang tidak boleh kosong.",
+  "assetFormScreenCurrentValueNegativeError": "Nilai sekarang tidak boleh negatif.",
+  "assetFormScreenGainLossPreviewLabel": "Estimasi Gain / Loss:",
+  "assetFormScreenOfflineNotice": "100% Offline. Nilai aset diperbarui secara manual oleh Anda kapan saja (D8).",
+  "assetFormScreenPurchaseRequiredError": "Modal awal harus lebih besar dari 0.",
+  "assetFormScreenCurrentValueRequiredError": "Nilai sekarang tidak boleh kosong atau negatif.",
+  "assetFormScreenSaveSuccessToast": "Aset berhasil disimpan",
+  "assetFormScreenSaveError": "Gagal menyimpan aset: {error}",
+  "@assetFormScreenSaveError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "assetFormScreenSaveChangesButton": "Simpan Perubahan",
+  "assetFormScreenAddButton": "Tambah Aset",
+  "assetFormScreenTypeGold": "Emas",
+  "assetFormScreenTypeStocks": "Saham",
+  "assetFormScreenTypeMutualFund": "Reksadana",
+  "assetFormScreenTypeCrypto": "Kripto",
+  "assetFormScreenTypeProperty": "Properti",
+  "assetFormScreenTypeDeposit": "Deposito",
+  "assetFormScreenTypeOther": "Lainnya",
+  "updateValueDialogTitle": "Update Nilai Aset",
+  "updateValueDialogTypeLabel": "Tipe: {type}",
+  "@updateValueDialogTypeLabel": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "updateValueDialogPurchaseValueLabel": "Modal Awal",
+  "updateValueDialogPreviousValueLabel": "Nilai Sebelumnya",
+  "updateValueDialogLastUpdatedLabel": "Terakhir diperbarui: {date}",
+  "@updateValueDialogLastUpdatedLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "updateValueDialogNewValueLabel": "Nilai Sekarang Baru",
+  "updateValueDialogEmptyValueError": "Nilai aset tidak boleh kosong.",
+  "updateValueDialogNegativeValueError": "Nilai tidak boleh negatif.",
+  "updateValueDialogRequiredError": "Nilai aset tidak boleh kosong atau negatif.",
+  "updateValueDialogNewGainLossLabel": "Estimasi Gain / Loss Baru:",
+  "updateValueDialogChangeFromPreviousLabel": "Perubahan dari sebelumnya: {sign}{amount}",
+  "@updateValueDialogChangeFromPreviousLabel": {
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "updateValueDialogGenericError": "Gagal memperbarui nilai: {error}",
+  "@updateValueDialogGenericError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "updateValueDialogSuccessToast": "Nilai aset berhasil diperbarui",
+  "updateValueDialogCancelButton": "Batal",
+  "updateValueDialogSaveButton": "Simpan Pembaruan",
+  "analyticsScreenTitle": "Visual Analitik",
+  "analyticsScreenThemeToggleToLight": "Beralih ke mode terang",
+  "analyticsScreenThemeToggleToDark": "Beralih ke mode gelap",
+  "analyticsScreenLoadError": "Gagal memuat analitik: {error}",
+  "@analyticsScreenLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "analyticsScreenTrendLoadError": "Gagal memuat tren: {error}",
+  "@analyticsScreenTrendLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "analyticsScreenFilterDaily": "Harian",
+  "analyticsScreenFilterWeekly": "Mingguan",
+  "analyticsScreenFilterMonthly": "Bulanan",
+  "analyticsEmptyStateDefaultMessage": "Belum ada transaksi pada periode ini.",
+  "analyticsEmptyStateDefaultSubmessage": "Catat pengeluaran atau pemasukan untuk melihat visualisasi grafik dan tren keuangan.",
+  "analyticsEmptyStateRecordButton": "Catat Transaksi",
+  "incomeExpenseRatioCardTitle": "Ringkasan Keuangan Periode",
+  "incomeExpenseRatioCardTotalIncomeLabel": "Total Pemasukan",
+  "incomeExpenseRatioCardTotalExpenseLabel": "Total Pengeluaran",
+  "incomeExpenseRatioCardNetSavingsLabel": "Tabungan Bersih",
+  "incomeExpenseRatioCardExpenseRatioLabel": "Rasio Pengeluaran",
+  "categoryBreakdownCardTitle": "Proporsi Pengeluaran per Kategori",
+  "categoryBreakdownCardTotalLabel": "Total: {amount}",
+  "@categoryBreakdownCardTotalLabel": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryBreakdownCardShowPieTooltip": "Tampilkan diagram lingkaran (Pie)",
+  "categoryBreakdownCardShowBarTooltip": "Tampilkan diagram batang (Bar)",
+  "categoryBreakdownCardEmptyMessage": "Tidak ada pengeluaran tercatat pada periode ini.",
+  "categoryBreakdownCardTransactionCountLabel": "{count} transaksi",
+  "@categoryBreakdownCardTransactionCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "monthOverMonthSectionTitle": "Tren Bulan-ke-Bulan (MoM)",
+  "monthOverMonthSectionComparisonLabel": "{currMonth} vs {prevMonth}",
+  "@monthOverMonthSectionComparisonLabel": {
+    "placeholders": {
+      "currMonth": {
+        "type": "String"
+      },
+      "prevMonth": {
+        "type": "String"
+      }
+    }
+  },
+  "monthOverMonthSectionLastMonthLegend": "Bulan Lalu",
+  "monthOverMonthSectionThisMonthLegend": "Bulan Ini",
+  "monthOverMonthSectionEmptyMessage": "Belum cukup data transaksi untuk perbandingan bulan-ke-bulan.",
+  "monthOverMonthSectionCategoryComparisonTitle": "Perbandingan Pengeluaran per Kategori",
+  "monthOverMonthSectionTooltipLabel": "{categoryName} ({period})\n{amount}",
+  "@monthOverMonthSectionTooltipLabel": {
+    "placeholders": {
+      "categoryName": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "monthOverMonthSectionExpenseLabel": "Pengeluaran",
+  "monthOverMonthSectionIncomeLabel": "Pemasukan",
+  "monthOverMonthSectionNewBadge": "Baru",
+  "monthOverMonthSectionPreviousAmountLabel": "Lalu: {amount}",
+  "@monthOverMonthSectionPreviousAmountLabel": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "walletsScreenTitle": "Kelola Dompet",
+  "walletsScreenTransferTooltip": "Transfer Antar Dompet",
+  "walletsScreenTotalBalanceLabel": "Total Saldo (Kekayaan Bersih)",
+  "walletsScreenTotalBalanceSubtitle": "Total akumulasi dari {count} dompet & rekening aktif.",
+  "@walletsScreenTotalBalanceSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "walletsScreenTransferButton": "Transfer",
+  "walletsScreenAddButton": "Tambah",
+  "walletsScreenListTitle": "Daftar Dompet ({count})",
+  "@walletsScreenListTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "walletsScreenEmptyTitle": "Belum ada dompet terdaftar.",
+  "walletsScreenEmptyMessage": "Tambahkan dompet pertamamu untuk mulai mencatat.",
+  "walletsScreenLoadError": "Gagal memuat daftar dompet: {error}",
+  "@walletsScreenLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "walletsScreenDeleteDialogTitle": "Hapus Dompet?",
+  "walletsScreenDeleteDialogMessage": "Apakah kamu yakin ingin menghapus dompet \"{name}\"?\n\nCatatan: Dompet tidak dapat dihapus jika masih memiliki transaksi atau transfer terkait.",
+  "@walletsScreenDeleteDialogMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "walletsScreenCancelButton": "Batal",
+  "walletsScreenDeleteButton": "Hapus",
+  "walletsScreenDeleteSuccessToast": "Dompet \"{name}\" berhasil dihapus.",
+  "@walletsScreenDeleteSuccessToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "walletsScreenDeleteRejectedTitle": "Hapus Ditolak",
+  "walletsScreenDeleteFailedTitle": "Gagal Menghapus Dompet",
+  "walletsScreenUnderstoodButton": "Mengerti",
+  "walletCardIncludedInBudgetBadge": "Ikut Budget Harian",
+  "walletCardExcludedFromBudgetBadge": "Di luar Budget",
+  "walletCardCurrentBalanceLabel": "Saldo saat ini",
+  "walletCardTransferMenuItem": "Transfer",
+  "walletCardEditMenuItem": "Edit Dompet",
+  "walletCardDeleteMenuItem": "Hapus",
+  "walletFormScreenEditTitle": "Edit Dompet",
+  "walletFormScreenAddTitle": "Tambah Dompet",
+  "walletFormScreenNameLabel": "Nama Dompet",
+  "walletFormScreenNameHint": "Misal: BCA, Tunai, Gopay, Bibit",
+  "walletFormScreenNameRequiredError": "Nama dompet tidak boleh kosong",
+  "walletFormScreenIconPickerLabel": "Pilih Ikon",
+  "walletFormScreenStartingBalanceLabel": "Saldo Awal",
+  "walletFormScreenStartingBalanceHelper": "Saldo saat dompet pertama kali dibuat/dihitung (whole Rupiah).",
+  "walletFormScreenStartingBalanceNegativeError": "Saldo awal tidak boleh negatif",
+  "walletFormScreenIncludeBudgetToggleTitle": "Hitung dalam Budget Harian",
+  "walletFormScreenIncludeBudgetToggleSubtitle": "Jika aktif, transaksi di dompet ini akan memengaruhi sisa uang jajan harianmu (BR-04). Matikan untuk dompet tabungan/investasi.",
+  "walletFormScreenSaveSuccessToast": "Dompet berhasil disimpan",
+  "walletFormScreenSaveChangesButton": "Simpan Perubahan",
+  "walletFormScreenCreateButton": "Buat Dompet",
+  "transferFormScreenTitle": "Transfer Antar Dompet",
+  "transferFormScreenMissingWalletsError": "Pilih dompet asal dan tujuan transfer.",
+  "transferFormScreenSameWalletError": "Dompet asal dan tujuan tidak boleh sama.",
+  "transferFormScreenZeroAmountError": "Nominal transfer harus lebih besar dari nol.",
+  "transferFormScreenSuccessToast": "Transfer {amount} berhasil diproses",
+  "@transferFormScreenSuccessToast": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "transferFormScreenNeedMoreWalletsTitle": "Butuh minimal 2 dompet untuk melakukan transfer.",
+  "transferFormScreenNeedMoreWalletsMessage": "Tambahkan dompet lain terlebih dahulu di menu Kelola Dompet.",
+  "transferFormScreenSourceWalletLabel": "Dari Dompet (Sumber)",
+  "transferFormScreenTargetWalletLabel": "Ke Dompet (Tujuan)",
+  "transferFormScreenAmountLabel": "Nominal Transfer",
+  "transferFormScreenAmountZeroError": "Nominal transfer harus lebih besar dari nol",
+  "transferFormScreenDateLabel": "Tanggal Transfer",
+  "transferFormScreenNotesLabel": "Catatan (Opsional)",
+  "transferFormScreenNotesHint": "Misal: Tarik tunai dari ATM, Top up GoPay",
+  "transferFormScreenSubmitButton": "Transfer Sekarang",
+  "transferFormScreenLoadError": "Gagal memuat dompet: {error}",
+  "@transferFormScreenLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "transactionsScreenTitle": "Daftar Transaksi",
+  "transactionsScreenEmptyFilterMessage": "Tidak ada transaksi untuk filter ini.",
+  "transactionsScreenLoadError": "Gagal memuat transaksi: {error}",
+  "@transactionsScreenLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "transactionsScreenEmptyTitle": "Belum Ada Transaksi",
+  "transactionsScreenEmptyMessage": "Catat pengeluaran atau pemasukan pertamamu dengan tombol di bawah.",
+  "transactionsScreenEmptyAddButton": "Tambah Transaksi Pertama",
+  "transactionsScreenFilterAll": "Semua",
+  "transactionsScreenFilterIncome": "Pemasukan",
+  "transactionsScreenFilterExpense": "Pengeluaran",
+  "transactionFormScreenEditTitle": "Edit Transaksi",
+  "transactionFormScreenAddTitle": "Catat Transaksi",
+  "transactionFormScreenTransferAmountLabel": "NOMINAL TRANSFER",
+  "transactionFormScreenAmountLabel": "JUMLAH",
+  "transactionFormScreenAmountEmptyError": "Jumlah tidak boleh kosong",
+  "transactionFormScreenAmountInvalidError": "Jumlah tidak boleh nol atau negatif",
+  "transactionFormScreenSourceWalletLabel": "Dari Dompet (Sumber)",
+  "transactionFormScreenTargetWalletLabel": "Ke Dompet (Tujuan)",
+  "transactionFormScreenSourceWalletLoadError": "Gagal memuat dompet: {error}",
+  "@transactionFormScreenSourceWalletLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "transactionFormScreenTargetWalletLoadError": "Gagal memuat dompet tujuan: {error}",
+  "@transactionFormScreenTargetWalletLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "transactionFormScreenWalletLabel": "Dompet",
+  "transactionFormScreenCategoryLabel": "Kategori",
+  "transactionFormScreenCategoryLoadError": "Gagal memuat kategori: {error}",
+  "@transactionFormScreenCategoryLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "transactionFormScreenDateLabel": "Tanggal",
+  "transactionFormScreenNotesLabel": "Catatan (opsional)",
+  "transactionFormScreenSaveSuccessToast": "Transaksi berhasil disimpan",
+  "transactionFormScreenSaveChangesButton": "Simpan Perubahan",
+  "transactionFormScreenSaveNewButton": "Simpan Transaksi",
+  "transactionFormScreenDeleteDialogTitle": "Hapus Transaksi?",
+  "transactionFormScreenDeleteDialogMessage": "Apakah kamu yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.",
+  "transactionFormScreenCancelButton": "Batal",
+  "transactionFormScreenDeleteButton": "Hapus",
+  "transactionFormScreenDeleteTransactionButton": "Hapus Transaksi",
+  "transactionFormScreenDeleteLockedButton": "Hapus Transaksi (Terkunci)",
+  "transactionFormScreenDeleteLockedNotice": "Hanya transaksi bertanggal hari ini yang dapat dihapus. Transaksi lampau tidak dapat dihapus untuk menjaga integritas histori (FR-03).",
+  "transactionFormScreenTypeExpenseLabel": "Pengeluaran",
+  "transactionFormScreenTypeIncomeLabel": "Pemasukan",
+  "transactionFormScreenTypeTransferLabel": "Transfer",
+  "transactionFormScreenInvalidTransferError": "Mohon masukkan nominal dan pilih dompet asal & tujuan yang berbeda.",
+  "transactionFormScreenInvalidRegularError": "Mohon masukkan jumlah dan pilih kategori.",
+  "homeScreenLoadError": "Gagal memuat budget: {error}",
+  "@homeScreenLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeScreenModePeriodicBadge": "Mode Periodik",
+  "homeScreenModeDailyBadge": "Mode Harian (Bekel)",
+  "homeScreenTotalSaldoLabel": "Total Saldo",
+  "homeScreenDailyAllowanceLabel": "Jatah Hari Ini",
+  "homeScreenSubtitleRemainingDays": "Sisa {days} hari sampai jadwal payday berikutnya",
+  "@homeScreenSubtitleRemainingDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "homeScreenSubtitleCarryOver": "Akumulasi carry-over kemarin & bekel hari ini",
+  "homeScreenCycleExpiredPeriodicTitle": "Siklus Gajian Berakhir",
+  "homeScreenCycleExpiredDailyTitle": "Rollover Harian Dibutuhkan",
+  "homeScreenCycleExpiredPeriodicMessage": "Jadwal gajian telah tercapai. Mulai siklus baru untuk memperbarui Uang Jajan Aman.",
+  "homeScreenCycleExpiredDailyMessage": "Hari baru telah tiba. Konfirmasi carry-over saldo untuk memulai hari ini.",
+  "homeScreenStartNewCycleButton": "Mulai Siklus Baru",
+  "homeScreenRolloverTodayButton": "Rollover Hari Ini",
+  "homeScreenBreakdownTitle": "Rincian Perhitungan",
+  "homeScreenRemainingCycleBalanceLabel": "Sisa Saldo Siklus",
+  "homeScreenGrossDailyAllowanceLabel": "Jatah Kotor / Hari",
+  "homeScreenGoalSavingsDailyLabel": "Tabungan Goal / Hari",
+  "homeScreenYesterdayCarryOverLabel": "Saldo Carry-Over Kemarin",
+  "homeScreenTodayAllowanceInLabel": "Bekel Masuk Hari Ini",
+  "homeScreenMandatoryExpenseTodayLabel": "Pengeluaran Wajib Hari Ini",
+  "homeScreenRecordedExpenseTodayLabel": "Pengeluaran Dicatat Hari Ini",
+  "homeScreenTransactionSummaryTitle": "Rincian Transaksi",
+  "homeScreenViewAllLink": "Lihat Selengkapnya",
+  "homeScreenTransactionSummaryLoadError": "Gagal memuat ringkasan transaksi.",
+  "homeScreenNoTransactionsYet": "Belum ada transaksi tercatat.",
+  "homeScreenIncomeColumnLabel": "Pemasukan",
+  "homeScreenExpenseColumnLabel": "Pengeluaran",
+  "homeScreenNoneYet": "Belum ada",
+  "settingsScreenTitle": "Pengaturan",
+  "settingsScreenPreferencesTitle": "Tampilan & Bahasa",
+  "settingsScreenPreferencesSubtitle": "Kustomisasi tema dan bahasa antarmuka",
+  "settingsScreenDarkModeTitle": "Mode Gelap (Dark Mode)",
+  "settingsScreenDarkModeActiveSubtitle": "Tema gelap aktif (rekomendasi OLED)",
+  "settingsScreenLightModeActiveSubtitle": "Tema terang aktif",
+  "settingsScreenLanguageTitle": "Bahasa Aplikasi",
+  "settingsScreenLanguageIndonesianActiveSubtitle": "Bahasa Indonesia (Aktif)",
+  "settingsScreenLanguageEnglishActiveSubtitle": "English (Active)",
+  "settingsScreenLanguageIndonesianOption": "Bahasa Indonesia",
+  "settingsScreenLanguageEnglishOption": "English",
+  "settingsScreenNotificationsTitle": "Notifikasi & Pengingat",
+  "settingsScreenNotificationsSubtitle": "100% Offline via Alarm Manager lokal",
+  "settingsScreenDailyReminderTitle": "Pengingat Catat Harian",
+  "settingsScreenDailyReminderSubtitle": "Setiap hari pukul {time} WIB (ketuk jam untuk mengubah)",
+  "@settingsScreenDailyReminderSubtitle": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsScreenChangeTimeButton": "Ubah Jam ({time})",
+  "@settingsScreenChangeTimeButton": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsScreenLimitAlertTitle": "Peringatan Limit Anggaran",
+  "settingsScreenLimitAlertSubtitle": "Pemberitahuan real-time saat uang jajan aman hari ini mendekati 0 atau minus.",
+  "settingsScreenPayCycleTitle": "Siklus Gajian Baru",
+  "settingsScreenPayCycleSubtitle": "Pemberitahuan saat memasuki tanggal gajian atau siklus baru.",
+  "settingsScreenGoalMilestoneTitle": "Milestone Target Tabungan",
+  "settingsScreenGoalMilestoneSubtitle": "Pemberitahuan saat progres goal mencapai 25%, 50%, 75%, dan 100%.",
+  "settingsScreenAboutTitle": "Tentang LedgerMate",
+  "settingsScreenVersionLabel": "Versi {version}+{buildNumber} (100% Offline, Tanpa Server)",
+  "@settingsScreenVersionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "buildNumber": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsScreenVersionLoading": "Memuat versi...",
+  "settingsScreenVersionFallback": "100% Offline, Tanpa Server",
+  "settingsScreenAboutDescription": "LedgerMate adalah pelacak anggaran harian pintar berbasis offline-first. Seluruh data keuangan Anda tersimpan secara lokal di perangkat Anda menggunakan Isar Database.",
+  "categoryManagementCardAddDialogTitle": "Tambah Kategori Baru",
+  "categoryManagementCardNameLabel": "Nama Kategori",
+  "categoryManagementCardNameHint": "Contoh: Investasi, Zakat, Liburan",
+  "categoryManagementCardCancelButton": "Batal",
+  "categoryManagementCardSaveButton": "Simpan",
+  "categoryManagementCardEditDialogTitle": "Ubah Nama Kategori",
+  "categoryManagementCardDeleteDialogTitle": "Hapus Kategori?",
+  "categoryManagementCardDeleteDialogMessage": "Apakah Anda yakin ingin menghapus kategori \"{name}\"?",
+  "@categoryManagementCardDeleteDialogMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryManagementCardDeleteButton": "Hapus",
+  "categoryManagementCardTitle": "Kelola Kategori",
+  "categoryManagementCardSubtitle": "Kategori bawaan & kustom untuk transaksi",
+  "categoryManagementCardAddTooltip": "Tambah Kategori",
+  "categoryManagementCardLoadingDefaults": "Memuat kategori default...",
+  "categoryManagementCardDefaultBadge": "Bawaan",
+  "categoryManagementCardEditTooltip": "Ubah Nama",
+  "categoryManagementCardDeleteTooltip": "Hapus Kategori",
+  "categoryManagementCardLoadError": "Gagal memuat kategori: {error}",
+  "@categoryManagementCardLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "walletsManagementCardTitle": "Kelola Dompet & Rekening",
+  "walletsManagementCardSubtitle": "Atur dompet, rekening bank, saldo awal & transfer",
+  "walletsManagementCardOpenTooltip": "Buka Kelola Dompet",
+  "dataManagementCardTitle": "Cadangkan & Pulihkan Data",
+  "dataManagementCardSubtitle": "Format JSON & CSV (100% Offline, FR-08)",
+  "dataManagementCardDescription": "Cadangkan seluruh database secara berkala atau pindahkan data finansial ke perangkat baru tanpa koneksi server.",
+  "dataManagementCardProcessingMessage": "Sedang memproses data...",
+  "dataManagementCardExportSuccessTitle": "Ekspor Berhasil!",
+  "dataManagementCardExportJsonTitle": "Cadangkan Database (JSON)",
+  "dataManagementCardExportJsonSubtitle": "Simpan semua koleksi (profil, gajian, kategori, transaksi, goals, aset) ke file JSON.",
+  "dataManagementCardExportJsonButton": "Cadangkan (JSON)",
+  "dataManagementCardExportJsonSuccessToast": "File cadangan tersimpan di:\n{path}",
+  "@dataManagementCardExportJsonSuccessToast": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "dataManagementCardExportCsvTitle": "Ekspor Riwayat Transaksi (CSV)",
+  "dataManagementCardExportCsvSubtitle": "Format tabel CSV RFC 4180 dengan header berbahasa Indonesia untuk spreadsheet.",
+  "dataManagementCardExportCsvButton": "Ekspor CSV",
+  "dataManagementCardExportCsvSuccessToast": "Tabel transaksi CSV tersimpan di:\n{path}",
+  "@dataManagementCardExportCsvSuccessToast": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "dataManagementCardRestoreTitle": "Pulihkan Data (JSON)",
+  "dataManagementCardRestoreSubtitle": "Pilih file .json cadangan untuk mengembalikan seluruh database ke kondisi tersimpan.",
+  "dataManagementCardRestoreButton": "Pilih File Cadangan",
+  "dataManagementCardRestoreSuccessToast": "Database lokal berhasil dipulihkan dari cadangan.",
+  "restoreConfirmationDialogTitle": "Konfirmasi Pemulihan Data",
+  "restoreConfirmationDialogWarningMessage": "PERHATIAN: Pemulihan akan menghapus dan menimpa SELURUH data lokal saat ini. Tindakan ini tidak dapat dibatalkan.",
+  "restoreConfirmationDialogSummaryTitle": "Ringkasan Data Cadangan:",
+  "restoreConfirmationDialogBackupTimeLabel": "Waktu Cadangan",
+  "restoreConfirmationDialogUserProfileLabel": "Profil Pengguna",
+  "restoreConfirmationDialogAvailableValue": "Tersedia",
+  "restoreConfirmationDialogNotAvailableValue": "Tidak Ada",
+  "restoreConfirmationDialogPayCycleLabel": "Siklus Gaji",
+  "restoreConfirmationDialogPayCycleCountValue": "{count} data",
+  "@restoreConfirmationDialogPayCycleCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "restoreConfirmationDialogCategoryLabel": "Kategori",
+  "restoreConfirmationDialogCategoryCountValue": "{count} kategori",
+  "@restoreConfirmationDialogCategoryCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "restoreConfirmationDialogTransactionLabel": "Riwayat Transaksi",
+  "restoreConfirmationDialogTransactionCountValue": "{count} transaksi",
+  "@restoreConfirmationDialogTransactionCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "restoreConfirmationDialogGoalLabel": "Target Finansial (Goals)",
+  "restoreConfirmationDialogGoalCountValue": "{count} target",
+  "@restoreConfirmationDialogGoalCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "restoreConfirmationDialogAssetLabel": "Aset / Investasi",
+  "restoreConfirmationDialogAssetCountValue": "{count} aset",
+  "@restoreConfirmationDialogAssetCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "restoreConfirmationDialogCancelButton": "Batal",
+  "restoreConfirmationDialogConfirmButton": "Timpa & Pulihkan",
+  "payCycleTransitionScreenTitle": "Transisi Siklus",
+  "payCycleTransitionScreenLoadProfileError": "Gagal memuat profil: {error}",
+  "@payCycleTransitionScreenLoadProfileError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "payCycleTransitionScreenProfileNotFound": "Profil tidak ditemukan.",
+  "payCycleTransitionScreenSalaryEmptyError": "Gaji siklus baru tidak boleh kosong",
+  "payCycleTransitionScreenSalaryInvalidError": "Gaji harus lebih besar dari nol",
+  "payCycleTransitionScreenExpenseNameEmptyError": "Nama pengeluaran tidak boleh kosong",
+  "payCycleTransitionScreenAmountEmptyError": "Jumlah tidak boleh kosong",
+  "payCycleTransitionScreenAmountInvalidError": "Jumlah harus lebih besar dari nol",
+  "payCycleTransitionScreenIncompleteDataError": "Harap lengkapi semua data yang diperlukan.",
+  "payCycleTransitionHeaderPeriodicTitle": "Siklus Gajian Baru",
+  "payCycleTransitionHeaderDailyTitle": "Rollover Harian",
+  "payCycleTransitionHeaderPeriodicMessage": "Siklus sebelumnya telah berakhir. Masukkan gaji dan pengeluaran wajib siklus baru secara manual (BR-02: tidak ada template otomatis).",
+  "payCycleTransitionHeaderDailyMessage": "Hari baru telah tiba. Konfirmasi sisa saldo kemarin dan masukkan bekel serta pengeluaran wajib hari ini (BR-02: re-input manual tiap periode).",
+  "payCycleTransitionIntervalDateTitle": "Interval & Tanggal Gajian Berikutnya",
+  "payCycleTransitionPickPaydayButton": "Pilih tanggal gajian",
+  "payCycleTransitionPaydaySelectedButton": "Gajian: {date}",
+  "@payCycleTransitionPaydaySelectedButton": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "payCycleTransitionIntervalWeekly": "Mingguan",
+  "payCycleTransitionIntervalBiweekly": "2 Mingguan",
+  "payCycleTransitionIntervalMonthly": "Bulanan",
+  "payCycleTransitionIntervalCustom": "Custom",
+  "payCycleTransitionSalaryLabel": "Gaji Siklus Ini (Wajib diisi)",
+  "payCycleTransitionSalaryHelper": "Sesuai BR-02: masukkan nominal gaji baru secara manual.",
+  "payCycleTransitionCarryOverTitle": "Saldo Carry-Over dari Kemarin",
+  "payCycleTransitionCarryOverMessage": "Sisa Uang Jajan Aman kemarin terakumulasi otomatis ke saldo hari ini (BR-01).",
+  "payCycleTransitionBekelLabel": "Bekel Hari Ini (Opsional)",
+  "payCycleTransitionBekelHelper": "Kosongkan atau isi 0 jika hari ini tidak ada uang saku baru.",
+  "payCycleTransitionExpensesPeriodicTitle": "Pengeluaran Wajib Siklus Ini",
+  "payCycleTransitionExpensesDailyTitle": "Pengeluaran Wajib Hari Ini",
+  "payCycleTransitionExpensesSubtitle": "Opsional — per BR-02, daftar pengeluaran wajib diinput manual tiap periode (tidak dicopy dari siklus lama).",
+  "payCycleTransitionExpensesEmptyMessage": "Belum ada pengeluaran wajib ditambahkan.",
+  "payCycleTransitionRemoveExpenseTooltip": "Hapus Pengeluaran",
+  "payCycleTransitionExpenseNameFieldLabel": "Nama pengeluaran (mis. Kos, Cicilan)",
+  "payCycleTransitionExpenseAmountFieldLabel": "Nominal pengeluaran",
+  "payCycleTransitionAddExpenseButton": "Tambah Pengeluaran Wajib",
+  "payCycleTransitionStartNewCycleButton": "Mulai Siklus Baru",
+  "payCycleTransitionStartTodayButton": "Mulai Hari Ini",
+  "currencyPrefix": "Rp ",
+  "currencyHintZero": "Rp 0",
+  "notificationChannelDailyReminder": "Pengingat Harian",
+  "notificationChannelDailyReminderDescription": "Pengingat harian untuk mencatat transaksi keuangan",
+  "notificationDailyReminderTitle": "Saatnya Catat Keuangan!",
+  "notificationDailyReminderBody": "Jangan lupa mencatat pengeluaran dan pemasukan hari ini di LedgerMate.",
+  "notificationChannelLimitAlert": "Peringatan Limit Anggaran",
+  "notificationChannelLimitAlertDescription": "Pemberitahuan saat budget harian habis atau mendekati 0",
+  "notificationLimitAlertTitle": "Peringatan: Limit Harian Terlampaui!",
+  "notificationLimitAlertBody": "Uang jajan aman hari ini tersisa {amount}. Tahan pengeluaran non-esensial.",
+  "@notificationLimitAlertBody": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationChannelPayCycle": "Siklus Gajian",
+  "notificationChannelPayCycleDescription": "Pemberitahuan awal atau berakhirnya siklus gajian",
+  "notificationChannelGoalMilestone": "Target Finansial (Goals)",
+  "notificationChannelGoalMilestoneDescription": "Pemberitahuan pencapaian milestone target tabungan",
+  "notificationGoalMilestoneTitle": "Milestone Target Tercapai! 🎉",
+  "notificationGoalMilestoneBody": "Target \"{goalName}\" telah mencapai {percent}%! Tetap konsisten menabung!",
+  "@notificationGoalMilestoneBody": {
+    "placeholders": {
+      "goalName": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "notificationPayCyclePeriodicStartTitle": "Siklus Baru Dimulai",
+  "notificationPayCycleDailyStartTitle": "Siklus Harian Baru",
+  "notificationPayCyclePeriodicStartBody": "Siklus baru aktif hingga {day}/{month}/{year}. Budget harian telah disesuaikan.",
+  "@notificationPayCyclePeriodicStartBody": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "month": {
+        "type": "int"
+      },
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "notificationPayCycleDailyStartBody": "Bekel harian telah dicatat. Uang jajan aman siap digunakan hari ini.",
+  "notificationPayCycleExpiredTitle": "Siklus Gajian Telah Tiba!",
+  "notificationPayCycleExpiredBody": "Waktunya perbarui gaji dan pengeluaran wajib untuk memulai siklus baru.",
+  "walletIconCash": "Dompet / Tunai",
+  "walletIconBank": "Bank / Rekening",
+  "walletIconCard": "Kartu Debit / Kredit",
+  "walletIconEwallet": "E-Wallet",
+  "walletIconSavings": "Tabungan",
+  "walletIconPayments": "Kas / Uang",
+  "walletIconInvestment": "Investasi / Valas",
+  "walletIconBusiness": "Bisnis / Toko",
+  "defaultCategoryFood": "Makan",
+  "defaultCategoryTransport": "Transport",
+  "defaultCategoryEntertainment": "Hiburan",
+  "defaultCategoryBills": "Tagihan",
+  "defaultCategoryOther": "Lainnya",
+  "transactionTypeTransferLabel": "Transfer",
+  "transactionCategoryFallback": "Kategori #{id}",
+  "@transactionCategoryFallback": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "monthJanuary": "Januari",
+  "monthFebruary": "Februari",
+  "monthMarch": "Maret",
+  "monthApril": "April",
+  "monthMay": "Mei",
+  "monthJune": "Juni",
+  "monthJuly": "Juli",
+  "monthAugust": "Agustus",
+  "monthSeptember": "September",
+  "monthOctober": "Oktober",
+  "monthNovember": "November",
+  "monthDecember": "Desember",
+  "analyticsDateRangeDaily": "{day} {month} {year}",
+  "@analyticsDateRangeDaily": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "month": {
+        "type": "String"
+      },
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "analyticsDateRangeWeekly": "{startDay} {startMonth} - {endDay} {endMonth} {year}",
+  "@analyticsDateRangeWeekly": {
+    "placeholders": {
+      "startDay": {
+        "type": "int"
+      },
+      "startMonth": {
+        "type": "String"
+      },
+      "endDay": {
+        "type": "int"
+      },
+      "endMonth": {
+        "type": "String"
+      },
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "analyticsDateRangeMonthly": "{month} {year}",
+  "@analyticsDateRangeMonthly": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "analyticsCategoryFallback": "Lainnya",
+  "assetValidationPurchaseValuePositive": "Nilai beli/modal awal harus lebih besar dari 0.",
+  "assetValidationCurrentValueNotNegative": "Nilai sekarang tidak boleh negatif.",
+  "goalValidationNameRequired": "Nama target tidak boleh kosong.",
+  "goalValidationTargetPositive": "Target nominal harus lebih besar dari 0.",
+  "goalValidationCurrentNotNegative": "Saldo saat ini tidak boleh negatif.",
+  "goalValidationDailyAllocationPositive": "Alokasi harian manual harus lebih besar dari 0.",
+  "goalValidationWithdrawPositive": "Nominal penarikan harus lebih besar dari 0.",
+  "goalValidationWithdrawExceedsBalance": "Nominal penarikan melebihi saldo tabungan saat ini.",
+  "goalWithdrawTransactionNote": "Tarik dari goal: {goalName}",
+  "@goalWithdrawTransactionNote": {
+    "placeholders": {
+      "goalName": {
+        "type": "String"
+      }
+    }
+  },
+  "walletValidationHasTransactions": "Dompet tidak dapat dihapus karena masih memiliki transaksi terkait. Pindahkan atau hapus transaksi terlebih dahulu.",
+  "walletValidationMinimumOne": "Minimal harus ada 1 dompet aktif di aplikasi.",
+  "walletValidationNameRequired": "Nama dompet tidak boleh kosong.",
+  "walletValidationStartingBalanceNotNegative": "Saldo awal tidak boleh negatif.",
+  "walletValidationTransferAmountPositive": "Nominal transfer harus lebih besar dari nol.",
+  "settingsCategoryDeleteInUseError": "Kategori tidak dapat dihapus karena masih digunakan oleh transaksi.",
+  "defaultWalletName": "Dompet Utama",
+  "payCycleBekelTransactionNote": "Bekel hari ini",
+  "withdrawDialogChip25": "25%",
+  "withdrawDialogChip50": "50%",
+  "transferWalletDropdownItem": "{name} ({balance})",
+  "@transferWalletDropdownItem": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "balance": {
+        "type": "String"
+      }
+    }
+  },
+  "homeScreenDateFormatLocale": "id_ID"
 }

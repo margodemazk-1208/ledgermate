@@ -15,6 +15,16 @@ import '../../wallets/application/wallet_providers.dart';
 import '../data/pay_cycle_repository.dart';
 import 'pay_cycle_transition_state.dart';
 
+/// Sentinel code for [PayCycleTransitionState.submitError] set by the
+/// `canSubmit` validation guard in [PayCycleTransitionNotifier.
+/// submitTransition] (application layer — no `BuildContext` here to
+/// resolve `AppLocalizations`). The presentation layer maps this to a
+/// localized message; any other `submitError` value is an arbitrary
+/// repository exception's `toString()`, shown as-is (localizing arbitrary
+/// exception text is out of scope for M20).
+const payCycleTransitionIncompleteDataErrorCode =
+    '__pay_cycle_transition_incomplete_data__';
+
 final payCycleRepositoryProvider = Provider<PayCycleRepositoryBase>((ref) {
   final isar = ref.watch(isarProvider);
   final hook = ref.watch(payCycleNotificationHookProvider);
@@ -268,7 +278,7 @@ class PayCycleTransitionNotifier extends Notifier<PayCycleTransitionState> {
 
     if (!state.canSubmit) {
       state = state.copyWith(
-        submitError: 'Harap lengkapi semua data yang diperlukan.',
+        submitError: payCycleTransitionIncompleteDataErrorCode,
       );
       return false;
     }

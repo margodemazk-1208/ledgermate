@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ledgermate/core/database/category.dart';
+import 'package:ledgermate/core/l10n/app_localizations.dart';
 import 'package:ledgermate/features/export_import/application/export_import_providers.dart';
 import 'package:ledgermate/features/export_import/data/export_import_repository.dart';
 import 'package:ledgermate/features/export_import/domain/backup_data.dart';
@@ -121,6 +122,9 @@ void main() {
         exportImportRepositoryProvider.overrideWithValue(fakeRepo),
       ],
       child: MaterialApp(
+        locale: const Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SingleChildScrollView(
             child: child ?? const DataManagementCard(),
@@ -209,6 +213,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('id'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: RestoreConfirmationDialog(
               summary: summary,

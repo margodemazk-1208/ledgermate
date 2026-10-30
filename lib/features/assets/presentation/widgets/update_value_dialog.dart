@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/database/asset.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/presentation/widgets/press_scale.dart';
 import '../../../../core/presentation/widgets/success_toast.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -54,10 +55,11 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
 
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
+    final l10n = AppLocalizations.of(context)!;
 
     final newValue = _parsedValue;
     if (newValue == null || newValue < 0) {
-      setState(() => _errorMsg = 'Nilai aset tidak boleh kosong atau negatif.');
+      setState(() => _errorMsg = l10n.updateValueDialogRequiredError);
       return;
     }
 
@@ -67,13 +69,13 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
           .read(assetsRepositoryProvider)
           .updateAssetCurrentValue(id: widget.asset.id, currentValue: newValue);
       if (mounted) {
-        showSuccessToast(context, 'Nilai aset berhasil diperbarui');
+        showSuccessToast(context, l10n.updateValueDialogSuccessToast);
         Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMsg = 'Gagal memperbarui nilai: $e';
+          _errorMsg = l10n.updateValueDialogGenericError(e);
           _isSubmitting = false;
         });
       }
@@ -83,6 +85,7 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final purchase = widget.asset.purchaseValue;
     final oldCurrent = widget.asset.currentValue;
     final currentVal = _parsedValue ?? oldCurrent;
@@ -92,6 +95,8 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
         : 0.0;
     final isGain = newGainLoss >= 0;
     final deltaFromOld = currentVal - oldCurrent;
+    final gainSign = isGain ? '+' : '';
+    final deltaSign = deltaFromOld > 0 ? '+' : '';
 
     final dateFormat = DateFormat('d MMM yyyy, HH:mm', 'id_ID');
     final formattedDate = dateFormat.format(widget.asset.lastUpdatedAt);
@@ -103,7 +108,7 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Update Nilai Aset',
+              l10n.updateValueDialogTitle,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -139,7 +144,7 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Tipe: ${widget.asset.assetType}',
+                      l10n.updateValueDialogTypeLabel(widget.asset.assetType),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.textTheme.bodySmall?.color?.withValues(
                           alpha: 0.8,
@@ -150,7 +155,10 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Modal Awal', style: theme.textTheme.bodySmall),
+                        Text(
+                          l10n.updateValueDialogPurchaseValueLabel,
+                          style: theme.textTheme.bodySmall,
+                        ),
                         Text(
                           formatRupiah(purchase),
                           style: theme.textTheme.bodyMedium?.copyWith(
@@ -164,7 +172,7 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Nilai Sebelumnya',
+                          l10n.updateValueDialogPreviousValueLabel,
                           style: theme.textTheme.bodySmall,
                         ),
                         Text(
@@ -177,7 +185,7 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Terakhir diperbarui: $formattedDate',
+                      l10n.updateValueDialogLastUpdatedLabel(formattedDate),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.textTheme.bodySmall?.color?.withValues(
                           alpha: 0.6,
@@ -190,7 +198,7 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
               const SizedBox(height: 16),
 
               Text(
-                'Nilai Sekarang Baru',
+                l10n.updateValueDialogNewValueLabel,
                 style: theme.textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -210,8 +218,8 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
                 validator: (val) => validateRupiahAmount(
                   val,
                   allowZero: true,
-                  emptyMessage: 'Nilai aset tidak boleh kosong.',
-                  invalidMessage: 'Nilai tidak boleh negatif.',
+                  emptyMessage: l10n.updateValueDialogEmptyValueError,
+                  invalidMessage: l10n.updateValueDialogNegativeValueError,
                 ),
               ),
               const SizedBox(height: 12),
@@ -240,13 +248,13 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Estimasi Gain / Loss Baru:',
+                          l10n.updateValueDialogNewGainLossLabel,
                           style: theme.textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         Text(
-                          '${isGain ? '+' : ''}${formatRupiah(newGainLoss)} (${isGain ? '+' : ''}${newReturnPercent.toStringAsFixed(1)}%)',
+                          '$gainSign${formatRupiah(newGainLoss)} ($gainSign${newReturnPercent.toStringAsFixed(1)}%)',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: isGain
@@ -259,7 +267,10 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
                     if (deltaFromOld != 0) ...[
                       const SizedBox(height: 4),
                       Text(
-                        'Perubahan dari sebelumnya: ${deltaFromOld > 0 ? '+' : ''}${formatRupiah(deltaFromOld)}',
+                        l10n.updateValueDialogChangeFromPreviousLabel(
+                          deltaSign,
+                          formatRupiah(deltaFromOld),
+                        ),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: deltaFromOld > 0
                               ? AppColors.savingsGreen
@@ -290,7 +301,7 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
           onPressed: _isSubmitting
               ? null
               : () => Navigator.of(context).pop(false),
-          child: const Text('Batal'),
+          child: Text(l10n.updateValueDialogCancelButton),
         ),
         PressScale(
           enabled: !_isSubmitting,
@@ -310,7 +321,7 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
                       color: Colors.white,
                     ),
                   )
-                : const Text('Simpan Pembaruan'),
+                : Text(l10n.updateValueDialogSaveButton),
           ),
         ),
       ],

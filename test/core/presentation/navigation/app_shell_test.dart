@@ -13,6 +13,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:ledgermate/core/database/local_profile.dart';
 import 'package:ledgermate/core/database/transaction.dart' as db;
 import 'package:ledgermate/core/formulas/daily_budget_formulas.dart';
+import 'package:ledgermate/core/l10n/app_localizations.dart';
 import 'package:ledgermate/core/presentation/navigation/app_shell.dart';
 import 'package:ledgermate/core/theme/app_theme.dart';
 import 'package:ledgermate/features/analytics/application/analytics_providers.dart';
@@ -73,7 +74,13 @@ void main() {
         ),
         settingsRepositoryProvider.overrideWithValue(FakeSettingsRepository()),
       ],
-      child: MaterialApp(theme: AppTheme.dark, home: const AppShell()),
+      child: MaterialApp(
+        theme: AppTheme.dark,
+        locale: const Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const AppShell(),
+      ),
     );
   }
 

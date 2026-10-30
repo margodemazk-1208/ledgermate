@@ -95,7 +95,12 @@ class _OnboardingGate extends ConsumerWidget {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text('Gagal memuat data: $error'),
+            child: Builder(
+              builder: (context) => Text(
+                AppLocalizations.of(context)!
+                    .appRootDataLoadErrorMessage(error),
+              ),
+            ),
           ),
         ),
       ),

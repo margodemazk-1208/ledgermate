@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../../core/presentation/widgets/icon_circle.dart';
 import '../../../../core/presentation/widgets/press_scale.dart';
@@ -44,19 +45,17 @@ class AssetCard extends ConsumerWidget {
   }
 
   Future<void> _handleDelete(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Aset?'),
-        content: Text(
-          'Apakah Anda yakin ingin menghapus aset "${item.name}"? '
-          'Tindakan ini tidak dapat dibatalkan.',
-        ),
+        title: Text(l10n.assetCardDeleteDialogTitle),
+        content: Text(l10n.assetCardDeleteDialogMessage(item.name)),
         actions: [
           TextButton(
             key: const ValueKey('delete_asset_cancel_button'),
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Batal'),
+            child: Text(l10n.assetCardCancelButton),
           ),
           PressScale(
             child: FilledButton(
@@ -65,7 +64,7 @@ class AssetCard extends ConsumerWidget {
                 backgroundColor: AppColors.expenseRed,
               ),
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Hapus'),
+              child: Text(l10n.assetCardDeleteButton),
             ),
           ),
         ],
@@ -80,7 +79,9 @@ class AssetCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isGain = item.isGain;
+    final sign = isGain ? '+' : '';
     final gainColor = isGain
         ? AppColors.savingsGreenText(theme.brightness)
         : AppColors.expenseRedText(theme.brightness);
@@ -134,7 +135,7 @@ class AssetCard extends ConsumerWidget {
                 ),
                 IconButton(
                   key: ValueKey('edit_asset_button_${item.id}'),
-                  tooltip: 'Edit Lengkap',
+                  tooltip: l10n.assetCardEditTooltip,
                   icon: const Icon(Icons.edit_outlined, size: 20),
                   onPressed: () {
                     Navigator.of(context).push(
@@ -147,7 +148,7 @@ class AssetCard extends ConsumerWidget {
                 PressScale(
                   child: IconButton(
                     key: ValueKey('delete_asset_button_${item.id}'),
-                    tooltip: 'Hapus Aset',
+                    tooltip: l10n.assetCardDeleteTooltip,
                     icon: const Icon(
                       Icons.delete_outline,
                       size: 20,
@@ -168,7 +169,7 @@ class AssetCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Modal Awal',
+                        l10n.assetCardPurchaseValueLabel,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.textTheme.bodySmall?.color?.withValues(
                             alpha: 0.7,
@@ -190,7 +191,7 @@ class AssetCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Nilai Sekarang',
+                        l10n.assetCardCurrentValueLabel,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.textTheme.bodySmall?.color?.withValues(
                             alpha: 0.7,
@@ -224,7 +225,7 @@ class AssetCard extends ConsumerWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      'Keuntungan / Kerugian',
+                      l10n.assetCardGainLossLabel,
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
@@ -235,7 +236,11 @@ class AssetCard extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
-                      '${isGain ? '+' : ''}${formatRupiah(item.gainLoss)} (${isGain ? '+' : ''}${item.returnPercentage.toStringAsFixed(1)}%)',
+                      l10n.assetCardGainLossValue(
+                        sign,
+                        formatRupiah(item.gainLoss),
+                        item.returnPercentage.toStringAsFixed(1),
+                      ),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: gainColor,
@@ -256,7 +261,9 @@ class AssetCard extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Update: ${_formatDateTime(item.lastUpdatedAt)}',
+                    l10n.assetCardLastUpdatedLabel(
+                      _formatDateTime(item.lastUpdatedAt),
+                    ),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.textTheme.bodySmall?.color?.withValues(
                         alpha: 0.6,
@@ -273,7 +280,7 @@ class AssetCard extends ConsumerWidget {
                     );
                   },
                   icon: const Icon(Icons.sync_alt, size: 16),
-                  label: const Text('Update Nilai'),
+                  label: Text(l10n.assetCardUpdateValueButton),
                   style: FilledButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                   ),

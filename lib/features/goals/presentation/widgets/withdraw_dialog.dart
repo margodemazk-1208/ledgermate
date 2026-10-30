@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/financial_goal.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/presentation/widgets/press_scale.dart';
 import '../../../../core/presentation/widgets/success_toast.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -54,14 +55,15 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
     // D18/M17 bug #8: entry guard before the confirm `showDialog` gap below.
     if (_isBusy) return;
     if (!_formKey.currentState!.validate()) return;
+    final l10n = AppLocalizations.of(context)!;
 
     final amount = _parseAmount();
     if (amount == null || amount <= 0) {
-      setState(() => _errorMsg = 'Nominal harus lebih besar dari 0.');
+      setState(() => _errorMsg = l10n.withdrawDialogInvalidAmountError);
       return;
     }
     if (amount > widget.goal.currentAmount) {
-      setState(() => _errorMsg = 'Nominal melebihi tabungan saat ini.');
+      setState(() => _errorMsg = l10n.withdrawDialogExceedsBalanceError);
       return;
     }
 
@@ -74,25 +76,27 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text(
-          'Konfirmasi Penarikan',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: Text(
+          l10n.withdrawDialogConfirmTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         content: Text(
-          'Tarik ${formatRupiah(amount)} dari target "${widget.goal.goalName}"?\n\n'
-          'Saldo target akan berkurang dan nominal ini akan otomatis kembali ke saldo aktif periode berjalan.',
+          l10n.withdrawDialogConfirmMessage(
+            formatRupiah(amount),
+            widget.goal.goalName,
+          ),
         ),
         actions: [
           TextButton(
             key: const ValueKey('withdraw_confirm_cancel_button'),
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Batal'),
+            child: Text(l10n.withdrawDialogCancelButton),
           ),
           FilledButton(
             key: const ValueKey('withdraw_confirm_submit_button'),
             style: FilledButton.styleFrom(backgroundColor: AppColors.brandTeal),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Tarik Sekarang'),
+            child: Text(l10n.withdrawDialogConfirmSubmitButton),
           ),
         ],
       ),
@@ -111,7 +115,10 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
           .read(goalsRepositoryProvider)
           .withdrawFromGoal(goalId: widget.goal.id, amount: amount);
       if (mounted) {
-        showSuccessToast(context, 'Penarikan ${formatRupiah(amount)} berhasil');
+        showSuccessToast(
+          context,
+          l10n.withdrawDialogSuccessToast(formatRupiah(amount)),
+        );
         Navigator.of(context).pop(amount);
       }
     } catch (e) {
@@ -119,7 +126,7 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
         setState(() {
           _isBusy = false;
           _isSubmitting = false;
-          _errorMsg = 'Gagal melakukan penarikan: $e';
+          _errorMsg = l10n.withdrawDialogGenericError(e);
         });
       }
     }
@@ -128,6 +135,7 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -135,10 +143,10 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
         children: [
           const Icon(Icons.outbox, color: AppColors.brandTeal, size: 26),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Tarik dari Goal',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+              l10n.withdrawDialogTitle,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
             ),
           ),
         ],
@@ -150,14 +158,16 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Target: ${widget.goal.goalName}',
+              l10n.withdrawDialogTargetLabel(widget.goal.goalName),
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'Tersedia saat ini: ${formatRupiah(widget.goal.currentAmount)}',
+              l10n.withdrawDialogAvailableLabel(
+                formatRupiah(widget.goal.currentAmount),
+              ),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: AppColors.savingsGreen,
                 fontWeight: FontWeight.w600,
@@ -168,18 +178,18 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
               key: const ValueKey('withdraw_amount_field'),
               controller: _amountController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Nominal Penarikan',
+              decoration: InputDecoration(
+                labelText: l10n.withdrawDialogAmountFieldLabel,
                 hintText: 'Rp 0',
-                prefixIcon: Icon(Icons.money),
+                prefixIcon: const Icon(Icons.money),
               ),
               validator: (val) {
                 final parsed = parseRupiah(val ?? '');
                 if (parsed == null || parsed <= 0) {
-                  return 'Masukkan nominal yang valid';
+                  return l10n.withdrawDialogInvalidAmountValidator;
                 }
                 if (parsed > widget.goal.currentAmount) {
-                  return 'Melebihi saldo terkumpul';
+                  return l10n.withdrawDialogExceedsBalanceValidator;
                 }
                 return null;
               },
@@ -200,7 +210,7 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
                 ),
                 ActionChip(
                   key: const ValueKey('withdraw_chip_100'),
-                  label: const Text('Semua'),
+                  label: Text(l10n.withdrawDialogChipAll),
                   onPressed: () => _setPresetPercentage(1.0),
                 ),
               ],
@@ -222,7 +232,7 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
         TextButton(
           key: const ValueKey('withdraw_cancel_button'),
           onPressed: _isBusy ? null : () => Navigator.of(context).pop(),
-          child: const Text('Batal'),
+          child: Text(l10n.withdrawDialogCancelButton),
         ),
         PressScale(
           enabled: !_isBusy,
@@ -238,7 +248,7 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
                       color: Colors.white,
                     ),
                   )
-                : const Text('Lanjut Tarik'),
+                : Text(l10n.withdrawDialogSubmitButton),
           ),
         ),
       ],

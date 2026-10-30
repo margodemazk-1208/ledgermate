@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/animated_progress_bar.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
@@ -21,12 +22,13 @@ class GoalsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final summaryAsync = ref.watch(goalsOverviewSummaryProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Target Tabungan',
+          l10n.goalsScreenTitle,
           style: AppTypography.script(fontSize: 20),
         ),
       ),
@@ -45,7 +47,7 @@ class GoalsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Gagal memuat target tabungan: $err',
+                  l10n.goalsScreenLoadError(err),
                   style: theme.textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -76,14 +78,14 @@ class GoalsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Belum Ada Target Tabungan',
+                      l10n.goalsScreenEmptyTitle,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Buat target finansial untuk melacak estimasi tercapai dan menyisihkan dana harian secara otomatis.',
+                      l10n.goalsScreenEmptyMessage,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.textTheme.bodySmall?.color,
                       ),
@@ -100,7 +102,7 @@ class GoalsScreen extends ConsumerWidget {
                         );
                       },
                       icon: const Icon(Icons.add),
-                      label: const Text('Buat Target Pertama'),
+                      label: Text(l10n.goalsScreenCreateFirstButton),
                     ),
                   ],
                 ),
@@ -123,7 +125,7 @@ class GoalsScreen extends ConsumerWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        'Daftar Target Aktif (${summary.goalCount})',
+                        l10n.goalsScreenActiveListHeader(summary.goalCount),
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.3,
@@ -135,7 +137,9 @@ class GoalsScreen extends ConsumerWidget {
                     if (summary.completedCount > 0) ...[
                       const SizedBox(width: 8),
                       Text(
-                        '${summary.completedCount} selesai',
+                        l10n.goalsScreenCompletedCountLabel(
+                          summary.completedCount,
+                        ),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColors.savingsGreenText(theme.brightness),
                           fontWeight: FontWeight.w600,
@@ -155,7 +159,7 @@ class GoalsScreen extends ConsumerWidget {
                 const SizedBox(height: 4),
                 DashedAddCard(
                   key: const ValueKey('goals_dashed_add_card'),
-                  label: 'Tambah Goal Baru',
+                  label: l10n.goalsScreenAddGoalCardLabel,
                   onTap: () {
                     Navigator.of(context).push(
                       SlidePageRoute(builder: (_) => const GoalFormScreen()),
@@ -188,6 +192,7 @@ class _GoalsOverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final percent = (summary.overallProgress * 100).toInt();
 
     return Card(
@@ -207,7 +212,7 @@ class _GoalsOverviewCard extends StatelessWidget {
               children: [
                 Flexible(
                   child: Text(
-                    'Total Progres Tabungan',
+                    l10n.goalsOverviewCardTitle,
                     style: AppTypography.script(fontSize: 16),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -242,14 +247,14 @@ class _GoalsOverviewCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _StatColumn(
-                    label: 'Terkumpul',
+                    label: l10n.goalsOverviewCardCollectedLabel,
                     value: formatRupiah(summary.totalCurrentAmount),
                     valueColor: AppColors.savingsGreenText(theme.brightness),
                   ),
                 ),
                 Expanded(
                   child: _StatColumn(
-                    label: 'Total Target',
+                    label: l10n.goalsOverviewCardTargetLabel,
                     value: formatRupiah(summary.totalTargetAmount),
                   ),
                 ),
@@ -260,7 +265,7 @@ class _GoalsOverviewCard extends StatelessWidget {
                   // it now reads in the default body text color like
                   // "Total Target" next to it.
                   child: _StatColumn(
-                    label: 'Cadangan/Hari',
+                    label: l10n.goalsOverviewCardDailyReserveLabel,
                     value:
                         '${formatRupiah(summary.totalDailySavingsReserve)}/h',
                   ),

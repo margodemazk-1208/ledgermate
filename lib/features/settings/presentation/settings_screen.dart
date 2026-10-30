@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/category.dart';
 import '../../../core/database/local_profile.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/theme/app_typography.dart';
@@ -26,6 +27,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final currentThemeMode = ref.watch(themeModeProvider);
     final isDarkMode =
         currentThemeMode == ThemeMode.dark ||
@@ -55,7 +57,10 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       key: const ValueKey('settings_screen'),
       appBar: AppBar(
-        title: Text('Pengaturan', style: AppTypography.script(fontSize: 20)),
+        title: Text(
+          l10n.settingsScreenTitle,
+          style: AppTypography.script(fontSize: 20),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -106,12 +111,12 @@ class SettingsScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Tampilan & Bahasa',
+                              l10n.settingsScreenPreferencesTitle,
                               style: AppTypography.script(fontSize: 17),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Kustomisasi tema dan bahasa antarmuka',
+                              l10n.settingsScreenPreferencesSubtitle,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.textTheme.bodySmall?.color
                                     ?.withValues(alpha: 0.7),
@@ -126,11 +131,11 @@ class SettingsScreen extends ConsumerWidget {
                   SwitchListTile(
                     key: const ValueKey('settings_dark_mode_switch'),
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Mode Gelap (Dark Mode)'),
+                    title: Text(l10n.settingsScreenDarkModeTitle),
                     subtitle: Text(
                       isDarkMode
-                          ? 'Tema gelap aktif (rekomendasi OLED)'
-                          : 'Tema terang aktif',
+                          ? l10n.settingsScreenDarkModeActiveSubtitle
+                          : l10n.settingsScreenLightModeActiveSubtitle,
                       style: theme.textTheme.bodySmall,
                     ),
                     secondary: Icon(
@@ -156,11 +161,11 @@ class SettingsScreen extends ConsumerWidget {
                       Icons.language,
                       color: theme.textTheme.bodyLarge?.color,
                     ),
-                    title: const Text('Bahasa Aplikasi'),
+                    title: Text(l10n.settingsScreenLanguageTitle),
                     subtitle: Text(
                       currentLanguage == AppLanguage.id
-                          ? 'Bahasa Indonesia (Aktif)'
-                          : 'English (Active)',
+                          ? l10n.settingsScreenLanguageIndonesianActiveSubtitle
+                          : l10n.settingsScreenLanguageEnglishActiveSubtitle,
                     ),
                     trailing: DropdownButton<AppLanguage>(
                       value: currentLanguage,
@@ -175,14 +180,16 @@ class SettingsScreen extends ConsumerWidget {
                               .setFromLanguage(lang);
                         }
                       },
-                      items: const [
+                      items: [
                         DropdownMenuItem(
                           value: AppLanguage.id,
-                          child: Text('Bahasa Indonesia'),
+                          child: Text(
+                            l10n.settingsScreenLanguageIndonesianOption,
+                          ),
                         ),
                         DropdownMenuItem(
                           value: AppLanguage.en,
-                          child: Text('English'),
+                          child: Text(l10n.settingsScreenLanguageEnglishOption),
                         ),
                       ],
                     ),
@@ -235,12 +242,12 @@ class SettingsScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Notifikasi & Pengingat',
+                              l10n.settingsScreenNotificationsTitle,
                               style: AppTypography.script(fontSize: 17),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '100% Offline via Alarm Manager lokal',
+                              l10n.settingsScreenNotificationsSubtitle,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.textTheme.bodySmall?.color
                                     ?.withValues(alpha: 0.7),
@@ -256,9 +263,11 @@ class SettingsScreen extends ConsumerWidget {
                   SwitchListTile(
                     key: const ValueKey('settings_daily_reminder_switch'),
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Pengingat Catat Harian'),
+                    title: Text(l10n.settingsScreenDailyReminderTitle),
                     subtitle: Text(
-                      'Setiap hari pukul ${_formatTime(profile?.notifDailyReminderTime ?? 1260)} WIB (ketuk jam untuk mengubah)',
+                      l10n.settingsScreenDailyReminderSubtitle(
+                        _formatTime(profile?.notifDailyReminderTime ?? 1260),
+                      ),
                       style: theme.textTheme.bodySmall,
                     ),
                     value: profile?.notifDailyReminderEnabled ?? true,
@@ -306,7 +315,9 @@ class SettingsScreen extends ConsumerWidget {
                           : null,
                       icon: const Icon(Icons.schedule, size: 18),
                       label: Text(
-                        'Ubah Jam (${_formatTime(profile?.notifDailyReminderTime ?? 1260)})',
+                        l10n.settingsScreenChangeTimeButton(
+                          _formatTime(profile?.notifDailyReminderTime ?? 1260),
+                        ),
                       ),
                     ),
                   ),
@@ -315,9 +326,9 @@ class SettingsScreen extends ConsumerWidget {
                   SwitchListTile(
                     key: const ValueKey('settings_limit_alert_switch'),
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Peringatan Limit Anggaran'),
+                    title: Text(l10n.settingsScreenLimitAlertTitle),
                     subtitle: Text(
-                      'Pemberitahuan real-time saat uang jajan aman hari ini mendekati 0 atau minus.',
+                      l10n.settingsScreenLimitAlertSubtitle,
                       style: theme.textTheme.bodySmall,
                     ),
                     value: profile?.notifLimitAlertEnabled ?? true,
@@ -332,9 +343,9 @@ class SettingsScreen extends ConsumerWidget {
                   SwitchListTile(
                     key: const ValueKey('settings_pay_cycle_switch'),
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Siklus Gajian Baru'),
+                    title: Text(l10n.settingsScreenPayCycleTitle),
                     subtitle: Text(
-                      'Pemberitahuan saat memasuki tanggal gajian atau siklus baru.',
+                      l10n.settingsScreenPayCycleSubtitle,
                       style: theme.textTheme.bodySmall,
                     ),
                     value: profile?.notifPayCycleEnabled ?? true,
@@ -349,9 +360,9 @@ class SettingsScreen extends ConsumerWidget {
                   SwitchListTile(
                     key: const ValueKey('settings_goal_milestone_switch'),
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Milestone Target Tabungan'),
+                    title: Text(l10n.settingsScreenGoalMilestoneTitle),
                     subtitle: Text(
-                      'Pemberitahuan saat progres goal mencapai 25%, 50%, 75%, dan 100%.',
+                      l10n.settingsScreenGoalMilestoneSubtitle,
                       style: theme.textTheme.bodySmall,
                     ),
                     value: profile?.notifGoalMilestoneEnabled ?? true,
@@ -417,7 +428,7 @@ class SettingsScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Tentang LedgerMate',
+                              l10n.settingsScreenAboutTitle,
                               style: AppTypography.script(fontSize: 17),
                             ),
                             const SizedBox(height: 2),
@@ -427,22 +438,24 @@ class SettingsScreen extends ConsumerWidget {
                             // immediately drifted from the real version.
                             packageInfoAsync.when(
                               data: (info) => Text(
-                                'Versi ${info.version}+${info.buildNumber} '
-                                '(100% Offline, Tanpa Server)',
+                                l10n.settingsScreenVersionLabel(
+                                  info.version,
+                                  info.buildNumber,
+                                ),
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.textTheme.bodySmall?.color
                                       ?.withValues(alpha: 0.7),
                                 ),
                               ),
                               loading: () => Text(
-                                'Memuat versi...',
+                                l10n.settingsScreenVersionLoading,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.textTheme.bodySmall?.color
                                       ?.withValues(alpha: 0.7),
                                 ),
                               ),
                               error: (_, _) => Text(
-                                '100% Offline, Tanpa Server',
+                                l10n.settingsScreenVersionFallback,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.textTheme.bodySmall?.color
                                       ?.withValues(alpha: 0.7),
@@ -456,7 +469,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'LedgerMate adalah pelacak anggaran harian pintar berbasis offline-first. Seluruh data keuangan Anda tersimpan secara lokal di perangkat Anda menggunakan Isar Database.',
+                    l10n.settingsScreenAboutDescription,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.textTheme.bodySmall?.color?.withValues(
                         alpha: 0.8,
@@ -480,27 +493,28 @@ class _CategoryManagementCard extends ConsumerWidget {
   const _CategoryManagementCard();
 
   void _showAddCategoryDialog(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
     var isSubmitting = false;
     showDialog(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (dialogCtx, setDialogState) => AlertDialog(
-          title: const Text('Tambah Kategori Baru'),
+          title: Text(l10n.categoryManagementCardAddDialogTitle),
           content: TextField(
             key: const ValueKey('add_category_name_field'),
             controller: controller,
             autofocus: true,
             enabled: !isSubmitting,
-            decoration: const InputDecoration(
-              labelText: 'Nama Kategori',
-              hintText: 'Contoh: Investasi, Zakat, Liburan',
+            decoration: InputDecoration(
+              labelText: l10n.categoryManagementCardNameLabel,
+              hintText: l10n.categoryManagementCardNameHint,
             ),
           ),
           actions: [
             TextButton(
               onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
-              child: const Text('Batal'),
+              child: Text(l10n.categoryManagementCardCancelButton),
             ),
             FilledButton(
               key: const ValueKey('add_category_confirm_button'),
@@ -537,7 +551,7 @@ class _CategoryManagementCard extends ConsumerWidget {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Simpan'),
+                  : Text(l10n.categoryManagementCardSaveButton),
             ),
           ],
         ),
@@ -550,24 +564,27 @@ class _CategoryManagementCard extends ConsumerWidget {
     WidgetRef ref,
     Category category,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: category.name);
     var isSubmitting = false;
     showDialog(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (dialogCtx, setDialogState) => AlertDialog(
-          title: const Text('Ubah Nama Kategori'),
+          title: Text(l10n.categoryManagementCardEditDialogTitle),
           content: TextField(
             key: const ValueKey('edit_category_name_field'),
             controller: controller,
             autofocus: true,
             enabled: !isSubmitting,
-            decoration: const InputDecoration(labelText: 'Nama Kategori'),
+            decoration: InputDecoration(
+              labelText: l10n.categoryManagementCardNameLabel,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
-              child: const Text('Batal'),
+              child: Text(l10n.categoryManagementCardCancelButton),
             ),
             FilledButton(
               key: const ValueKey('edit_category_confirm_button'),
@@ -601,7 +618,7 @@ class _CategoryManagementCard extends ConsumerWidget {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Simpan'),
+                  : Text(l10n.categoryManagementCardSaveButton),
             ),
           ],
         ),
@@ -614,19 +631,20 @@ class _CategoryManagementCard extends ConsumerWidget {
     WidgetRef ref,
     Category category,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     var isSubmitting = false;
     showDialog(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (dialogCtx, setDialogState) => AlertDialog(
-          title: const Text('Hapus Kategori?'),
+          title: Text(l10n.categoryManagementCardDeleteDialogTitle),
           content: Text(
-            'Apakah Anda yakin ingin menghapus kategori "${category.name}"?',
+            l10n.categoryManagementCardDeleteDialogMessage(category.name),
           ),
           actions: [
             TextButton(
               onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
-              child: const Text('Batal'),
+              child: Text(l10n.categoryManagementCardCancelButton),
             ),
             FilledButton(
               key: const ValueKey('delete_category_confirm_button'),
@@ -667,7 +685,7 @@ class _CategoryManagementCard extends ConsumerWidget {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Hapus'),
+                  : Text(l10n.categoryManagementCardDeleteButton),
             ),
           ],
         ),
@@ -678,6 +696,7 @@ class _CategoryManagementCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final categoriesAsync = ref.watch(settingsCategoriesStreamProvider);
 
     return Card(
@@ -719,12 +738,12 @@ class _CategoryManagementCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Kelola Kategori',
+                        l10n.categoryManagementCardTitle,
                         style: AppTypography.script(fontSize: 17),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Kategori bawaan & kustom untuk transaksi',
+                        l10n.categoryManagementCardSubtitle,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.textTheme.bodySmall?.color?.withValues(
                             alpha: 0.7,
@@ -738,7 +757,7 @@ class _CategoryManagementCard extends ConsumerWidget {
                   key: const ValueKey('settings_add_category_button'),
                   onPressed: () => _showAddCategoryDialog(context, ref),
                   icon: const Icon(Icons.add),
-                  tooltip: 'Tambah Kategori',
+                  tooltip: l10n.categoryManagementCardAddTooltip,
                 ),
               ],
             ),
@@ -746,10 +765,10 @@ class _CategoryManagementCard extends ConsumerWidget {
             categoriesAsync.when(
               data: (categories) {
                 if (categories.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Text('Memuat kategori default...'),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Text(l10n.categoryManagementCardLoadingDefaults),
                     ),
                   );
                 }
@@ -776,7 +795,7 @@ class _CategoryManagementCard extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                'Bawaan',
+                                l10n.categoryManagementCardDefaultBadge,
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: theme.colorScheme.onSurface.withValues(
                                     alpha: 0.7,
@@ -789,7 +808,8 @@ class _CategoryManagementCard extends ConsumerWidget {
                               children: [
                                 IconButton(
                                   icon: const Icon(Icons.edit, size: 20),
-                                  tooltip: 'Ubah Nama',
+                                  tooltip:
+                                      l10n.categoryManagementCardEditTooltip,
                                   onPressed: () => _showEditCategoryDialog(
                                     context,
                                     ref,
@@ -802,7 +822,8 @@ class _CategoryManagementCard extends ConsumerWidget {
                                     size: 20,
                                     color: theme.colorScheme.error,
                                   ),
-                                  tooltip: 'Hapus Kategori',
+                                  tooltip:
+                                      l10n.categoryManagementCardDeleteTooltip,
                                   onPressed: () => _showDeleteCategoryDialog(
                                     context,
                                     ref,
@@ -821,7 +842,7 @@ class _CategoryManagementCard extends ConsumerWidget {
                   child: CircularProgressIndicator(),
                 ),
               ),
-              error: (e, _) => Text('Gagal memuat kategori: $e'),
+              error: (e, _) => Text(l10n.categoryManagementCardLoadError(e)),
             ),
           ],
         ),
@@ -836,6 +857,7 @@ class _WalletsManagementCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Card(
       key: const ValueKey('settings_wallets_card'),
@@ -876,12 +898,12 @@ class _WalletsManagementCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Kelola Dompet & Rekening',
+                        l10n.walletsManagementCardTitle,
                         style: AppTypography.script(fontSize: 17),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Atur dompet, rekening bank, saldo awal & transfer',
+                        l10n.walletsManagementCardSubtitle,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.textTheme.bodySmall?.color?.withValues(
                             alpha: 0.7,
@@ -899,7 +921,7 @@ class _WalletsManagementCard extends StatelessWidget {
                     );
                   },
                   icon: const Icon(Icons.arrow_forward),
-                  tooltip: 'Buka Kelola Dompet',
+                  tooltip: l10n.walletsManagementCardOpenTooltip,
                 ),
               ],
             ),

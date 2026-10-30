@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/backup_data.dart';
 
@@ -20,6 +21,7 @@ class RestoreConfirmationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm');
     final formattedDate = dateFormat.format(summary.exportedAt);
 
@@ -30,8 +32,8 @@ class RestoreConfirmationDialog extends StatelessWidget {
         color: AppColors.warningAmber,
         size: 40,
       ),
-      title: const Text(
-        'Konfirmasi Pemulihan Data',
+      title: Text(
+        l10n.restoreConfirmationDialogTitle,
         textAlign: TextAlign.center,
       ),
       content: SingleChildScrollView(
@@ -59,7 +61,7 @@ class RestoreConfirmationDialog extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'PERHATIAN: Pemulihan akan menghapus dan menimpa SELURUH data lokal saat ini. Tindakan ini tidak dapat dibatalkan.',
+                      l10n.restoreConfirmationDialogWarningMessage,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.expenseRed,
                         fontWeight: FontWeight.w600,
@@ -71,42 +73,54 @@ class RestoreConfirmationDialog extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Ringkasan Data Cadangan:',
+              l10n.restoreConfirmationDialogSummaryTitle,
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
-            _buildSummaryRow(context, 'Waktu Cadangan', formattedDate),
             _buildSummaryRow(
               context,
-              'Profil Pengguna',
-              summary.hasProfile ? 'Tersedia' : 'Tidak Ada',
+              l10n.restoreConfirmationDialogBackupTimeLabel,
+              formattedDate,
             ),
             _buildSummaryRow(
               context,
-              'Siklus Gaji',
-              '${summary.payCycleCount} data',
+              l10n.restoreConfirmationDialogUserProfileLabel,
+              summary.hasProfile
+                  ? l10n.restoreConfirmationDialogAvailableValue
+                  : l10n.restoreConfirmationDialogNotAvailableValue,
             ),
             _buildSummaryRow(
               context,
-              'Kategori',
-              '${summary.categoryCount} kategori',
+              l10n.restoreConfirmationDialogPayCycleLabel,
+              l10n.restoreConfirmationDialogPayCycleCountValue(
+                summary.payCycleCount,
+              ),
             ),
             _buildSummaryRow(
               context,
-              'Riwayat Transaksi',
-              '${summary.transactionCount} transaksi',
+              l10n.restoreConfirmationDialogCategoryLabel,
+              l10n.restoreConfirmationDialogCategoryCountValue(
+                summary.categoryCount,
+              ),
             ),
             _buildSummaryRow(
               context,
-              'Target Finansial (Goals)',
-              '${summary.goalCount} target',
+              l10n.restoreConfirmationDialogTransactionLabel,
+              l10n.restoreConfirmationDialogTransactionCountValue(
+                summary.transactionCount,
+              ),
             ),
             _buildSummaryRow(
               context,
-              'Aset / Investasi',
-              '${summary.assetCount} aset',
+              l10n.restoreConfirmationDialogGoalLabel,
+              l10n.restoreConfirmationDialogGoalCountValue(summary.goalCount),
+            ),
+            _buildSummaryRow(
+              context,
+              l10n.restoreConfirmationDialogAssetLabel,
+              l10n.restoreConfirmationDialogAssetCountValue(summary.assetCount),
             ),
           ],
         ),
@@ -115,7 +129,7 @@ class RestoreConfirmationDialog extends StatelessWidget {
         OutlinedButton(
           key: const ValueKey('restore_cancel_button'),
           onPressed: onCancel,
-          child: const Text('Batal'),
+          child: Text(l10n.restoreConfirmationDialogCancelButton),
         ),
         FilledButton(
           key: const ValueKey('restore_confirm_button'),
@@ -124,7 +138,7 @@ class RestoreConfirmationDialog extends StatelessWidget {
             foregroundColor: Colors.white,
           ),
           onPressed: onConfirm,
-          child: const Text('Timpa & Pulihkan'),
+          child: Text(l10n.restoreConfirmationDialogConfirmButton),
         ),
       ],
     );

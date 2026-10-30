@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ledgermate/core/database/local_profile.dart';
+import 'package:ledgermate/core/l10n/app_localizations.dart';
 import 'package:ledgermate/features/export_import/application/export_import_providers.dart';
 import 'package:ledgermate/features/export_import/data/export_import_repository.dart';
 import 'package:ledgermate/features/export_import/domain/backup_data.dart';
@@ -98,7 +100,12 @@ void main() {
         settingsRepositoryProvider.overrideWithValue(fakeSettingsRepo),
         notificationServiceProvider.overrideWithValue(fakeNotifService),
       ],
-      child: const MaterialApp(home: SettingsScreen()),
+      child: MaterialApp(
+        locale: const Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const SettingsScreen(),
+      ),
     );
   }
 
@@ -221,6 +228,63 @@ void main() {
         await tester.tap(switchFinder);
         await tester.pumpAndSettle();
       });
+
+      testWidgets(
+        'toggles language dropdown to English and updates UI text to English',
+        (tester) async {
+          tester.view.physicalSize = const Size(1200, 6000);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() {
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                filePickerServiceProvider.overrideWithValue(
+                  FakeFilePickerService(),
+                ),
+                exportImportRepositoryProvider.overrideWithValue(
+                  FakeExportImportRepository(),
+                ),
+                settingsRepositoryProvider.overrideWithValue(fakeSettingsRepo),
+                notificationServiceProvider.overrideWithValue(fakeNotifService),
+              ],
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final locale = ref.watch(appLocaleProvider);
+                  return MaterialApp(
+                    locale: locale,
+                    localizationsDelegates:
+                        AppLocalizations.localizationsDelegates,
+                    supportedLocales: AppLocalizations.supportedLocales,
+                    home: const SettingsScreen(),
+                  );
+                },
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.widgetWithText(AppBar, 'Pengaturan'), findsOneWidget);
+          expect(find.text('Tampilan & Bahasa'), findsOneWidget);
+
+          final langDropdown = find.byType(DropdownButton<AppLanguage>);
+          expect(langDropdown, findsOneWidget);
+
+          await tester.tap(langDropdown);
+          await tester.pumpAndSettle();
+
+          final enOption = find.text('English').last;
+          await tester.tap(enOption);
+          await tester.pumpAndSettle();
+
+          expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
+          expect(find.text('Appearance & Language'), findsOneWidget);
+          expect(find.text('Dark Mode'), findsOneWidget);
+        },
+      );
 
       testWidgets(
         'toggles notification switches and triggers permission request',

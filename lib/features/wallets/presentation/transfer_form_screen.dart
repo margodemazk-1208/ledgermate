@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/widgets/press_scale.dart';
 import '../../../core/presentation/widgets/success_toast.dart';
 import '../../../core/theme/app_colors.dart';
@@ -46,6 +47,7 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     // D18/M17 bug #8: re-entrancy guard against double-tap.
     if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) {
@@ -54,14 +56,14 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
 
     if (_sourceWalletId == null || _targetWalletId == null) {
       setState(() {
-        _errorMessage = 'Pilih dompet asal dan tujuan transfer.';
+        _errorMessage = l10n.transferFormScreenMissingWalletsError;
       });
       return;
     }
 
     if (_sourceWalletId == _targetWalletId) {
       setState(() {
-        _errorMessage = 'Dompet asal dan tujuan tidak boleh sama.';
+        _errorMessage = l10n.transferFormScreenSameWalletError;
       });
       return;
     }
@@ -69,7 +71,7 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
     final amount = parseRupiah(_amountController.text) ?? 0;
     if (amount <= 0) {
       setState(() {
-        _errorMessage = 'Nominal transfer harus lebih besar dari nol.';
+        _errorMessage = l10n.transferFormScreenZeroAmountError;
       });
       return;
     }
@@ -95,7 +97,8 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
       if (mounted) {
         showSuccessToast(
           context,
-          'Transfer ${formatRupiah(amount)} berhasil diproses',
+          AppLocalizations.of(context)!
+              .transferFormScreenSuccessToast(formatRupiah(amount)),
         );
         Navigator.of(context).pop(true);
       }
@@ -126,6 +129,7 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final walletsAsync = ref.watch(walletsStreamProvider);
     final balancesAsync = ref.watch(walletBalancesProvider);
     final balances = balancesAsync.value ?? const <int, int>{};
@@ -133,7 +137,7 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Transfer Antar Dompet',
+          l10n.transferFormScreenTitle,
           style: AppTypography.script(fontSize: 18),
         ),
       ),
@@ -153,13 +157,13 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Butuh minimal 2 dompet untuk melakukan transfer.',
+                      l10n.transferFormScreenNeedMoreWalletsTitle,
                       style: theme.textTheme.titleMedium,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Tambahkan dompet lain terlebih dahulu di menu Kelola Dompet.',
+                      l10n.transferFormScreenNeedMoreWalletsMessage,
                       style: theme.textTheme.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
@@ -223,9 +227,9 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
                   DropdownButtonFormField<int>(
                     key: const ValueKey('transfer_source_wallet_picker'),
                     initialValue: _sourceWalletId,
-                    decoration: const InputDecoration(
-                      labelText: 'Dari Dompet (Sumber)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.transferFormScreenSourceWalletLabel,
+                      border: const OutlineInputBorder(),
                     ),
                     items: wallets.map((w) {
                       final bal = balances[w.id] ?? w.startingBalance;
@@ -260,9 +264,9 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
                   DropdownButtonFormField<int>(
                     key: const ValueKey('transfer_target_wallet_picker'),
                     initialValue: _targetWalletId,
-                    decoration: const InputDecoration(
-                      labelText: 'Ke Dompet (Tujuan)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.transferFormScreenTargetWalletLabel,
+                      border: const OutlineInputBorder(),
                     ),
                     items: wallets.where((w) => w.id != _sourceWalletId).map((
                       w,
@@ -293,15 +297,15 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
                     controller: _amountController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [RupiahInputFormatter()],
-                    decoration: const InputDecoration(
-                      labelText: 'Nominal Transfer',
+                    decoration: InputDecoration(
+                      labelText: l10n.transferFormScreenAmountLabel,
                       prefixText: 'Rp ',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                     ),
                     validator: (val) {
                       final parsed = parseRupiah(val ?? '') ?? 0;
                       if (parsed <= 0) {
-                        return 'Nominal transfer harus lebih besar dari nol';
+                        return l10n.transferFormScreenAmountZeroError;
                       }
                       return null;
                     },
@@ -313,10 +317,10 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
                     onTap: _pickDate,
                     borderRadius: BorderRadius.circular(12),
                     child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Tanggal Transfer',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.calendar_today),
+                      decoration: InputDecoration(
+                        labelText: l10n.transferFormScreenDateLabel,
+                        border: const OutlineInputBorder(),
+                        suffixIcon: const Icon(Icons.calendar_today),
                       ),
                       child: Text(
                         DateFormat('d MMMM yyyy').format(_date),
@@ -330,10 +334,10 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
                   TextFormField(
                     key: const ValueKey('transfer_notes_field'),
                     controller: _notesController,
-                    decoration: const InputDecoration(
-                      labelText: 'Catatan (Opsional)',
-                      hintText: 'Misal: Tarik tunai dari ATM, Top up GoPay',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.transferFormScreenNotesLabel,
+                      hintText: l10n.transferFormScreenNotesHint,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -359,7 +363,7 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
                               ),
                             )
                           : const Icon(Icons.swap_horiz),
-                      label: const Text('Transfer Sekarang'),
+                      label: Text(l10n.transferFormScreenSubmitButton),
                     ),
                   ),
                 ],
@@ -372,7 +376,7 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Gagal memuat dompet: $err',
+              l10n.transferFormScreenLoadError(err),
               style: const TextStyle(color: AppColors.expenseRed),
             ),
           ),

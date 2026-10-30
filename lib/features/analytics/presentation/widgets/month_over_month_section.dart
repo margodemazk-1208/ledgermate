@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/rupiah_formatter.dart';
 import '../../domain/analytics_models.dart';
@@ -16,6 +17,7 @@ class MonthOverMonthSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isDark = theme.brightness == Brightness.dark;
 
     final currMonthName = summary.currentMonthRange.label;
@@ -42,14 +44,17 @@ class MonthOverMonthSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Tren Bulan-ke-Bulan (MoM)',
+                        l10n.monthOverMonthSectionTitle,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '$currMonthName vs $prevMonthName',
+                        l10n.monthOverMonthSectionComparisonLabel(
+                          currMonthName,
+                          prevMonthName,
+                        ),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.textTheme.bodySmall?.color?.withValues(
                             alpha: 0.7,
@@ -64,12 +69,12 @@ class MonthOverMonthSection extends StatelessWidget {
                   children: [
                     _LegendIndicator(
                       color: AnalyticsChartColors.previousMonthBar(isDark),
-                      label: 'Bulan Lalu',
+                      label: l10n.monthOverMonthSectionLastMonthLegend,
                     ),
                     const SizedBox(width: 12),
-                    const _LegendIndicator(
+                    _LegendIndicator(
                       color: AnalyticsChartColors.currentMonthBar,
-                      label: 'Bulan Ini',
+                      label: l10n.monthOverMonthSectionThisMonthLegend,
                     ),
                   ],
                 ),
@@ -82,7 +87,7 @@ class MonthOverMonthSection extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(
                   child: Text(
-                    'Belum cukup data transaksi untuk perbandingan bulan-ke-bulan.',
+                    l10n.monthOverMonthSectionEmptyMessage,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.textTheme.bodySmall?.color?.withValues(
                         alpha: 0.7,
@@ -100,7 +105,7 @@ class MonthOverMonthSection extends StatelessWidget {
               // Bar Chart Comparison (Side-by-side per category)
               if (summary.categoryComparisons.isNotEmpty) ...[
                 Text(
-                  'Perbandingan Pengeluaran per Kategori',
+                  l10n.monthOverMonthSectionCategoryComparisonTitle,
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: theme.textTheme.bodySmall?.color?.withValues(
@@ -111,7 +116,12 @@ class MonthOverMonthSection extends StatelessWidget {
                 const SizedBox(height: 12),
                 SizedBox(
                   height: 190,
-                  child: _buildComparisonBarChart(summary, isDark, theme),
+                  child: _buildComparisonBarChart(
+                    context,
+                    summary,
+                    isDark,
+                    theme,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Divider(height: 1),
@@ -130,10 +140,12 @@ class MonthOverMonthSection extends StatelessWidget {
   }
 
   Widget _buildComparisonBarChart(
+    BuildContext context,
     MonthOverMonthSummary summary,
     bool isDark,
     ThemeData theme,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     // Limit chart to top 5 categories for legibility
     final items = summary.categoryComparisons.take(5).toList();
     double maxVal = 0;
@@ -161,9 +173,15 @@ class MonthOverMonthSection extends StatelessWidget {
               final amount = isCurrent
                   ? cat.currentMonthExpense
                   : cat.previousMonthExpense;
-              final periodName = isCurrent ? 'Bulan Ini' : 'Bulan Lalu';
+              final periodName = isCurrent
+                  ? l10n.monthOverMonthSectionThisMonthLegend
+                  : l10n.monthOverMonthSectionLastMonthLegend;
               return BarTooltipItem(
-                '${cat.categoryName} ($periodName)\n${formatRupiah(amount)}',
+                l10n.monthOverMonthSectionTooltipLabel(
+                  cat.categoryName,
+                  periodName,
+                  formatRupiah(amount),
+                ),
                 TextStyle(
                   color: theme.textTheme.bodyMedium?.color,
                   fontWeight: FontWeight.w600,
@@ -258,6 +276,7 @@ class _OverallComparisonRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     final expDiff = summary.expenseDifference;
     final expPct = summary.expenseChangePercentage;
@@ -284,7 +303,7 @@ class _OverallComparisonRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Pengeluaran',
+                  l10n.monthOverMonthSectionExpenseLabel,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.textTheme.bodySmall?.color?.withValues(
                       alpha: 0.7,
@@ -314,7 +333,9 @@ class _OverallComparisonRow extends StatelessWidget {
                     Text(
                       expPct != null
                           ? '${expDiff >= 0 ? '+' : ''}${expPct.toStringAsFixed(1)}%'
-                          : (summary.currentMonthExpense > 0 ? 'Baru' : '0%'),
+                          : (summary.currentMonthExpense > 0
+                                ? l10n.monthOverMonthSectionNewBadge
+                                : '0%'),
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -339,7 +360,7 @@ class _OverallComparisonRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Pemasukan',
+                  l10n.monthOverMonthSectionIncomeLabel,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.textTheme.bodySmall?.color?.withValues(
                       alpha: 0.7,
@@ -371,7 +392,9 @@ class _OverallComparisonRow extends StatelessWidget {
                     Text(
                       summary.incomeChangePercentage != null
                           ? '${summary.incomeDifference >= 0 ? '+' : ''}${summary.incomeChangePercentage!.toStringAsFixed(1)}%'
-                          : (summary.currentMonthIncome > 0 ? 'Baru' : '0%'),
+                          : (summary.currentMonthIncome > 0
+                                ? l10n.monthOverMonthSectionNewBadge
+                                : '0%'),
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -399,6 +422,7 @@ class _CategoryComparisonRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final diff = item.difference;
     final pct = item.changePercentage;
     final isUp = diff > 0;
@@ -434,7 +458,9 @@ class _CategoryComparisonRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Lalu: ${formatRupiah(item.previousMonthExpense)}',
+                  l10n.monthOverMonthSectionPreviousAmountLabel(
+                    formatRupiah(item.previousMonthExpense),
+                  ),
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontSize: 11,
                     color: theme.textTheme.bodySmall?.color?.withValues(
@@ -457,7 +483,9 @@ class _CategoryComparisonRow extends StatelessWidget {
               Text(
                 pct != null
                     ? '${diff >= 0 ? '+' : ''}${pct.toStringAsFixed(1)}%'
-                    : (item.currentMonthExpense > 0 ? 'Baru' : '0%'),
+                    : (item.currentMonthExpense > 0
+                          ? l10n.monthOverMonthSectionNewBadge
+                          : '0%'),
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,

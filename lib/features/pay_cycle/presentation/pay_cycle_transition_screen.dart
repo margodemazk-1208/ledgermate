@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/rupiah_formatter.dart';
 import '../../budget_engine/application/budget_providers.dart';
@@ -54,6 +55,7 @@ class _PayCycleTransitionScreenState
   }
 
   void _onSalaryChanged(String val) {
+    final l10n = AppLocalizations.of(context)!;
     final parsed = parseRupiah(val);
     ref
         .read(payCycleTransitionNotifierProvider.notifier)
@@ -61,8 +63,8 @@ class _PayCycleTransitionScreenState
     setState(() {
       _salaryError = validateRupiahAmount(
         val,
-        emptyMessage: 'Gaji siklus baru tidak boleh kosong',
-        invalidMessage: 'Gaji harus lebih besar dari nol',
+        emptyMessage: l10n.payCycleTransitionScreenSalaryEmptyError,
+        invalidMessage: l10n.payCycleTransitionScreenSalaryInvalidError,
       );
     });
   }
@@ -73,15 +75,16 @@ class _PayCycleTransitionScreenState
   }
 
   void _addExpense(bool isPeriodic) {
+    final l10n = AppLocalizations.of(context)!;
     final name = _expenseNameController.text.trim();
     final amount = parseRupiah(_expenseAmountController.text);
     final nameError = name.isEmpty
-        ? 'Nama pengeluaran tidak boleh kosong'
+        ? l10n.payCycleTransitionScreenExpenseNameEmptyError
         : null;
     final amountError = validateRupiahAmount(
       _expenseAmountController.text,
-      emptyMessage: 'Jumlah tidak boleh kosong',
-      invalidMessage: 'Jumlah harus lebih besar dari nol',
+      emptyMessage: l10n.payCycleTransitionScreenAmountEmptyError,
+      invalidMessage: l10n.payCycleTransitionScreenAmountInvalidError,
     );
 
     setState(() {
@@ -106,12 +109,24 @@ class _PayCycleTransitionScreenState
     _expenseAmountController.clear();
   }
 
+  /// Maps a [PayCycleTransitionState.submitError] sentinel code (set by the
+  /// application-layer `canSubmit` guard, which has no `BuildContext`) to a
+  /// localized message. Any other value is an arbitrary repository
+  /// exception's `toString()`, shown as-is (out of scope for M20).
+  String _resolveSubmitError(AppLocalizations l10n, String code) {
+    if (code == payCycleTransitionIncompleteDataErrorCode) {
+      return l10n.payCycleTransitionScreenIncompleteDataError;
+    }
+    return code;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final profileAsync = ref.watch(budgetProfileStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Transisi Siklus')),
+      appBar: AppBar(title: Text(l10n.payCycleTransitionScreenTitle)),
       body: profileAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(
@@ -130,14 +145,19 @@ class _PayCycleTransitionScreenState
                   color: AppColors.expenseRed,
                 ),
                 const SizedBox(height: 16),
-                Text('Gagal memuat profil: $err', textAlign: TextAlign.center),
+                Text(
+                  l10n.payCycleTransitionScreenLoadProfileError(err),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
         ),
         data: (profile) {
           if (profile == null) {
-            return const Center(child: Text('Profil tidak ditemukan.'));
+            return Center(
+              child: Text(l10n.payCycleTransitionScreenProfileNotFound),
+            );
           }
 
           final state = ref.watch(payCycleTransitionNotifierProvider);
@@ -148,7 +168,7 @@ class _PayCycleTransitionScreenState
                 next.submitError != prev?.submitError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(next.submitError!),
+                  content: Text(_resolveSubmitError(l10n, next.submitError!)),
                   backgroundColor: AppColors.expenseRed,
                 ),
               );
@@ -225,6 +245,7 @@ class _HeaderSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -245,7 +266,9 @@ class _HeaderSection extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                isPeriodic ? 'Siklus Gajian Baru' : 'Rollover Harian',
+                isPeriodic
+                    ? l10n.payCycleTransitionHeaderPeriodicTitle
+                    : l10n.payCycleTransitionHeaderDailyTitle,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -255,8 +278,8 @@ class _HeaderSection extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             isPeriodic
-                ? 'Siklus sebelumnya telah berakhir. Masukkan gaji dan pengeluaran wajib siklus baru secara manual (BR-02: tidak ada template otomatis).'
-                : 'Hari baru telah tiba. Konfirmasi sisa saldo kemarin dan masukkan bekel serta pengeluaran wajib hari ini (BR-02: re-input manual tiap periode).',
+                ? l10n.payCycleTransitionHeaderPeriodicMessage
+                : l10n.payCycleTransitionHeaderDailyMessage,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
             ),
@@ -287,13 +310,14 @@ class _ModeAIntervalAndDatePicker extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final notifier = ref.read(payCycleTransitionNotifierProvider.notifier);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Interval & Tanggal Gajian Berikutnya',
+          l10n.payCycleTransitionIntervalDateTitle,
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -306,7 +330,7 @@ class _ModeAIntervalAndDatePicker extends ConsumerWidget {
             final selected = state.incomeIntervalType == type;
             return ChoiceChip(
               key: ValueKey('transition_interval_chip_${type.name}'),
-              label: Text(_intervalLabel(type)),
+              label: Text(_intervalLabel(l10n, type)),
               selected: selected,
               onSelected: (_) => notifier.setIncomeIntervalType(type),
             );
@@ -331,24 +355,26 @@ class _ModeAIntervalAndDatePicker extends ConsumerWidget {
           icon: const Icon(Icons.calendar_today),
           label: Text(
             state.nextPaydayDate == null
-                ? 'Pilih tanggal gajian'
-                : 'Gajian: ${_formatDate(state.nextPaydayDate!)}',
+                ? l10n.payCycleTransitionPickPaydayButton
+                : l10n.payCycleTransitionPaydaySelectedButton(
+                    _formatDate(state.nextPaydayDate!),
+                  ),
           ),
         ),
       ],
     );
   }
 
-  static String _intervalLabel(IncomeIntervalType type) {
+  static String _intervalLabel(AppLocalizations l10n, IncomeIntervalType type) {
     switch (type) {
       case IncomeIntervalType.weekly:
-        return 'Mingguan';
+        return l10n.payCycleTransitionIntervalWeekly;
       case IncomeIntervalType.biweekly:
-        return '2 Mingguan';
+        return l10n.payCycleTransitionIntervalBiweekly;
       case IncomeIntervalType.monthly:
-        return 'Bulanan';
+        return l10n.payCycleTransitionIntervalMonthly;
       case IncomeIntervalType.custom:
-        return 'Custom';
+        return l10n.payCycleTransitionIntervalCustom;
     }
   }
 }
@@ -366,6 +392,7 @@ class _ModeASalaryInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -376,11 +403,10 @@ class _ModeASalaryInput extends StatelessWidget {
           keyboardType: TextInputType.number,
           inputFormatters: [RupiahInputFormatter()],
           decoration: InputDecoration(
-            labelText: 'Gaji Siklus Ini (Wajib diisi)',
+            labelText: l10n.payCycleTransitionSalaryLabel,
             prefixText: 'Rp ',
             errorText: errorText,
-            helperText:
-                'Sesuai BR-02: masukkan nominal gaji baru secara manual.',
+            helperText: l10n.payCycleTransitionSalaryHelper,
             border: const OutlineInputBorder(),
           ),
         ),
@@ -397,6 +423,7 @@ class _ModeBCarryOverCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isPositive = carryOver >= 0;
     final amountColor = isPositive ? AppColors.brandTeal : AppColors.expenseRed;
 
@@ -411,7 +438,7 @@ class _ModeBCarryOverCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Saldo Carry-Over dari Kemarin',
+            l10n.payCycleTransitionCarryOverTitle,
             style: theme.textTheme.labelMedium,
           ),
           const SizedBox(height: 4),
@@ -425,7 +452,7 @@ class _ModeBCarryOverCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Sisa Uang Jajan Aman kemarin terakumulasi otomatis ke saldo hari ini (BR-01).',
+            l10n.payCycleTransitionCarryOverMessage,
             style: theme.textTheme.bodySmall,
           ),
         ],
@@ -442,6 +469,7 @@ class _ModeBBekelInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -451,12 +479,11 @@ class _ModeBBekelInput extends StatelessWidget {
           onChanged: onChanged,
           keyboardType: TextInputType.number,
           inputFormatters: [RupiahInputFormatter()],
-          decoration: const InputDecoration(
-            labelText: 'Bekel Hari Ini (Opsional)',
+          decoration: InputDecoration(
+            labelText: l10n.payCycleTransitionBekelLabel,
             prefixText: 'Rp ',
-            helperText:
-                'Kosongkan atau isi 0 jika hari ini tidak ada uang saku baru.',
-            border: OutlineInputBorder(),
+            helperText: l10n.payCycleTransitionBekelHelper,
+            border: const OutlineInputBorder(),
           ),
         ),
       ],
@@ -488,21 +515,22 @@ class _MandatoryExpensesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           isPeriodic
-              ? 'Pengeluaran Wajib Siklus Ini'
-              : 'Pengeluaran Wajib Hari Ini',
+              ? l10n.payCycleTransitionExpensesPeriodicTitle
+              : l10n.payCycleTransitionExpensesDailyTitle,
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 4),
         Text(
-          'Opsional — per BR-02, daftar pengeluaran wajib diinput manual tiap periode (tidak dicopy dari siklus lama).',
+          l10n.payCycleTransitionExpensesSubtitle,
           style: theme.textTheme.bodySmall,
         ),
         const SizedBox(height: 12),
@@ -517,7 +545,7 @@ class _MandatoryExpensesSection extends StatelessWidget {
               ),
             ),
             child: Text(
-              'Belum ada pengeluaran wajib ditambahkan.',
+              l10n.payCycleTransitionExpensesEmptyMessage,
               style: theme.textTheme.bodySmall,
             ),
           )
@@ -533,7 +561,7 @@ class _MandatoryExpensesSection extends StatelessWidget {
                 subtitle: Text(formatRupiah(item.amount)),
                 trailing: IconButton(
                   key: ValueKey('transition_remove_expense_$index'),
-                  tooltip: 'Hapus Pengeluaran',
+                  tooltip: l10n.payCycleTransitionRemoveExpenseTooltip,
                   icon: const Icon(
                     Icons.delete_outline,
                     color: AppColors.expenseRed,
@@ -548,7 +576,7 @@ class _MandatoryExpensesSection extends StatelessWidget {
           key: const ValueKey('transition_expense_name_field'),
           controller: nameController,
           decoration: InputDecoration(
-            labelText: 'Nama pengeluaran (mis. Kos, Cicilan)',
+            labelText: l10n.payCycleTransitionExpenseNameFieldLabel,
             errorText: nameError,
             border: const OutlineInputBorder(),
           ),
@@ -560,7 +588,7 @@ class _MandatoryExpensesSection extends StatelessWidget {
           keyboardType: TextInputType.number,
           inputFormatters: [RupiahInputFormatter()],
           decoration: InputDecoration(
-            labelText: 'Nominal pengeluaran',
+            labelText: l10n.payCycleTransitionExpenseAmountFieldLabel,
             prefixText: 'Rp ',
             errorText: amountError,
             border: const OutlineInputBorder(),
@@ -571,7 +599,7 @@ class _MandatoryExpensesSection extends StatelessWidget {
           key: const ValueKey('transition_add_expense_button'),
           onPressed: onAdd,
           icon: const Icon(Icons.add),
-          label: const Text('Tambah Pengeluaran Wajib'),
+          label: Text(l10n.payCycleTransitionAddExpenseButton),
         ),
       ],
     );
@@ -586,6 +614,7 @@ class _SubmitButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final isPeriodic = state.isPeriodic;
     final canSubmit = state.canSubmit;
 
@@ -608,7 +637,9 @@ class _SubmitButton extends ConsumerWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : Text(
-              isPeriodic ? 'Mulai Siklus Baru' : 'Mulai Hari Ini',
+              isPeriodic
+                  ? l10n.payCycleTransitionStartNewCycleButton
+                  : l10n.payCycleTransitionStartTodayButton,
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
     );

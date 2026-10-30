@@ -7,6 +7,15 @@ import '../../../core/database/transaction.dart' as db;
 import '../../notifications/application/limit_alert_hook.dart';
 import '../data/transaction_repository.dart';
 
+/// Sentinel codes for [TransactionFormState.submitError] set by validation
+/// failures in [TransactionFormNotifier.save] (application layer — no
+/// `BuildContext` here to resolve `AppLocalizations`). The presentation
+/// layer maps these to localized messages; any other `submitError` value
+/// is an arbitrary repository exception's `toString()` and is shown as-is
+/// (localizing arbitrary exception text is out of scope for M20).
+const transactionInvalidTransferErrorCode = '__transaction_invalid_transfer__';
+const transactionInvalidRegularErrorCode = '__transaction_invalid_regular__';
+
 final transactionRepositoryProvider = Provider<TransactionRepositoryBase>((
   ref,
 ) {
@@ -213,12 +222,10 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
     if (!state.isValid) {
       if (state.type == db.TransactionType.transfer) {
         state = state.copyWith(
-          submitError: 'Mohon masukkan nominal dan pilih dompet asal & tujuan yang berbeda.',
+          submitError: transactionInvalidTransferErrorCode,
         );
       } else {
-        state = state.copyWith(
-          submitError: 'Mohon masukkan jumlah dan pilih kategori.',
-        );
+        state = state.copyWith(submitError: transactionInvalidRegularErrorCode);
       }
       return false;
     }

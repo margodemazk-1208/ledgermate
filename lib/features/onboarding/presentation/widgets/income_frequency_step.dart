@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/database/local_profile.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../application/onboarding_providers.dart';
 import 'onboarding_step_header.dart';
 
@@ -14,6 +15,7 @@ class IncomeFrequencyStep extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final state = ref.watch(onboardingWizardProvider);
     final notifier = ref.read(onboardingWizardProvider.notifier);
     final colorScheme = Theme.of(context).colorScheme;
@@ -23,32 +25,33 @@ class IncomeFrequencyStep extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const OnboardingStepHeader(
+          OnboardingStepHeader(
             stepIndex: 0,
             totalSteps: 4,
-            title: 'Pola Pendapatanmu',
-            subtitle: 'Pilih yang paling cocok dengan cara kamu menerima uang.',
+            title: l10n.incomeFrequencyStepTitle,
+            subtitle: l10n.incomeFrequencyStepSubtitle,
           ),
           _ModeCard(
-            title: 'Periodik',
-            description:
-                'Gajian lump-sum di tanggal tertentu — mingguan, 2 mingguan, '
-                'bulanan, atau custom.',
+            keySuffix: 'periodik',
+            title: l10n.incomeFrequencyStepPeriodicTitle,
+            description: l10n.incomeFrequencyStepPeriodicDescription,
             selected: state.incomeFrequency == IncomeFrequency.periodic,
             onTap: () => notifier.selectFrequency(IncomeFrequency.periodic),
           ),
           const SizedBox(height: 12),
           _ModeCard(
-            title: 'Harian',
-            description:
-                'Bekel/income diterima tiap hari (termasuk jadwal nggak '
-                'rata) — tanpa tanggal gajian tetap.',
+            keySuffix: 'harian',
+            title: l10n.incomeFrequencyStepDailyTitle,
+            description: l10n.incomeFrequencyStepDailyDescription,
             selected: state.incomeFrequency == IncomeFrequency.daily,
             onTap: () => notifier.selectFrequency(IncomeFrequency.daily),
           ),
           if (state.incomeFrequency == IncomeFrequency.periodic) ...[
             const SizedBox(height: 24),
-            Text('Interval', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              l10n.incomeFrequencyStepIntervalLabel,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -57,7 +60,7 @@ class IncomeFrequencyStep extends ConsumerWidget {
                 final selected = state.incomeIntervalType == type;
                 return ChoiceChip(
                   key: ValueKey('interval_chip_${type.name}'),
-                  label: Text(_intervalLabel(type)),
+                  label: Text(_intervalLabel(l10n, type)),
                   selected: selected,
                   onSelected: (_) => notifier.selectIntervalType(type),
                   selectedColor: colorScheme.primary,
@@ -71,7 +74,7 @@ class IncomeFrequencyStep extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Tanggal income berikutnya',
+              l10n.incomeFrequencyStepNextPaydayLabel,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
@@ -92,10 +95,12 @@ class IncomeFrequencyStep extends ConsumerWidget {
               icon: const Icon(Icons.calendar_today),
               label: Text(
                 state.nextPaydayDate == null
-                    ? 'Pilih tanggal'
+                    ? l10n.incomeFrequencyStepPickDate
                     : DateFormat(
                         'd MMMM y',
-                        'id_ID',
+                        Localizations.localeOf(context).languageCode == 'en'
+                            ? 'en_US'
+                            : 'id_ID',
                       ).format(state.nextPaydayDate!),
               ),
             ),
@@ -105,28 +110,33 @@ class IncomeFrequencyStep extends ConsumerWidget {
     );
   }
 
-  static String _intervalLabel(IncomeIntervalType type) {
+  static String _intervalLabel(AppLocalizations l10n, IncomeIntervalType type) {
     switch (type) {
       case IncomeIntervalType.weekly:
-        return 'Mingguan';
+        return l10n.incomeFrequencyStepIntervalWeekly;
       case IncomeIntervalType.biweekly:
-        return '2 Mingguan';
+        return l10n.incomeFrequencyStepIntervalBiweekly;
       case IncomeIntervalType.monthly:
-        return 'Bulanan';
+        return l10n.incomeFrequencyStepIntervalMonthly;
       case IncomeIntervalType.custom:
-        return 'Custom';
+        return l10n.incomeFrequencyStepIntervalCustom;
     }
   }
 }
 
 class _ModeCard extends StatelessWidget {
   const _ModeCard({
+    required this.keySuffix,
     required this.title,
     required this.description,
     required this.selected,
     required this.onTap,
   });
 
+  /// Stable, locale-independent identifier for the widget test `ValueKey`
+  /// (tests tap by key, e.g. `mode_card_harian` — this must NOT shift when
+  /// the displayed [title] is translated to English).
+  final String keySuffix;
   final String title;
   final String description;
   final bool selected;
@@ -139,7 +149,7 @@ class _ModeCard extends StatelessWidget {
       color: Theme.of(context).cardColor,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
-        key: ValueKey('mode_card_${title.toLowerCase()}'),
+        key: ValueKey('mode_card_$keySuffix'),
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Container(

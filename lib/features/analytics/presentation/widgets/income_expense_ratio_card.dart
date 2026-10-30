@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/rupiah_formatter.dart';
 import '../../domain/analytics_models.dart';
@@ -15,6 +16,7 @@ class IncomeExpenseRatioCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isDark = theme.brightness == Brightness.dark;
 
     final totalIncome = summary.totalIncome;
@@ -37,7 +39,7 @@ class IncomeExpenseRatioCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Ringkasan Keuangan Periode',
+              l10n.incomeExpenseRatioCardTitle,
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -49,7 +51,7 @@ class IncomeExpenseRatioCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _MetricItem(
-                    label: 'Total Pemasukan',
+                    label: l10n.incomeExpenseRatioCardTotalIncomeLabel,
                     amount: totalIncome,
                     amountColor: AnalyticsChartColors.incomeColor,
                     icon: Icons.arrow_downward_rounded,
@@ -62,7 +64,7 @@ class IncomeExpenseRatioCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: _MetricItem(
-                    label: 'Total Pengeluaran',
+                    label: l10n.incomeExpenseRatioCardTotalExpenseLabel,
                     amount: totalExpense,
                     amountColor: AnalyticsChartColors.expenseColor,
                     icon: Icons.arrow_upward_rounded,
@@ -82,7 +84,7 @@ class IncomeExpenseRatioCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Tabungan Bersih',
+                      l10n.incomeExpenseRatioCardNetSavingsLabel,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.textTheme.bodySmall?.color?.withValues(
                           alpha: 0.7,
@@ -105,7 +107,7 @@ class IncomeExpenseRatioCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'Rasio Pengeluaran',
+                      l10n.incomeExpenseRatioCardExpenseRatioLabel,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.textTheme.bodySmall?.color?.withValues(
                           alpha: 0.7,

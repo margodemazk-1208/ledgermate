@@ -1,6 +1,7 @@
 // FR-06b Realism Warning dialog per PRD §7.3 BR-03.
 import 'package:flutter/material.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/rupiah_formatter.dart';
 
@@ -25,21 +26,22 @@ class RealismWarningDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Row(
+      title: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.warning_amber_rounded,
             color: AppColors.warningAmber,
             size: 28,
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Target Mungkin Terlalu Berat',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+              l10n.realismWarningDialogTitle,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
             ),
           ),
         ],
@@ -49,12 +51,16 @@ class RealismWarningDialog extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Jika target ini disimpan, total alokasi tabungan harian Anda menjadi ${formatRupiah(projectedDailyReserve)}/hari.',
+            l10n.realismWarningDialogImpactMessage(
+              formatRupiah(projectedDailyReserve),
+            ),
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 8),
           Text(
-            'Hal ini akan mendorong Uang Jajan Aman Hari Ini ke angka negatif: ${formatRupiah(projectedUangJajanAman)}/hari.',
+            l10n.realismWarningDialogNegativeBudgetMessage(
+              formatRupiah(projectedUangJajanAman),
+            ),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: AppColors.expenseRed,
               fontWeight: FontWeight.w600,
@@ -70,19 +76,19 @@ class RealismWarningDialog extends StatelessWidget {
                 color: AppColors.warningAmber.withValues(alpha: 0.3),
               ),
             ),
-            child: const Row(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
+                const Icon(
                   Icons.info_outline,
                   size: 18,
                   color: AppColors.warningAmber,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Memperpanjang tanggal target akan menurunkan porsi tabungan harian sehingga anggaran harian tetap aman.',
-                    style: TextStyle(fontSize: 12),
+                    l10n.realismWarningDialogHint,
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ),
               ],
@@ -97,7 +103,7 @@ class RealismWarningDialog extends StatelessWidget {
           key: const ValueKey('realism_extend_date_button'),
           onPressed: () =>
               Navigator.of(context).pop(RealismWarningAction.extendDate),
-          child: const Text('Perpanjang tanggal target'),
+          child: Text(l10n.realismWarningDialogExtendButton),
         ),
         FilledButton(
           key: const ValueKey('realism_proceed_button'),
@@ -107,7 +113,7 @@ class RealismWarningDialog extends StatelessWidget {
           ),
           onPressed: () =>
               Navigator.of(context).pop(RealismWarningAction.proceed),
-          child: const Text('Lanjut, saya paham risikonya'),
+          child: Text(l10n.realismWarningDialogProceedButton),
         ),
       ],
     );

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/financial_goal.dart';
 import '../../../core/formulas/daily_budget_formulas.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/widgets/press_scale.dart';
 import '../../../core/presentation/widgets/success_toast.dart';
 import '../../../core/presentation/widgets/unsaved_changes_guard.dart';
@@ -129,6 +130,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
     // goal twice.
     if (_isBusy) return;
     if (!_formKey.currentState!.validate()) return;
+    final l10n = AppLocalizations.of(context)!;
 
     final name = _nameController.text.trim();
     final targetAmount = parseRupiah(_targetAmountController.text) ?? 0;
@@ -138,13 +140,13 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
         : null;
 
     if (targetAmount <= 0) {
-      setState(() => _formError = 'Target nominal harus lebih besar dari 0.');
+      setState(() => _formError = l10n.goalFormScreenTargetAmountRequiredError);
       return;
     }
 
     final now = DateTime.now();
     if (!normalizeDate(_targetDate).isAfter(normalizeDate(now))) {
-      setState(() => _formError = 'Tanggal target harus lebih dari hari ini.');
+      setState(() => _formError = l10n.goalFormScreenTargetDateError);
       return;
     }
 
@@ -216,7 +218,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
             manualDailyAllocation: manualAlloc,
           );
       if (mounted) {
-        showSuccessToast(context, 'Target tabungan berhasil disimpan');
+        showSuccessToast(context, l10n.goalFormScreenSaveSuccessToast);
         _dirty = false;
         Navigator.of(context).pop();
       }
@@ -225,7 +227,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
         setState(() {
           _isBusy = false;
           _isSubmitting = false;
-          _formError = 'Gagal menyimpan target: $e';
+          _formError = l10n.goalFormScreenSaveError(e);
         });
       }
     }
@@ -234,6 +236,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isEditing = widget.goal != null;
     final dateText = DateFormat('d MMMM yyyy', 'id_ID').format(_targetDate);
 
@@ -242,7 +245,9 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            isEditing ? 'Edit Target Tabungan' : 'Tambah Target Baru',
+            isEditing
+                ? l10n.goalFormScreenEditTitle
+                : l10n.goalFormScreenAddTitle,
             style: AppTypography.script(fontSize: 18),
           ),
         ),
@@ -257,14 +262,14 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                 TextFormField(
                   key: const ValueKey('goal_name_field'),
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Target',
-                    hintText: 'Misal: Laptop Baru, Dana Darurat',
-                    prefixIcon: Icon(Icons.flag_outlined),
+                  decoration: InputDecoration(
+                    labelText: l10n.goalFormScreenNameLabel,
+                    hintText: l10n.goalFormScreenNameHint,
+                    prefixIcon: const Icon(Icons.flag_outlined),
                   ),
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
-                      return 'Nama target tidak boleh kosong';
+                      return l10n.goalFormScreenNameEmptyError;
                     }
                     return null;
                   },
@@ -277,17 +282,17 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                   controller: _targetAmountController,
                   keyboardType: TextInputType.number,
                   inputFormatters: [RupiahInputFormatter()],
-                  decoration: const InputDecoration(
-                    labelText: 'Target Nominal',
+                  decoration: InputDecoration(
+                    labelText: l10n.goalFormScreenTargetAmountLabel,
                     prefixText: 'Rp ',
                     hintText: '0',
-                    prefixIcon: Icon(Icons.monetization_on_outlined),
+                    prefixIcon: const Icon(Icons.monetization_on_outlined),
                   ),
                   onChanged: (_) => setState(() {}),
                   validator: (val) {
                     final parsed = parseRupiah(val ?? '');
                     if (parsed == null || parsed <= 0) {
-                      return 'Target nominal harus lebih besar dari 0';
+                      return l10n.goalFormScreenTargetAmountError;
                     }
                     return null;
                   },
@@ -300,18 +305,20 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                   controller: _currentAmountController,
                   keyboardType: TextInputType.number,
                   inputFormatters: [RupiahInputFormatter()],
-                  decoration: const InputDecoration(
-                    labelText: 'Saldo Awal / Sudah Terkumpul',
+                  decoration: InputDecoration(
+                    labelText: l10n.goalFormScreenCurrentAmountLabel,
                     prefixText: 'Rp ',
                     hintText: '0',
-                    prefixIcon: Icon(Icons.account_balance_wallet_outlined),
-                    helperText: 'Isi jika sudah mulai menabung sebelum target ini dibuat',
+                    prefixIcon: const Icon(
+                      Icons.account_balance_wallet_outlined,
+                    ),
+                    helperText: l10n.goalFormScreenCurrentAmountHelper,
                   ),
                   onChanged: (_) => setState(() {}),
                   validator: (val) {
                     final parsed = parseRupiah(val ?? '');
                     if (parsed == null || parsed < 0) {
-                      return 'Saldo tidak boleh negatif';
+                      return l10n.goalFormScreenCurrentAmountNegativeError;
                     }
                     return null;
                   },
@@ -335,7 +342,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                     Icons.calendar_today,
                     color: AppColors.brandTeal,
                   ),
-                  title: const Text('Target Tanggal Tercapai'),
+                  title: Text(l10n.goalFormScreenTargetDateTitle),
                   subtitle: Text(
                     dateText,
                     style: theme.textTheme.titleSmall?.copyWith(
@@ -352,10 +359,8 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                 SwitchListTile(
                   key: const ValueKey('goal_manual_allocation_switch'),
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Override Alokasi Harian Manual'),
-                  subtitle: const Text(
-                    'Tetapkan nominal tabungan harian tetap, bukan hasil hitungan otomatis formula.',
-                  ),
+                  title: Text(l10n.goalFormScreenManualAllocationTitle),
+                  subtitle: Text(l10n.goalFormScreenManualAllocationSubtitle),
                   value: _hasManualAllocation,
                   activeTrackColor: AppColors.brandTeal,
                   onChanged: (enabled) {
@@ -372,19 +377,19 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                     controller: _manualAllocationController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [RupiahInputFormatter()],
-                    decoration: const InputDecoration(
-                      labelText: 'Nominal Alokasi Harian (Rp/hari)',
+                    decoration: InputDecoration(
+                      labelText: l10n.goalFormScreenManualAllocationFieldLabel,
                       prefixText: 'Rp ',
                       hintText: '0',
-                      prefixIcon: Icon(Icons.tune),
-                      helperText: 'Nominal ini langsung menggantikan kalkulasi formula otomatis',
+                      prefixIcon: const Icon(Icons.tune),
+                      helperText: l10n.goalFormScreenManualAllocationHelper,
                     ),
                     onChanged: (_) => setState(() {}),
                     validator: (val) {
                       if (!_hasManualAllocation) return null;
                       final parsed = parseRupiah(val ?? '');
                       if (parsed == null || parsed <= 0) {
-                        return 'Masukkan alokasi harian yang lebih besar dari 0';
+                        return l10n.goalFormScreenManualAllocationError;
                       }
                       return null;
                     },
@@ -433,7 +438,9 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                             ),
                           )
                         : Text(
-                            isEditing ? 'Perbarui Target' : 'Simpan Target',
+                            isEditing
+                                ? l10n.goalFormScreenUpdateButton
+                                : l10n.goalFormScreenSaveButton,
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                   ),

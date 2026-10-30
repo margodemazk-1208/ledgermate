@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:ledgermate/core/database/transaction.dart' as db;
+import 'package:ledgermate/core/l10n/app_localizations.dart';
 import 'package:ledgermate/core/theme/app_theme.dart';
 import 'package:ledgermate/features/transactions/application/transaction_providers.dart';
 import 'package:ledgermate/features/transactions/presentation/transaction_form_screen.dart';
@@ -37,6 +38,9 @@ void main() {
         ],
         child: MaterialApp(
           theme: theme ?? AppTheme.dark,
+          locale: const Locale('id'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: home ?? const TransactionsScreen(),
         ),
       ),

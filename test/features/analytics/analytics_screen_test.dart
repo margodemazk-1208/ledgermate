@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:ledgermate/core/database/category.dart';
 import 'package:ledgermate/core/database/transaction.dart' as db;
+import 'package:ledgermate/core/l10n/app_localizations.dart';
 import 'package:ledgermate/core/theme/theme_provider.dart';
 import 'package:ledgermate/features/analytics/application/analytics_providers.dart';
 import 'package:ledgermate/features/analytics/presentation/analytics_screen.dart';
@@ -62,6 +63,9 @@ void main() {
             theme: lightTheme,
             darkTheme: darkTheme,
             themeMode: themeMode,
+            locale: const Locale('id'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: child ?? const AnalyticsScreen(),
           );
         },

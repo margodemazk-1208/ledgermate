@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/filter_pill.dart';
@@ -25,6 +26,7 @@ class AnalyticsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isDark = theme.brightness == Brightness.dark;
 
     final periodFilter = ref.watch(periodFilterProvider);
@@ -34,15 +36,15 @@ class AnalyticsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Visual Analitik',
+          l10n.analyticsScreenTitle,
           style: AppTypography.script(fontSize: 18),
         ),
         actions: [
           IconButton(
             key: const ValueKey('analytics_theme_toggle_button'),
             tooltip: isDark
-                ? 'Beralih ke mode terang'
-                : 'Beralih ke mode gelap',
+                ? l10n.analyticsScreenThemeToggleToLight
+                : l10n.analyticsScreenThemeToggleToDark,
             icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
             onPressed: () {
               ref
@@ -67,7 +69,7 @@ class AnalyticsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Gagal memuat analitik: $err',
+                  l10n.analyticsScreenLoadError(err),
                   style: theme.textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -78,7 +80,8 @@ class AnalyticsScreen extends ConsumerWidget {
         data: (summary) {
           return momAsync.when(
             loading: () => const AnalyticsSkeletonList(),
-            error: (err, _) => Center(child: Text('Gagal memuat tren: $err')),
+            error: (err, _) =>
+                Center(child: Text(l10n.analyticsScreenTrendLoadError(err))),
             data: (momSummary) {
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
@@ -177,23 +180,24 @@ class _PeriodFilterSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         FilterPill(
-          label: 'Harian',
+          label: l10n.analyticsScreenFilterDaily,
           selected: selectedFilter == PeriodFilter.daily,
           onTap: () => onFilterChanged(PeriodFilter.daily),
         ),
         const SizedBox(width: 8),
         FilterPill(
-          label: 'Mingguan',
+          label: l10n.analyticsScreenFilterWeekly,
           selected: selectedFilter == PeriodFilter.weekly,
           onTap: () => onFilterChanged(PeriodFilter.weekly),
         ),
         const SizedBox(width: 8),
         FilterPill(
-          label: 'Bulanan',
+          label: l10n.analyticsScreenFilterMonthly,
           selected: selectedFilter == PeriodFilter.monthly,
           onTap: () => onFilterChanged(PeriodFilter.monthly),
         ),

@@ -8,6 +8,15 @@ import '../../settings/application/settings_providers.dart';
 import '../data/onboarding_repository.dart';
 import 'onboarding_wizard_state.dart';
 
+/// Sentinel stored in [OnboardingWizardState.submitError] for the one
+/// deterministic validation failure (incomplete step data) so the UI layer
+/// (which has a `BuildContext`) can show a localized message instead of a
+/// hardcoded string baked in at this application layer, which has no
+/// context to localize with. Any OTHER failure (a real persistence
+/// exception) still falls back to `e.toString()` — localizing arbitrary
+/// repository/Isar exception text is out of scope for M20 (see M20 report).
+const incompleteOnboardingDataErrorCode = '__incomplete_onboarding_data__';
+
 final onboardingRepositoryProvider = Provider<OnboardingRepositoryBase>((ref) {
   return OnboardingRepository(ref.watch(isarProvider));
 });
@@ -125,9 +134,7 @@ class OnboardingWizardNotifier extends Notifier<OnboardingWizardState> {
     final frequency = state.incomeFrequency;
     final amount = state.initialIncomeAmount;
     if (frequency == null || amount == null) {
-      state = state.copyWith(
-        submitError: 'Data belum lengkap — kembali ke langkah sebelumnya.',
-      );
+      state = state.copyWith(submitError: incompleteOnboardingDataErrorCode);
       return false;
     }
 

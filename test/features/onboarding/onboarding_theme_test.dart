@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:ledgermate/core/l10n/app_localizations.dart';
 import 'package:ledgermate/core/theme/app_theme.dart';
 import 'package:ledgermate/features/onboarding/application/onboarding_providers.dart';
 import 'package:ledgermate/features/onboarding/presentation/onboarding_screen.dart';
@@ -28,7 +29,13 @@ void main() {
         overrides: [
           onboardingRepositoryProvider.overrideWithValue(fakeRepository),
         ],
-        child: MaterialApp(theme: theme, home: const OnboardingScreen()),
+        child: MaterialApp(
+          theme: theme,
+          locale: const Locale('id'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const OnboardingScreen(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -45,7 +52,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(paydayButtonFinder);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('OK'));
+    // Indonesian Material localizations translate the date picker's OK
+    // button to "OKE" — confirms the picker is actually running under the
+    // real id locale now that the test MaterialApp pins it explicitly.
+    await tester.tap(find.text('OKE'));
     await tester.pumpAndSettle();
 
     // Step 1 -> Step 2 (wallet setup)

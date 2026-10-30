@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/dashed_add_card.dart';
@@ -20,18 +21,19 @@ class AssetsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final summaryAsync = ref.watch(assetsOverviewSummaryProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Aset & Investasi',
+          l10n.assetsScreenTitle,
           style: AppTypography.script(fontSize: 20),
         ),
         actions: [
           IconButton(
             key: const ValueKey('appbar_add_asset_button'),
-            tooltip: 'Tambah Aset',
+            tooltip: l10n.assetsScreenAddTooltip,
             icon: const Icon(Icons.add),
             onPressed: () {
               Navigator.of(
@@ -56,7 +58,7 @@ class AssetsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Gagal memuat data aset: $err',
+                  l10n.assetsScreenLoadError(err),
                   style: theme.textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -88,6 +90,7 @@ class AssetsScreen extends ConsumerWidget {
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -108,7 +111,7 @@ class AssetsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Belum Ada Aset Terdaftar',
+              l10n.assetsScreenEmptyTitle,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -116,8 +119,7 @@ class AssetsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Pantau nilai kekayaan bersih (net-worth) Anda secara mandiri. '
-              'Catat aset seperti emas, saham, reksadana, atau kripto dengan pembaruan manual 100% offline.',
+              l10n.assetsScreenEmptyMessage,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.textTheme.bodyMedium?.color?.withValues(
                   alpha: 0.7,
@@ -142,7 +144,7 @@ class AssetsScreen extends ConsumerWidget {
                 ),
               ),
               icon: const Icon(Icons.add),
-              label: const Text('Tambah Aset Pertama'),
+              label: Text(l10n.assetsScreenAddFirstButton),
             ),
           ],
         ),
@@ -152,10 +154,12 @@ class AssetsScreen extends ConsumerWidget {
 
   Widget _buildAssetsList(BuildContext context, AssetsOverviewSummary summary) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isTotalGain = summary.isTotalGain;
     final totalGainColor = isTotalGain
         ? AppColors.savingsGreenText(theme.brightness)
         : AppColors.expenseRedText(theme.brightness);
+    final sign = isTotalGain ? '+' : '';
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
@@ -178,7 +182,7 @@ class AssetsScreen extends ConsumerWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        'Total Portofolio Aset',
+                        l10n.assetsScreenPortfolioTotalLabel,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
@@ -202,7 +206,7 @@ class AssetsScreen extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '${summary.assetCount} Aset',
+                        l10n.assetsScreenAssetCountBadge(summary.assetCount),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.textTheme.bodySmall?.color,
                           fontWeight: FontWeight.w600,
@@ -235,7 +239,7 @@ class AssetsScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Total Modal Awal',
+                            l10n.assetsScreenTotalPurchaseLabel,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.textTheme.bodySmall?.color
                                   ?.withValues(alpha: 0.7),
@@ -256,7 +260,7 @@ class AssetsScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Total Keuntungan',
+                            l10n.assetsScreenTotalGainLabel,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.textTheme.bodySmall?.color
                                   ?.withValues(alpha: 0.7),
@@ -264,7 +268,11 @@ class AssetsScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${isTotalGain ? '+' : ''}${formatRupiah(summary.totalGainLoss)} (${isTotalGain ? '+' : ''}${summary.totalReturnPercentage.toStringAsFixed(1)}%)',
+                            l10n.assetsScreenGainLossSummary(
+                              sign,
+                              formatRupiah(summary.totalGainLoss),
+                              summary.totalReturnPercentage.toStringAsFixed(1),
+                            ),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: totalGainColor,
@@ -283,7 +291,7 @@ class AssetsScreen extends ConsumerWidget {
 
         // Section Header
         Text(
-          'Daftar Aset (${summary.assetCount})',
+          l10n.assetsScreenListHeader(summary.assetCount),
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -299,7 +307,7 @@ class AssetsScreen extends ConsumerWidget {
         ),
         DashedAddCard(
           key: const ValueKey('assets_dashed_add_card'),
-          label: 'Tambah Aset Baru',
+          label: l10n.assetsScreenAddCardLabel,
           onTap: () {
             Navigator.of(context)
                 .push(SlidePageRoute(builder: (_) => const AssetFormScreen()));

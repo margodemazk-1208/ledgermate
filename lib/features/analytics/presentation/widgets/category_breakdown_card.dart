@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/rupiah_formatter.dart';
 import '../../domain/analytics_models.dart';
@@ -23,6 +24,7 @@ class _CategoryBreakdownCardState extends State<CategoryBreakdownCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isDark = theme.brightness == Brightness.dark;
     final breakdowns = widget.summary.categoryBreakdowns;
     final totalExpense = widget.summary.totalExpense;
@@ -48,14 +50,16 @@ class _CategoryBreakdownCardState extends State<CategoryBreakdownCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Proporsi Pengeluaran per Kategori',
+                        l10n.categoryBreakdownCardTitle,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Total: ${formatRupiah(totalExpense)}',
+                        l10n.categoryBreakdownCardTotalLabel(
+                          formatRupiah(totalExpense),
+                        ),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.textTheme.bodySmall?.color?.withValues(
                             alpha: 0.7,
@@ -68,8 +72,8 @@ class _CategoryBreakdownCardState extends State<CategoryBreakdownCard> {
                 IconButton(
                   key: const ValueKey('toggle_chart_type_button'),
                   tooltip: _showBarChart
-                      ? 'Tampilkan diagram lingkaran (Pie)'
-                      : 'Tampilkan diagram batang (Bar)',
+                      ? l10n.categoryBreakdownCardShowPieTooltip
+                      : l10n.categoryBreakdownCardShowBarTooltip,
                   icon: Icon(
                     _showBarChart ? Icons.pie_chart : Icons.bar_chart,
                     size: 20,
@@ -91,7 +95,7 @@ class _CategoryBreakdownCardState extends State<CategoryBreakdownCard> {
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(
                   child: Text(
-                    'Tidak ada pengeluaran tercatat pada periode ini.',
+                    l10n.categoryBreakdownCardEmptyMessage,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.textTheme.bodySmall?.color?.withValues(
                         alpha: 0.7,
@@ -286,6 +290,7 @@ class _CategoryBreakdownRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -308,7 +313,9 @@ class _CategoryBreakdownRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${breakdown.transactionCount} transaksi',
+                  l10n.categoryBreakdownCardTransactionCountLabel(
+                    breakdown.transactionCount,
+                  ),
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontSize: 11,
                     color: theme.textTheme.bodySmall?.color?.withValues(

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../../core/presentation/widgets/animated_progress_bar.dart';
 import '../../../../core/presentation/widgets/press_scale.dart';
@@ -23,19 +24,17 @@ class GoalCard extends ConsumerWidget {
 
   Future<void> _handleDelete(BuildContext context, WidgetRef ref) async {
     final goal = projection.goal;
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Target?'),
-        content: Text(
-          'Apakah Anda yakin ingin menghapus target "${goal.goalName}"? '
-          'Tindakan ini tidak dapat dibatalkan.',
-        ),
+        title: Text(l10n.goalCardDeleteDialogTitle),
+        content: Text(l10n.goalCardDeleteDialogMessage(goal.goalName)),
         actions: [
           TextButton(
             key: const ValueKey('delete_confirm_cancel_button'),
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Batal'),
+            child: Text(l10n.goalCardCancelButton),
           ),
           PressScale(
             child: FilledButton(
@@ -44,7 +43,7 @@ class GoalCard extends ConsumerWidget {
                 backgroundColor: AppColors.expenseRed,
               ),
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Hapus'),
+              child: Text(l10n.goalCardDeleteButton),
             ),
           ),
         ],
@@ -59,6 +58,7 @@ class GoalCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final goal = projection.goal;
     final isCompleted = projection.isCompleted;
     final percentInt = (projection.progressPercent * 100).toInt();
@@ -93,7 +93,9 @@ class GoalCard extends ConsumerWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Target: ${_formatDate(goal.targetDate)}',
+                        l10n.goalCardTargetDateLabel(
+                          _formatDate(goal.targetDate),
+                        ),
                         style: theme.textTheme.bodySmall,
                       ),
                     ],
@@ -124,7 +126,7 @@ class GoalCard extends ConsumerWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Tercapai',
+                          l10n.goalCardCompletedBadge,
                           style: TextStyle(
                             color: AppColors.savingsGreenText(theme.brightness),
                             fontWeight: FontWeight.w600,
@@ -153,7 +155,7 @@ class GoalCard extends ConsumerWidget {
                       ),
                     ),
                     child: Text(
-                      'Override Manual',
+                      l10n.goalCardManualOverrideBadge,
                       style: TextStyle(
                         color: theme.textTheme.bodySmall?.color,
                         fontWeight: FontWeight.w600,
@@ -186,7 +188,10 @@ class GoalCard extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
-                    '${formatRupiah(goal.targetAmount)} ($percentInt%)',
+                    l10n.goalCardTargetAmountLabel(
+                      formatRupiah(goal.targetAmount),
+                      percentInt,
+                    ),
                     style: theme.textTheme.bodySmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -233,10 +238,12 @@ class GoalCard extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       isCompleted
-                          ? 'Target telah terpenuhi sepenuhnya!'
+                          ? l10n.goalCardCompletedMessage
                           : projection.estimatedCompletionDate != null
-                          ? 'Estimasi tercapai: ${_formatDate(projection.estimatedCompletionDate!)}'
-                          : 'Belum ada estimasi (alokasi 0)',
+                          ? l10n.goalCardEstimatedCompletionMessage(
+                              _formatDate(projection.estimatedCompletionDate!),
+                            )
+                          : l10n.goalCardNoEstimateMessage,
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
@@ -245,8 +252,10 @@ class GoalCard extends ConsumerWidget {
                   Flexible(
                     child: Text(
                       isCompleted
-                          ? 'Selesai'
-                          : '${formatRupiah(projection.dailyAllocation)}/hari',
+                          ? l10n.goalCardDoneLabel
+                          : l10n.goalCardDailyAllocationLabel(
+                              formatRupiah(projection.dailyAllocation),
+                            ),
                       style: theme.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: AppColors.savingsGreenText(theme.brightness),
@@ -283,7 +292,7 @@ class GoalCard extends ConsumerWidget {
                               );
                             }
                           : null,
-                      child: const Text('Tarik dari Goal'),
+                      child: Text(l10n.goalCardWithdrawButton),
                     ),
                   ),
                 ),
@@ -304,13 +313,13 @@ class GoalCard extends ConsumerWidget {
                         ),
                       );
                     },
-                    child: const Text('Edit'),
+                    child: Text(l10n.goalCardEditButton),
                   ),
                 ),
                 PressScale(
                   child: IconButton(
                     key: ValueKey('delete_goal_button_${goal.id}'),
-                    tooltip: 'Hapus Target',
+                    tooltip: l10n.goalCardDeleteTooltip,
                     color: AppColors.expenseRedText(theme.brightness),
                     icon: const Icon(Icons.delete_outline, size: 20),
                     onPressed: () => _handleDelete(context, ref),

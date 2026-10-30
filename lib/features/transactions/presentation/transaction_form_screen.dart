@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/widgets/press_scale.dart';
 import '../../../core/presentation/widgets/success_toast.dart';
 import '../../../core/presentation/widgets/unsaved_changes_guard.dart';
@@ -72,13 +73,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   void _onAmountChanged(String value) {
+    final l10n = AppLocalizations.of(context)!;
     final parsed = parseRupiah(value);
     ref.read(transactionFormProvider.notifier).setAmount(parsed);
     setState(() {
       _amountError = validateRupiahAmount(
         value,
-        emptyMessage: 'Jumlah tidak boleh kosong',
-        invalidMessage: 'Jumlah tidak boleh nol atau negatif',
+        emptyMessage: l10n.transactionFormScreenAmountEmptyError,
+        invalidMessage: l10n.transactionFormScreenAmountInvalidError,
       );
     });
   }
@@ -98,12 +100,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   Future<void> _onSave() async {
+    final l10n = AppLocalizations.of(context)!;
     final formNotifier = ref.read(transactionFormProvider.notifier);
     final amountText = _amountController.text;
     final err = validateRupiahAmount(
       amountText,
-      emptyMessage: 'Jumlah tidak boleh kosong',
-      invalidMessage: 'Jumlah tidak boleh nol atau negatif',
+      emptyMessage: l10n.transactionFormScreenAmountEmptyError,
+      invalidMessage: l10n.transactionFormScreenAmountInvalidError,
     );
     if (err != null) {
       setState(() => _amountError = err);
@@ -112,24 +115,23 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
     final success = await formNotifier.save();
     if (success && mounted) {
-      showSuccessToast(context, 'Transaksi berhasil disimpan');
+      showSuccessToast(context, l10n.transactionFormScreenSaveSuccessToast);
       _dirty = false;
       Navigator.of(context).pop(true);
     }
   }
 
   Future<void> _onDelete() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Transaksi?'),
-        content: const Text(
-          'Apakah kamu yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.',
-        ),
+        title: Text(l10n.transactionFormScreenDeleteDialogTitle),
+        content: Text(l10n.transactionFormScreenDeleteDialogMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Batal'),
+            child: Text(l10n.transactionFormScreenCancelButton),
           ),
           PressScale(
             child: FilledButton(
@@ -138,7 +140,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 backgroundColor: AppColors.expenseRed,
               ),
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Hapus'),
+              child: Text(l10n.transactionFormScreenDeleteButton),
             ),
           ),
         ],
@@ -154,8 +156,24 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     }
   }
 
+  /// Maps a [TransactionFormState.submitError] sentinel code (set by the
+  /// application-layer `save()` validation, which has no `BuildContext`)
+  /// to a localized message. Any other value is an arbitrary repository
+  /// exception's `toString()`, shown as-is (out of scope for M20).
+  String _resolveSubmitError(AppLocalizations l10n, String code) {
+    switch (code) {
+      case transactionInvalidTransferErrorCode:
+        return l10n.transactionFormScreenInvalidTransferError;
+      case transactionInvalidRegularErrorCode:
+        return l10n.transactionFormScreenInvalidRegularError;
+      default:
+        return code;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final formState = ref.watch(transactionFormProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final walletsAsync = ref.watch(walletsStreamProvider);
@@ -191,7 +209,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            isEdit ? 'Edit Transaksi' : 'Catat Transaksi',
+            isEdit
+                ? l10n.transactionFormScreenEditTitle
+                : l10n.transactionFormScreenAddTitle,
             style: AppTypography.script(fontSize: 20),
           ),
         ),
@@ -218,8 +238,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 children: [
                   Text(
                     formState.type == db.TransactionType.transfer
-                        ? 'NOMINAL TRANSFER'
-                        : 'JUMLAH',
+                        ? l10n.transactionFormScreenTransferAmountLabel
+                        : l10n.transactionFormScreenAmountLabel,
                     style: AppTypography.mono(
                       fontSize: 11,
                       letterSpacing: 0.8,
@@ -268,9 +288,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     return DropdownButtonFormField<int>(
                       key: const ValueKey('transaction_wallet_picker'),
                       initialValue: selectedValue,
-                      decoration: const InputDecoration(
-                        labelText: 'Dari Dompet (Sumber)',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.transactionFormScreenSourceWalletLabel,
+                        border: const OutlineInputBorder(),
                       ),
                       items: wallets.map((w) {
                         return DropdownMenuItem<int>(
@@ -296,7 +316,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   },
                   loading: () => const LinearProgressIndicator(),
                   error: (err, _) => Text(
-                    'Gagal memuat dompet: $err',
+                    l10n.transactionFormScreenSourceWalletLoadError(err),
                     style: const TextStyle(color: AppColors.expenseRed),
                   ),
                 ),
@@ -320,9 +340,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     return DropdownButtonFormField<int>(
                       key: const ValueKey('transaction_target_wallet_picker'),
                       initialValue: selectedTarget,
-                      decoration: const InputDecoration(
-                        labelText: 'Ke Dompet (Tujuan)',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.transactionFormScreenTargetWalletLabel,
+                        border: const OutlineInputBorder(),
                       ),
                       items: targetWallets.map((w) {
                         return DropdownMenuItem<int>(
@@ -348,7 +368,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   },
                   loading: () => const LinearProgressIndicator(),
                   error: (err, _) => Text(
-                    'Gagal memuat dompet tujuan: $err',
+                    l10n.transactionFormScreenTargetWalletLoadError(err),
                     style: const TextStyle(color: AppColors.expenseRed),
                   ),
                 ),
@@ -365,9 +385,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     return DropdownButtonFormField<int>(
                       key: const ValueKey('transaction_wallet_picker'),
                       initialValue: selectedValue,
-                      decoration: const InputDecoration(
-                        labelText: 'Dompet',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.transactionFormScreenWalletLabel,
+                        border: const OutlineInputBorder(),
                       ),
                       items: wallets.map((w) {
                         return DropdownMenuItem<int>(
@@ -393,7 +413,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   },
                   loading: () => const LinearProgressIndicator(),
                   error: (err, _) => Text(
-                    'Gagal memuat dompet: $err',
+                    l10n.transactionFormScreenSourceWalletLoadError(err),
                     style: const TextStyle(color: AppColors.expenseRed),
                   ),
                 ),
@@ -410,9 +430,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     return DropdownButtonFormField<int>(
                       key: const ValueKey('transaction_category_picker'),
                       initialValue: selectedValue,
-                      decoration: const InputDecoration(
-                        labelText: 'Kategori',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.transactionFormScreenCategoryLabel,
+                        border: const OutlineInputBorder(),
                       ),
                       items: categories.map((cat) {
                         return DropdownMenuItem<int>(
@@ -432,7 +452,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   },
                   loading: () => const LinearProgressIndicator(),
                   error: (err, _) => Text(
-                    'Gagal memuat kategori: $err',
+                    l10n.transactionFormScreenCategoryLoadError(err),
                     style: const TextStyle(color: AppColors.expenseRed),
                   ),
                 ),
@@ -445,10 +465,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 onTap: () => _pickDate(context, formState.date),
                 borderRadius: BorderRadius.circular(4),
                 child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Tanggal',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
+                  decoration: InputDecoration(
+                    labelText: l10n.transactionFormScreenDateLabel,
+                    border: const OutlineInputBorder(),
+                    suffixIcon: const Icon(Icons.calendar_today),
                   ),
                   child: Text(
                     dateFormatted,
@@ -465,9 +485,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 onChanged: (val) {
                   ref.read(transactionFormProvider.notifier).setNotes(val);
                 },
-                decoration: const InputDecoration(
-                  labelText: 'Catatan (opsional)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.transactionFormScreenNotesLabel,
+                  border: const OutlineInputBorder(),
                 ),
                 maxLines: 2,
               ),
@@ -483,7 +503,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     border: Border.all(color: AppColors.expenseRed),
                   ),
                   child: Text(
-                    formState.submitError!,
+                    _resolveSubmitError(l10n, formState.submitError!),
                     style: const TextStyle(color: AppColors.expenseRed),
                   ),
                 ),
@@ -508,7 +528,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             ),
                           )
                         : Text(
-                            isEdit ? 'Simpan Perubahan' : 'Simpan Transaksi',
+                            isEdit
+                                ? l10n.transactionFormScreenSaveChangesButton
+                                : l10n.transactionFormScreenSaveNewButton,
                             style: const TextStyle(fontSize: 16),
                           ),
                   ),
@@ -532,7 +554,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       ),
                       onPressed: formState.isSubmitting ? null : _onDelete,
                       icon: const Icon(Icons.delete_outline),
-                      label: const Text('Hapus Transaksi'),
+                      label: Text(
+                        l10n.transactionFormScreenDeleteTransactionButton,
+                      ),
                     ),
                   ),
                 ] else ...[
@@ -544,7 +568,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     ),
                     onPressed: null,
                     icon: const Icon(Icons.lock_outline),
-                    label: const Text('Hapus Transaksi (Terkunci)'),
+                    label: Text(l10n.transactionFormScreenDeleteLockedButton),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -557,8 +581,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Hanya transaksi bertanggal hari ini yang dapat dihapus. '
-                          'Transaksi lampau tidak dapat dihapus untuk menjaga integritas histori (FR-03).',
+                          l10n.transactionFormScreenDeleteLockedNotice,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: AppColors.warningAmber),
                         ),
@@ -584,15 +607,27 @@ class _TypeToggleGroup extends StatelessWidget {
   final db.TransactionType selected;
   final ValueChanged<db.TransactionType> onChanged;
 
-  static const _options = [
-    (db.TransactionType.expense, 'Pengeluaran', Icons.arrow_upward),
-    (db.TransactionType.income, 'Pemasukan', Icons.arrow_downward),
-    (db.TransactionType.transfer, 'Transfer', Icons.swap_horiz),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final options = [
+      (
+        db.TransactionType.expense,
+        l10n.transactionFormScreenTypeExpenseLabel,
+        Icons.arrow_upward,
+      ),
+      (
+        db.TransactionType.income,
+        l10n.transactionFormScreenTypeIncomeLabel,
+        Icons.arrow_downward,
+      ),
+      (
+        db.TransactionType.transfer,
+        l10n.transactionFormScreenTypeTransferLabel,
+        Icons.swap_horiz,
+      ),
+    ];
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -603,7 +638,7 @@ class _TypeToggleGroup extends StatelessWidget {
       ),
       child: Row(
         children: [
-          for (final (type, label, icon) in _options)
+          for (final (type, label, icon) in options)
             Expanded(
               child: InkWell(
                 onTap: () => onChanged(type),

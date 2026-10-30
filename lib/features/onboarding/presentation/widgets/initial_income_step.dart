@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/local_profile.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/utils/rupiah_formatter.dart';
 import '../../application/onboarding_providers.dart';
 import 'onboarding_step_header.dart';
@@ -39,20 +40,22 @@ class _InitialIncomeStepState extends ConsumerState<InitialIncomeStep> {
   }
 
   void _onChanged(String value) {
+    final l10n = AppLocalizations.of(context)!;
     final notifier = ref.read(onboardingWizardProvider.notifier);
     final parsed = parseRupiah(value);
     notifier.setInitialIncomeAmount(parsed);
     setState(() {
       _errorText = validateRupiahAmount(
         value,
-        emptyMessage: 'Jumlah tidak boleh kosong',
-        invalidMessage: 'Jumlah tidak boleh negatif atau nol',
+        emptyMessage: l10n.initialIncomeStepEmptyAmountError,
+        invalidMessage: l10n.initialIncomeStepInvalidAmountError,
       );
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isPeriodic =
         ref.watch(onboardingWizardProvider.select((s) => s.incomeFrequency)) ==
         IncomeFrequency.periodic;
@@ -65,10 +68,12 @@ class _InitialIncomeStepState extends ConsumerState<InitialIncomeStep> {
           OnboardingStepHeader(
             stepIndex: 2,
             totalSteps: 4,
-            title: isPeriodic ? 'Gaji Siklus Ini' : 'Bekel Awal Hari Ini',
+            title: isPeriodic
+                ? l10n.initialIncomeStepPeriodicTitle
+                : l10n.initialIncomeStepDailyTitle,
             subtitle: isPeriodic
-                ? 'Masukkan total gaji tetap untuk siklus gajian ini.'
-                : 'Masukkan uang yang sudah kamu pegang untuk mulai hari ini.',
+                ? l10n.initialIncomeStepPeriodicSubtitle
+                : l10n.initialIncomeStepDailySubtitle,
           ),
           TextField(
             key: const ValueKey('initial_income_field'),
@@ -77,7 +82,9 @@ class _InitialIncomeStepState extends ConsumerState<InitialIncomeStep> {
             keyboardType: TextInputType.number,
             inputFormatters: [RupiahInputFormatter()],
             decoration: InputDecoration(
-              labelText: isPeriodic ? 'Gaji tetap' : 'Jumlah awal',
+              labelText: isPeriodic
+                  ? l10n.initialIncomeStepPeriodicLabel
+                  : l10n.initialIncomeStepDailyLabel,
               prefixText: 'Rp ',
               errorText: _errorText,
               border: const OutlineInputBorder(),

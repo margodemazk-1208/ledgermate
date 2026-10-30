@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:ledgermate/core/l10n/app_localizations.dart';
 import 'package:ledgermate/core/theme/theme_provider.dart';
 import 'package:ledgermate/features/goals/application/goals_providers.dart';
 import 'package:ledgermate/features/goals/presentation/goal_form_screen.dart';
@@ -40,6 +41,9 @@ void main() {
             theme: lightTheme,
             darkTheme: darkTheme,
             themeMode: themeMode,
+            locale: const Locale('id'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: child ?? const GoalsScreen(),
           );
         },
@@ -182,6 +186,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('id'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Builder(
             builder: (ctx) => Scaffold(
               body: ElevatedButton(

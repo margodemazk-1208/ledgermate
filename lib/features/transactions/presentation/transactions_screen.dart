@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/icon_circle.dart';
@@ -34,6 +35,7 @@ class TransactionsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final rowsAsync = ref.watch(groupedTransactionsProvider);
     final filter = ref.watch(transactionTypeFilterProvider);
     // Only used to distinguish "database genuinely has zero transactions"
@@ -46,7 +48,7 @@ class TransactionsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Daftar Transaksi',
+          l10n.transactionsScreenTitle,
           style: AppTypography.script(fontSize: 20),
         ),
       ),
@@ -72,10 +74,10 @@ class TransactionsScreen extends ConsumerWidget {
                 );
               }
               if (rows.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
                   child: Center(
-                    child: Text('Tidak ada transaksi untuk filter ini.'),
+                    child: Text(l10n.transactionsScreenEmptyFilterMessage),
                   ),
                 );
               }
@@ -94,7 +96,7 @@ class TransactionsScreen extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Gagal memuat transaksi: $err',
+              l10n.transactionsScreenLoadError(err),
               style: const TextStyle(color: AppColors.expenseRed),
               textAlign: TextAlign.center,
             ),
@@ -115,6 +117,7 @@ class TransactionsScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -128,13 +131,13 @@ class TransactionsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Belum Ada Transaksi',
+              l10n.transactionsScreenEmptyTitle,
               style: Theme.of(context).textTheme.headlineMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Catat pengeluaran atau pemasukan pertamamu dengan tombol di bawah.',
+              l10n.transactionsScreenEmptyMessage,
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -147,7 +150,7 @@ class TransactionsScreen extends ConsumerWidget {
                 );
               },
               icon: const Icon(Icons.add),
-              label: const Text('Tambah Transaksi Pertama'),
+              label: Text(l10n.transactionsScreenEmptyAddButton),
             ),
           ],
         ),
@@ -164,22 +167,23 @@ class _FilterRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         FilterPill(
-          label: 'Semua',
+          label: l10n.transactionsScreenFilterAll,
           selected: selected == null,
           onTap: () => onSelected(null),
         ),
         const SizedBox(width: 8),
         FilterPill(
-          label: 'Pemasukan',
+          label: l10n.transactionsScreenFilterIncome,
           selected: selected == db.TransactionType.income,
           onTap: () => onSelected(db.TransactionType.income),
         ),
         const SizedBox(width: 8),
         FilterPill(
-          label: 'Pengeluaran',
+          label: l10n.transactionsScreenFilterExpense,
           selected: selected == db.TransactionType.expense,
           onTap: () => onSelected(db.TransactionType.expense),
         ),

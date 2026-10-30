@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
 import '../navigation/app_shell.dart';
@@ -17,22 +18,40 @@ class AppBottomNav extends ConsumerWidget {
 
   final int currentIndex;
 
-  static const _items = <_NavItemData>[
-    _NavItemData(Icons.home_outlined, Icons.home, 'Home'),
-    _NavItemData(Icons.receipt_long_outlined, Icons.receipt_long, 'Transaksi'),
-    _NavItemData(Icons.track_changes_outlined, Icons.track_changes, 'Goals'),
+  static List<_NavItemData> _items(AppLocalizations l10n) => [
+    _NavItemData(Icons.home_outlined, Icons.home, l10n.appBottomNavHomeLabel),
+    _NavItemData(
+      Icons.receipt_long_outlined,
+      Icons.receipt_long,
+      l10n.appBottomNavTransactionsLabel,
+    ),
+    _NavItemData(
+      Icons.track_changes_outlined,
+      Icons.track_changes,
+      l10n.appBottomNavGoalsLabel,
+    ),
     _NavItemData(
       Icons.account_balance_wallet_outlined,
       Icons.account_balance_wallet,
-      'Aset',
+      l10n.appBottomNavAssetsLabel,
     ),
-    _NavItemData(Icons.bar_chart_outlined, Icons.bar_chart, 'Analitik'),
-    _NavItemData(Icons.settings_outlined, Icons.settings, 'Pengaturan'),
+    _NavItemData(
+      Icons.bar_chart_outlined,
+      Icons.bar_chart,
+      l10n.appBottomNavAnalyticsLabel,
+    ),
+    _NavItemData(
+      Icons.settings_outlined,
+      Icons.settings,
+      l10n.appBottomNavSettingsLabel,
+    ),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final items = _items(l10n);
     final isDark = theme.brightness == Brightness.dark;
     final navBg = isDark ? const Color(0xFF161616) : theme.colorScheme.surface;
     final unselected = isDark
@@ -50,11 +69,11 @@ class AppBottomNav extends ConsumerWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              for (var i = 0; i < _items.length; i++)
+              for (var i = 0; i < items.length; i++)
                 Expanded(
                   child: _NavItem(
                     key: ValueKey('bottom_nav_item_$i'),
-                    data: _items[i],
+                    data: items[i],
                     active: i == currentIndex,
                     activeColor: AppColors.burgundySoft,
                     inactiveColor: unselected,

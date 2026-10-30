@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/wallet.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/widgets/press_scale.dart';
 import '../../../core/presentation/widgets/success_toast.dart';
 import '../../../core/presentation/widgets/unsaved_changes_guard.dart';
@@ -87,7 +88,10 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
             includeInDailyBudget: _includeInDailyBudget,
           );
       if (mounted) {
-        showSuccessToast(context, 'Dompet berhasil disimpan');
+        showSuccessToast(
+          context,
+          AppLocalizations.of(context)!.walletFormScreenSaveSuccessToast,
+        );
         _dirty = false;
         Navigator.of(context).pop(true);
       }
@@ -105,13 +109,16 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.wallet != null;
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return UnsavedChangesGuard(
       isDirty: () => _dirty,
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            isEdit ? 'Edit Dompet' : 'Tambah Dompet',
+            isEdit
+                ? l10n.walletFormScreenEditTitle
+                : l10n.walletFormScreenAddTitle,
             style: AppTypography.script(fontSize: 20),
           ),
         ),
@@ -159,14 +166,14 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
                 TextFormField(
                   key: const ValueKey('wallet_name_field'),
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Dompet',
-                    hintText: 'Misal: BCA, Tunai, Gopay, Bibit',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.walletFormScreenNameLabel,
+                    hintText: l10n.walletFormScreenNameHint,
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
-                      return 'Nama dompet tidak boleh kosong';
+                      return l10n.walletFormScreenNameRequiredError;
                     }
                     return null;
                   },
@@ -175,7 +182,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
 
                 // 2. Icon Picker
                 Text(
-                  'Pilih Ikon',
+                  l10n.walletFormScreenIconPickerLabel,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -254,16 +261,16 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
                   controller: _balanceController,
                   keyboardType: TextInputType.number,
                   inputFormatters: [RupiahInputFormatter()],
-                  decoration: const InputDecoration(
-                    labelText: 'Saldo Awal',
+                  decoration: InputDecoration(
+                    labelText: l10n.walletFormScreenStartingBalanceLabel,
                     prefixText: 'Rp ',
-                    helperText: 'Saldo saat dompet pertama kali dibuat/dihitung (whole Rupiah).',
-                    border: OutlineInputBorder(),
+                    helperText: l10n.walletFormScreenStartingBalanceHelper,
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (val) {
                     final parsed = parseRupiah(val ?? '') ?? 0;
                     if (parsed < 0) {
-                      return 'Saldo awal tidak boleh negatif';
+                      return l10n.walletFormScreenStartingBalanceNegativeError;
                     }
                     return null;
                   },
@@ -284,9 +291,9 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
                     key: const ValueKey('wallet_include_budget_switch'),
                     value: _includeInDailyBudget,
                     activeThumbColor: AppColors.brandTeal,
-                    title: const Text('Hitung dalam Budget Harian'),
-                    subtitle: const Text(
-                      'Jika aktif, transaksi di dompet ini akan memengaruhi sisa uang jajan harianmu (BR-04). Matikan untuk dompet tabungan/investasi.',
+                    title: Text(l10n.walletFormScreenIncludeBudgetToggleTitle),
+                    subtitle: Text(
+                      l10n.walletFormScreenIncludeBudgetToggleSubtitle,
                     ),
                     onChanged: (val) {
                       setState(() {
@@ -319,7 +326,11 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
                             ),
                           )
                         : const Icon(Icons.check),
-                    label: Text(isEdit ? 'Simpan Perubahan' : 'Buat Dompet'),
+                    label: Text(
+                      isEdit
+                          ? l10n.walletFormScreenSaveChangesButton
+                          : l10n.walletFormScreenCreateButton,
+                    ),
                   ),
                 ),
               ],

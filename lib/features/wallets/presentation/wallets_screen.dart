@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/wallet.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/icon_circle.dart';
 import '../../../core/presentation/widgets/press_scale.dart';
@@ -23,18 +24,16 @@ class WalletsScreen extends ConsumerWidget {
     WidgetRef ref,
     Wallet wallet,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Dompet?'),
-        content: Text(
-          'Apakah kamu yakin ingin menghapus dompet "${wallet.name}"?\n\n'
-          'Catatan: Dompet tidak dapat dihapus jika masih memiliki transaksi atau transfer terkait.',
-        ),
+        title: Text(l10n.walletsScreenDeleteDialogTitle),
+        content: Text(l10n.walletsScreenDeleteDialogMessage(wallet.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Batal'),
+            child: Text(l10n.walletsScreenCancelButton),
           ),
           PressScale(
             child: FilledButton(
@@ -42,7 +41,7 @@ class WalletsScreen extends ConsumerWidget {
                 backgroundColor: AppColors.expenseRed,
               ),
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Hapus'),
+              child: Text(l10n.walletsScreenDeleteButton),
             ),
           ),
         ],
@@ -55,28 +54,41 @@ class WalletsScreen extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Dompet "${wallet.name}" berhasil dihapus.'),
+              content: Text(l10n.walletsScreenDeleteSuccessToast(wallet.name)),
               backgroundColor: AppColors.savingsGreen,
             ),
           );
         }
       } on WalletDeleteRestrictedException catch (e) {
         if (context.mounted) {
-          _showErrorDialog(context, 'Hapus Ditolak', e.message);
+          _showErrorDialog(
+            context,
+            l10n.walletsScreenDeleteRejectedTitle,
+            e.message,
+          );
         }
       } on WalletHasTransactionsException catch (e) {
         if (context.mounted) {
-          _showErrorDialog(context, 'Hapus Ditolak', e.message);
+          _showErrorDialog(
+            context,
+            l10n.walletsScreenDeleteRejectedTitle,
+            e.message,
+          );
         }
       } catch (e) {
         if (context.mounted) {
-          _showErrorDialog(context, 'Gagal Menghapus Dompet', e.toString());
+          _showErrorDialog(
+            context,
+            l10n.walletsScreenDeleteFailedTitle,
+            e.toString(),
+          );
         }
       }
     }
   }
 
   void _showErrorDialog(BuildContext context, String title, String message) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -90,7 +102,7 @@ class WalletsScreen extends ConsumerWidget {
         actions: [
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Mengerti'),
+            child: Text(l10n.walletsScreenUnderstoodButton),
           ),
         ],
       ),
@@ -100,6 +112,7 @@ class WalletsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final walletsAsync = ref.watch(walletsStreamProvider);
     final balancesAsync = ref.watch(walletBalancesProvider);
     final totalSaldoAsync = ref.watch(totalSaldoProvider);
@@ -109,11 +122,14 @@ class WalletsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Kelola Dompet', style: AppTypography.script(fontSize: 20)),
+        title: Text(
+          l10n.walletsScreenTitle,
+          style: AppTypography.script(fontSize: 20),
+        ),
         actions: [
           IconButton(
             key: const ValueKey('wallets_transfer_appbar_button'),
-            tooltip: 'Transfer Antar Dompet',
+            tooltip: l10n.walletsScreenTransferTooltip,
             icon: const Icon(Icons.swap_horiz),
             onPressed: () {
               Navigator.of(context).push(
@@ -145,7 +161,7 @@ class WalletsScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Total Saldo (Kekayaan Bersih)',
+                        l10n.walletsScreenTotalBalanceLabel,
                         style: AppTypography.mono(
                           fontSize: 13,
                           color: theme.textTheme.bodySmall?.color,
@@ -172,7 +188,7 @@ class WalletsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Total akumulasi dari ${wallets.length} dompet & rekening aktif.',
+                        l10n.walletsScreenTotalBalanceSubtitle(wallets.length),
                         style: theme.textTheme.bodySmall,
                       ),
                       const SizedBox(height: 16),
@@ -191,7 +207,7 @@ class WalletsScreen extends ConsumerWidget {
                                 );
                               },
                               icon: const Icon(Icons.swap_horiz, size: 18),
-                              label: const Text('Transfer'),
+                              label: Text(l10n.walletsScreenTransferButton),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -209,7 +225,7 @@ class WalletsScreen extends ConsumerWidget {
                                 );
                               },
                               icon: const Icon(Icons.add, size: 18),
-                              label: const Text('Tambah'),
+                              label: Text(l10n.walletsScreenAddButton),
                             ),
                           ),
                         ],
@@ -225,7 +241,7 @@ class WalletsScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Daftar Dompet (${wallets.length})',
+                    l10n.walletsScreenListTitle(wallets.length),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -247,12 +263,12 @@ class WalletsScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Belum ada dompet terdaftar.',
+                          l10n.walletsScreenEmptyTitle,
                           style: theme.textTheme.titleMedium,
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Tambahkan dompet pertamamu untuk mulai mencatat.',
+                          l10n.walletsScreenEmptyMessage,
                           style: theme.textTheme.bodySmall,
                           textAlign: TextAlign.center,
                         ),
@@ -298,7 +314,7 @@ class WalletsScreen extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Gagal memuat daftar dompet: $err',
+              l10n.walletsScreenLoadError(err),
               style: TextStyle(
                 color: AppColors.expenseRedText(theme.brightness),
               ),
@@ -337,6 +353,7 @@ class _WalletItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Card(
       elevation: 0,
@@ -392,8 +409,8 @@ class _WalletItemCard extends StatelessWidget {
                           ),
                           child: Text(
                             wallet.includeInDailyBudget
-                                ? 'Ikut Budget Harian'
-                                : 'Di luar Budget',
+                                ? l10n.walletCardIncludedInBudgetBadge
+                                : l10n.walletCardExcludedFromBudgetBadge,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -425,7 +442,7 @@ class _WalletItemCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Saldo saat ini',
+                    l10n.walletCardCurrentBalanceLabel,
                     style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
                   ),
                 ],
@@ -446,23 +463,23 @@ class _WalletItemCard extends StatelessWidget {
                   }
                 },
                 itemBuilder: (ctx) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'transfer',
                     child: Row(
                       children: [
-                        Icon(Icons.swap_horiz, size: 18),
-                        SizedBox(width: 8),
-                        Text('Transfer'),
+                        const Icon(Icons.swap_horiz, size: 18),
+                        const SizedBox(width: 8),
+                        Text(l10n.walletCardTransferMenuItem),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit_outlined, size: 18),
-                        SizedBox(width: 8),
-                        Text('Edit Dompet'),
+                        const Icon(Icons.edit_outlined, size: 18),
+                        const SizedBox(width: 8),
+                        Text(l10n.walletCardEditMenuItem),
                       ],
                     ),
                   ),
@@ -477,7 +494,7 @@ class _WalletItemCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Hapus',
+                          l10n.walletCardDeleteMenuItem,
                           style: TextStyle(
                             color: AppColors.expenseRedText(theme.brightness),
                           ),
