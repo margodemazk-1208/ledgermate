@@ -66,7 +66,12 @@ void main() {
             locale: const Locale('id'),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: child ?? const AnalyticsScreen(),
+            // M21/Bug 1: `AnalyticsScreen` is now bare body content (no own
+            // `Scaffold`) — wrap it here so ink effects have a `Material`
+            // ancestor, matching what `AppShell` supplies in production.
+            home: child == null || child is AnalyticsScreen
+                ? Scaffold(body: child ?? const AnalyticsScreen())
+                : child,
           );
         },
       ),
@@ -80,7 +85,6 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('Visual Analitik'), findsOneWidget);
       expect(find.byType(AnalyticsEmptyState), findsOneWidget);
       expect(
         find.text('Belum ada transaksi pada periode ini.'),
@@ -103,19 +107,6 @@ void main() {
       );
       expect(ctaButton, findsOneWidget);
       await tester.tap(ctaButton);
-      await tester.pumpAndSettle();
-
-      expect(find.byType(TransactionFormScreen), findsOneWidget);
-      expect(find.text('Catat Transaksi'), findsOneWidget);
-    });
-
-    testWidgets('FAB navigates to TransactionFormScreen', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
-
-      final fab = find.byKey(const ValueKey('analytics_add_transaction_fab'));
-      expect(fab, findsOneWidget);
-      await tester.tap(fab);
       await tester.pumpAndSettle();
 
       expect(find.byType(TransactionFormScreen), findsOneWidget);
@@ -280,27 +271,6 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('26 Oktober - 1 November 2026'), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'Theme toggle button works in both dark and light mode (antislop R-21/R-34)',
-      (tester) async {
-        await tester.pumpWidget(buildTestWidget());
-        await tester.pumpAndSettle();
-
-        final themeBtn = find.byKey(
-          const ValueKey('analytics_theme_toggle_button'),
-        );
-        expect(themeBtn, findsOneWidget);
-
-        // Tap toggle
-        await tester.tap(themeBtn);
-        await tester.pumpAndSettle();
-
-        // Tap toggle again
-        await tester.tap(themeBtn);
-        await tester.pumpAndSettle();
       },
     );
   });

@@ -7,19 +7,25 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
 import '../navigation/slide_page_route.dart';
 import 'press_scale.dart';
-import '../../../features/assets/presentation/asset_form_screen.dart';
-import '../../../features/goals/presentation/goal_form_screen.dart';
 import '../../../features/transactions/presentation/transaction_form_screen.dart';
 import '../../../features/wallets/presentation/transfer_form_screen.dart';
+import '../../../features/wallets/presentation/wallet_form_screen.dart';
 
 /// Home's FAB speed-dial per `docs/design/mockups/08_fab_overlay.html`,
 /// with the M14 motion treatment from `docs/DESIGN.md` §Motion touchpoint 4:
 /// staggered bottom-to-top reveal (Pengeluaran -> Pemasukan -> Transfer ->
-/// Goal -> Aset), ~50ms stagger, each item fade+scale (0.8->1.0), FAB icon
+/// Tambah Dompet), ~50ms stagger, each item fade+scale (0.8->1.0), FAB icon
 /// rotates 45° (+ -> ×) over the same duration. Closing reverses the
 /// stagger (top-to-bottom collapse) via the SAME `AnimationController` run
 /// in reverse — see `_SpeedDialOverlay` doc comment for why that alone
 /// produces the correct reverse ordering.
+///
+/// M21/Bug 2: trimmed from 5 options to 4 — "Tambah Goal"/"Tambah Aset"
+/// were removed since the Goals/Assets tabs already have their own
+/// dedicated "+" FAB one tap away via the bottom nav, so duplicating them
+/// here was redundant. "Tambah Dompet" was added in their place since it
+/// was previously only reachable by drilling into Settings -> Wallets ->
+/// Add.
 class FabSpeedDial extends StatelessWidget {
   const FabSpeedDial({super.key});
 
@@ -102,10 +108,13 @@ class _SpeedDialOverlayState extends State<_SpeedDialOverlay>
   /// Per-item reveal [Interval] within the shared controller's timeline,
   /// bottom-to-top on open (index 0 starts first) — reversing the same
   /// controller naturally collapses top-to-bottom (the last-revealed item,
-  /// index 4, has the LATEST interval so it's first to fade out as the
+  /// index 3, has the LATEST interval so it's first to fade out as the
   /// controller value decreases back through it).
+  ///
+  /// M21/Bug 2: 4 items now (was 5) — stagger/span recomputed so the full
+  /// reveal still completes within the same total duration.
   Interval _intervalFor(int index) {
-    const stagger = 0.111; // ~50ms of the 450ms total duration
+    const stagger = 0.148; // ~50ms of the 340ms total duration (4 items)
     const itemSpan = 0.555; // ~250ms fade/scale span
     final start = (index * stagger).clamp(0.0, 1.0);
     final end = (start + itemSpan).clamp(0.0, 1.0);
@@ -136,28 +145,14 @@ class _SpeedDialOverlayState extends State<_SpeedDialOverlay>
                 _StaggeredItem(
                   animation: CurvedAnimation(
                     parent: _controller,
-                    curve: _intervalFor(4),
-                  ),
-                  child: _SpeedDialOption(
-                    key: const ValueKey('fab_option_add_asset'),
-                    label: l10n.fabSpeedDialAddAssetLabel,
-                    icon: Icons.account_balance_outlined,
-                    dark: true,
-                    onTap: () => _openScreen(context, const AssetFormScreen()),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                _StaggeredItem(
-                  animation: CurvedAnimation(
-                    parent: _controller,
                     curve: _intervalFor(3),
                   ),
                   child: _SpeedDialOption(
-                    key: const ValueKey('fab_option_add_goal'),
-                    label: l10n.fabSpeedDialAddGoalLabel,
-                    icon: Icons.track_changes_outlined,
+                    key: const ValueKey('fab_option_add_wallet'),
+                    label: l10n.fabSpeedDialAddWalletLabel,
+                    icon: Icons.account_balance_wallet_outlined,
                     dark: true,
-                    onTap: () => _openScreen(context, const GoalFormScreen()),
+                    onTap: () => _openScreen(context, const WalletFormScreen()),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -286,7 +281,7 @@ class _SpeedDialOption extends StatelessWidget {
   final String label;
   final IconData icon;
 
-  /// Mockup alternates dark pill+badge (Aset/Goal/Transfer) and light
+  /// Mockup alternates dark pill+badge (Transfer/Dompet) and light
   /// pill+badge (Pemasukan/Pengeluaran, the two most-used quick actions).
   final bool dark;
   final VoidCallback onTap;

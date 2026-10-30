@@ -128,6 +128,7 @@ class _MandatoryExpensesStepState extends ConsumerState<MandatoryExpensesStep> {
             inputFormatters: [RupiahInputFormatter()],
             decoration: InputDecoration(
               labelText: l10n.mandatoryExpensesStepAmountFieldLabel,
+              floatingLabelBehavior: FloatingLabelBehavior.always,
               prefixText: 'Rp ',
               errorText: _amountError,
               border: const OutlineInputBorder(),

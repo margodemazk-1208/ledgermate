@@ -253,6 +253,7 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [RupiahInputFormatter()],
                   decoration: const InputDecoration(
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
                     prefixText: 'Rp ',
                     hintText: '0',
                     border: OutlineInputBorder(),
@@ -302,6 +303,7 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [RupiahInputFormatter()],
                   decoration: const InputDecoration(
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
                     prefixText: 'Rp ',
                     hintText: '0',
                     border: OutlineInputBorder(),

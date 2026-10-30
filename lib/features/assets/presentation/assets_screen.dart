@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
-import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/dashed_add_card.dart';
 import '../../../core/presentation/widgets/skeleton_loader.dart';
 import '../../../core/theme/app_colors.dart';
@@ -24,67 +23,35 @@ class AssetsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final summaryAsync = ref.watch(assetsOverviewSummaryProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          l10n.assetsScreenTitle,
-          style: AppTypography.script(fontSize: 20),
-        ),
-        actions: [
-          IconButton(
-            key: const ValueKey('appbar_add_asset_button'),
-            tooltip: l10n.assetsScreenAddTooltip,
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(SlidePageRoute(builder: (_) => const AssetFormScreen()));
-            },
-          ),
-        ],
-      ),
-      body: summaryAsync.when(
-        loading: () => const AssetsSkeletonList(),
-        error: (err, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 48,
-                  color: AppColors.expenseRed,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.assetsScreenLoadError(err),
-                  style: theme.textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+    return summaryAsync.when(
+      loading: () => const AssetsSkeletonList(),
+      error: (err, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: AppColors.expenseRed,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.assetsScreenLoadError(err),
+                style: theme.textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
-        data: (summary) {
-          if (summary.assetCount == 0) {
-            return _buildEmptyState(context);
-          }
-          return _buildAssetsList(context, summary);
-        },
       ),
-      floatingActionButton: FloatingActionButton(
-        key: const ValueKey('add_asset_fab'),
-        onPressed: () {
-          Navigator.of(context)
-              .push(SlidePageRoute(builder: (_) => const AssetFormScreen()));
-        },
-        child: const Icon(Icons.add),
-      ),
-      bottomNavigationBar: const AppBottomNav(
-        key: ValueKey('assets_bottom_nav_bar'),
-        currentIndex: 3,
-      ),
+      data: (summary) {
+        if (summary.assetCount == 0) {
+          return _buildEmptyState(context);
+        }
+        return _buildAssetsList(context, summary);
+      },
     );
   }
 

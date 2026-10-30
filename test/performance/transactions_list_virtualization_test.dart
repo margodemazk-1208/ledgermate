@@ -159,7 +159,10 @@ void main() {
           locale: const Locale('id'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const TransactionsScreen(),
+          // M21/Bug 1: `TransactionsScreen` is now bare body content — wrap
+          // in a `Scaffold` for the `Material` ancestor its rows need,
+          // matching what `AppShell` supplies in production.
+          home: const Scaffold(body: TransactionsScreen()),
         ),
       ),
     );
@@ -196,7 +199,7 @@ void main() {
           locale: const Locale('id'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const TransactionsScreen(),
+          home: const Scaffold(body: TransactionsScreen()),
         ),
       ),
     );

@@ -431,7 +431,7 @@ abstract class AppLocalizations {
   /// No description provided for @walletSetupStepIncludeBudgetSubtitle.
   ///
   /// In id, this message translates to:
-  /// **'Uang di dompet ini akan dihitung ke dalam Uang Jajan Aman Hari Ini (BR-04).'**
+  /// **'Uang di dompet ini akan dihitung ke dalam Uang Jajan Aman Hari Ini.'**
   String get walletSetupStepIncludeBudgetSubtitle;
 
   /// No description provided for @onboardingScreenBackButton.
@@ -584,17 +584,11 @@ abstract class AppLocalizations {
   /// **'Tutup'**
   String get fabSpeedDialCloseBarrierLabel;
 
-  /// No description provided for @fabSpeedDialAddAssetLabel.
+  /// No description provided for @fabSpeedDialAddWalletLabel.
   ///
   /// In id, this message translates to:
-  /// **'Tambah Aset Baru'**
-  String get fabSpeedDialAddAssetLabel;
-
-  /// No description provided for @fabSpeedDialAddGoalLabel.
-  ///
-  /// In id, this message translates to:
-  /// **'Tambah Goal Baru'**
-  String get fabSpeedDialAddGoalLabel;
+  /// **'Tambah Dompet Baru'**
+  String get fabSpeedDialAddWalletLabel;
 
   /// No description provided for @fabSpeedDialTransferLabel.
   ///
@@ -1846,7 +1840,7 @@ abstract class AppLocalizations {
   /// No description provided for @walletFormScreenIncludeBudgetToggleSubtitle.
   ///
   /// In id, this message translates to:
-  /// **'Jika aktif, transaksi di dompet ini akan memengaruhi sisa uang jajan harianmu (BR-04). Matikan untuk dompet tabungan/investasi.'**
+  /// **'Jika aktif, transaksi di dompet ini akan memengaruhi sisa uang jajan harianmu. Matikan untuk dompet tabungan/investasi.'**
   String get walletFormScreenIncludeBudgetToggleSubtitle;
 
   /// No description provided for @walletFormScreenSaveSuccessToast.
@@ -2164,7 +2158,7 @@ abstract class AppLocalizations {
   /// No description provided for @transactionFormScreenDeleteLockedNotice.
   ///
   /// In id, this message translates to:
-  /// **'Hanya transaksi bertanggal hari ini yang dapat dihapus. Transaksi lampau tidak dapat dihapus untuk menjaga integritas histori (FR-03).'**
+  /// **'Hanya transaksi bertanggal hari ini yang dapat dihapus. Transaksi lampau tidak dapat dihapus untuk menjaga integritas histori.'**
   String get transactionFormScreenDeleteLockedNotice;
 
   /// No description provided for @transactionFormScreenTypeExpenseLabel.
@@ -3004,7 +2998,7 @@ abstract class AppLocalizations {
   /// No description provided for @payCycleTransitionCarryOverMessage.
   ///
   /// In id, this message translates to:
-  /// **'Sisa Uang Jajan Aman kemarin terakumulasi otomatis ke saldo hari ini (BR-01).'**
+  /// **'Sisa Uang Jajan Aman kemarin terakumulasi otomatis ke saldo hari ini.'**
   String get payCycleTransitionCarryOverMessage;
 
   /// No description provided for @payCycleTransitionBekelLabel.

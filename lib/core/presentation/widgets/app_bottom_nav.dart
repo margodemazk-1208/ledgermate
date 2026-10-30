@@ -13,10 +13,17 @@ import '../navigation/app_shell.dart';
 /// M18 (v1.3 perf, item 5): tab switches now mutate [currentTabIndexProvider]
 /// instead of pushing/replacing routes — see `app_shell.dart`'s header for
 /// why (state preservation + correct Android back-button behavior).
+///
+/// M21/Bug 1: this is now the SINGLE persistent instance living in
+/// `AppShell`'s `Scaffold.bottomNavigationBar` slot (previously each of the
+/// 6 tab screens embedded its own copy with an explicit `currentIndex`
+/// constructor argument, which is what let the whole chrome get swept up
+/// in each tab's `SlideTransition`). Reading [currentTabIndexProvider]
+/// directly means this single widget instance never needs to be rebuilt
+/// with a different constructor argument on tab switch — its position in
+/// the tree, and therefore on screen, never changes.
 class AppBottomNav extends ConsumerWidget {
-  const AppBottomNav({super.key, required this.currentIndex});
-
-  final int currentIndex;
+  const AppBottomNav({super.key});
 
   static List<_NavItemData> _items(AppLocalizations l10n) => [
     _NavItemData(Icons.home_outlined, Icons.home, l10n.appBottomNavHomeLabel),
@@ -52,6 +59,7 @@ class AppBottomNav extends ConsumerWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     final items = _items(l10n);
+    final currentIndex = ref.watch(currentTabIndexProvider);
     final isDark = theme.brightness == Brightness.dark;
     final navBg = isDark ? const Color(0xFF161616) : theme.colorScheme.surface;
     final unselected = isDark

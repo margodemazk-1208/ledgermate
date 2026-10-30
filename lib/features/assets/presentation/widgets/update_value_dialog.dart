@@ -210,6 +210,7 @@ class _UpdateValueDialogState extends ConsumerState<UpdateValueDialog> {
                 keyboardType: TextInputType.number,
                 inputFormatters: [RupiahInputFormatter()],
                 decoration: const InputDecoration(
+                  floatingLabelBehavior: FloatingLabelBehavior.always,
                   prefixText: 'Rp ',
                   hintText: '0',
                   border: OutlineInputBorder(),

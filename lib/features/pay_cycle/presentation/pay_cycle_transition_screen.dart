@@ -404,6 +404,7 @@ class _ModeASalaryInput extends StatelessWidget {
           inputFormatters: [RupiahInputFormatter()],
           decoration: InputDecoration(
             labelText: l10n.payCycleTransitionSalaryLabel,
+            floatingLabelBehavior: FloatingLabelBehavior.always,
             prefixText: 'Rp ',
             errorText: errorText,
             helperText: l10n.payCycleTransitionSalaryHelper,
@@ -481,6 +482,7 @@ class _ModeBBekelInput extends StatelessWidget {
           inputFormatters: [RupiahInputFormatter()],
           decoration: InputDecoration(
             labelText: l10n.payCycleTransitionBekelLabel,
+            floatingLabelBehavior: FloatingLabelBehavior.always,
             prefixText: 'Rp ',
             helperText: l10n.payCycleTransitionBekelHelper,
             border: const OutlineInputBorder(),
@@ -589,6 +591,7 @@ class _MandatoryExpensesSection extends StatelessWidget {
           inputFormatters: [RupiahInputFormatter()],
           decoration: InputDecoration(
             labelText: l10n.payCycleTransitionExpenseAmountFieldLabel,
+            floatingLabelBehavior: FloatingLabelBehavior.always,
             prefixText: 'Rp ',
             errorText: amountError,
             border: const OutlineInputBorder(),

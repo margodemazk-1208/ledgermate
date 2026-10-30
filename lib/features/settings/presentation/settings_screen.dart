@@ -5,7 +5,6 @@ import '../../../core/database/category.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
-import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../export_import/presentation/widgets/data_management_card.dart';
@@ -54,436 +53,425 @@ class SettingsScreen extends ConsumerWidget {
       });
     }
 
-    return Scaffold(
+    return ListView(
       key: const ValueKey('settings_screen'),
-      appBar: AppBar(
-        title: Text(
-          l10n.settingsScreenTitle,
-          style: AppTypography.script(fontSize: 20),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        children: [
-          // 1. Data Backup & Restore (FR-08)
-          const DataManagementCard(),
-          const SizedBox(height: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      children: [
+        // 1. Data Backup & Restore (FR-08)
+        const DataManagementCard(),
+        const SizedBox(height: 20),
 
-          // 2. Preferences Card (Theme & Language - FR-09)
-          Card(
-            key: const ValueKey('settings_preferences_card'),
-            margin: EdgeInsets.zero,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          // M19/D18: burgundy pulled off every section-header icon badge —
-                          // repeating it 5x on one screen was the clearest
-                          // case of the "accent used too heavily" audit
-                          // finding (docs/DESIGN.md ~10-15% guidance).
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.06,
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.tune,
-                          color: theme.textTheme.bodyLarge?.color,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.settingsScreenPreferencesTitle,
-                              style: AppTypography.script(fontSize: 17),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              l10n.settingsScreenPreferencesSubtitle,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.textTheme.bodySmall?.color
-                                    ?.withValues(alpha: 0.7),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  SwitchListTile(
-                    key: const ValueKey('settings_dark_mode_switch'),
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(l10n.settingsScreenDarkModeTitle),
-                    subtitle: Text(
-                      isDarkMode
-                          ? l10n.settingsScreenDarkModeActiveSubtitle
-                          : l10n.settingsScreenLightModeActiveSubtitle,
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    secondary: Icon(
-                      isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                      color: theme.textTheme.bodyLarge?.color,
-                    ),
-                    value: isDarkMode,
-                    onChanged: (val) {
-                      final newMode = val ? ThemeMode.dark : ThemeMode.light;
-                      ref.read(themeModeProvider.notifier).set(newMode);
-                      ref
-                          .read(settingsRepositoryProvider)
-                          .updateTheme(
-                            val ? AppThemeSetting.dark : AppThemeSetting.light,
-                          );
-                    },
-                  ),
-                  const Divider(height: 20),
-                  ListTile(
-                    key: const ValueKey('settings_language_tile'),
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      Icons.language,
-                      color: theme.textTheme.bodyLarge?.color,
-                    ),
-                    title: Text(l10n.settingsScreenLanguageTitle),
-                    subtitle: Text(
-                      currentLanguage == AppLanguage.id
-                          ? l10n.settingsScreenLanguageIndonesianActiveSubtitle
-                          : l10n.settingsScreenLanguageEnglishActiveSubtitle,
-                    ),
-                    trailing: DropdownButton<AppLanguage>(
-                      value: currentLanguage,
-                      underline: const SizedBox.shrink(),
-                      onChanged: (lang) {
-                        if (lang != null) {
-                          ref
-                              .read(settingsRepositoryProvider)
-                              .updateLanguage(lang);
-                          ref
-                              .read(appLocaleProvider.notifier)
-                              .setFromLanguage(lang);
-                        }
-                      },
-                      items: [
-                        DropdownMenuItem(
-                          value: AppLanguage.id,
-                          child: Text(
-                            l10n.settingsScreenLanguageIndonesianOption,
-                          ),
-                        ),
-                        DropdownMenuItem(
-                          value: AppLanguage.en,
-                          child: Text(l10n.settingsScreenLanguageEnglishOption),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+        // 2. Preferences Card (Theme & Language - FR-09)
+        Card(
+          key: const ValueKey('settings_preferences_card'),
+          margin: EdgeInsets.zero,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
             ),
           ),
-          const SizedBox(height: 20),
-
-          // 3. Local Notifications Card (FR-11)
-          Card(
-            key: const ValueKey('settings_notifications_card'),
-            margin: EdgeInsets.zero,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          // M19/D18: burgundy pulled off every section-header icon badge —
-                          // repeating it 5x on one screen was the clearest
-                          // case of the "accent used too heavily" audit
-                          // finding (docs/DESIGN.md ~10-15% guidance).
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.06,
-                          ),
-                          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        // M19/D18: burgundy pulled off every section-header icon badge —
+                        // repeating it 5x on one screen was the clearest
+                        // case of the "accent used too heavily" audit
+                        // finding (docs/DESIGN.md ~10-15% guidance).
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.06,
                         ),
-                        child: Icon(
-                          Icons.notifications_active,
-                          color: theme.textTheme.bodyLarge?.color,
-                          size: 24,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.tune,
+                        color: theme.textTheme.bodyLarge?.color,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.settingsScreenPreferencesTitle,
+                            style: AppTypography.script(fontSize: 17),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            l10n.settingsScreenPreferencesSubtitle,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.textTheme.bodySmall?.color
+                                  ?.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SwitchListTile(
+                  key: const ValueKey('settings_dark_mode_switch'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.settingsScreenDarkModeTitle),
+                  subtitle: Text(
+                    isDarkMode
+                        ? l10n.settingsScreenDarkModeActiveSubtitle
+                        : l10n.settingsScreenLightModeActiveSubtitle,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  secondary: Icon(
+                    isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
+                  value: isDarkMode,
+                  onChanged: (val) {
+                    final newMode = val ? ThemeMode.dark : ThemeMode.light;
+                    ref.read(themeModeProvider.notifier).set(newMode);
+                    ref
+                        .read(settingsRepositoryProvider)
+                        .updateTheme(
+                          val ? AppThemeSetting.dark : AppThemeSetting.light,
+                        );
+                  },
+                ),
+                const Divider(height: 20),
+                ListTile(
+                  key: const ValueKey('settings_language_tile'),
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    Icons.language,
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
+                  title: Text(l10n.settingsScreenLanguageTitle),
+                  subtitle: Text(
+                    currentLanguage == AppLanguage.id
+                        ? l10n.settingsScreenLanguageIndonesianActiveSubtitle
+                        : l10n.settingsScreenLanguageEnglishActiveSubtitle,
+                  ),
+                  trailing: DropdownButton<AppLanguage>(
+                    value: currentLanguage,
+                    underline: const SizedBox.shrink(),
+                    onChanged: (lang) {
+                      if (lang != null) {
+                        ref
+                            .read(settingsRepositoryProvider)
+                            .updateLanguage(lang);
+                        ref
+                            .read(appLocaleProvider.notifier)
+                            .setFromLanguage(lang);
+                      }
+                    },
+                    items: [
+                      DropdownMenuItem(
+                        value: AppLanguage.id,
+                        child: Text(
+                          l10n.settingsScreenLanguageIndonesianOption,
                         ),
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.settingsScreenNotificationsTitle,
-                              style: AppTypography.script(fontSize: 17),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              l10n.settingsScreenNotificationsSubtitle,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.textTheme.bodySmall?.color
-                                    ?.withValues(alpha: 0.7),
-                              ),
-                            ),
-                          ],
-                        ),
+                      DropdownMenuItem(
+                        value: AppLanguage.en,
+                        child: Text(l10n.settingsScreenLanguageEnglishOption),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  // Daily reminder switch + time picker
-                  SwitchListTile(
-                    key: const ValueKey('settings_daily_reminder_switch'),
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(l10n.settingsScreenDailyReminderTitle),
-                    subtitle: Text(
-                      l10n.settingsScreenDailyReminderSubtitle(
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // 3. Local Notifications Card (FR-11)
+        Card(
+          key: const ValueKey('settings_notifications_card'),
+          margin: EdgeInsets.zero,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        // M19/D18: burgundy pulled off every section-header icon badge —
+                        // repeating it 5x on one screen was the clearest
+                        // case of the "accent used too heavily" audit
+                        // finding (docs/DESIGN.md ~10-15% guidance).
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.06,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.notifications_active,
+                        color: theme.textTheme.bodyLarge?.color,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.settingsScreenNotificationsTitle,
+                            style: AppTypography.script(fontSize: 17),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            l10n.settingsScreenNotificationsSubtitle,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.textTheme.bodySmall?.color
+                                  ?.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Daily reminder switch + time picker
+                SwitchListTile(
+                  key: const ValueKey('settings_daily_reminder_switch'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.settingsScreenDailyReminderTitle),
+                  subtitle: Text(
+                    l10n.settingsScreenDailyReminderSubtitle(
+                      _formatTime(profile?.notifDailyReminderTime ?? 1260),
+                    ),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  value: profile?.notifDailyReminderEnabled ?? true,
+                  onChanged: (val) async {
+                    if (val) {
+                      await ref
+                          .read(notificationServiceProvider)
+                          .requestPermission();
+                    }
+                    await ref
+                        .read(settingsRepositoryProvider)
+                        .updateDailyReminder(
+                          enabled: val,
+                          timeMinutes: profile?.notifDailyReminderTime ?? 1260,
+                        );
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 36, bottom: 8),
+                  child: OutlinedButton.icon(
+                    key: const ValueKey('settings_reminder_time_picker'),
+                    onPressed: (profile?.notifDailyReminderEnabled ?? true)
+                        ? () async {
+                            final curMin =
+                                profile?.notifDailyReminderTime ?? 1260;
+                            final picked = await showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay(
+                                hour: curMin ~/ 60,
+                                minute: curMin % 60,
+                              ),
+                            );
+                            if (picked != null) {
+                              final minutes = picked.hour * 60 + picked.minute;
+                              await ref
+                                  .read(settingsRepositoryProvider)
+                                  .updateDailyReminder(
+                                    enabled: true,
+                                    timeMinutes: minutes,
+                                  );
+                            }
+                          }
+                        : null,
+                    icon: const Icon(Icons.schedule, size: 18),
+                    label: Text(
+                      l10n.settingsScreenChangeTimeButton(
                         _formatTime(profile?.notifDailyReminderTime ?? 1260),
                       ),
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    value: profile?.notifDailyReminderEnabled ?? true,
-                    onChanged: (val) async {
-                      if (val) {
-                        await ref
-                            .read(notificationServiceProvider)
-                            .requestPermission();
-                      }
-                      await ref
-                          .read(settingsRepositoryProvider)
-                          .updateDailyReminder(
-                            enabled: val,
-                            timeMinutes:
-                                profile?.notifDailyReminderTime ?? 1260,
-                          );
-                    },
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 36, bottom: 8),
-                    child: OutlinedButton.icon(
-                      key: const ValueKey('settings_reminder_time_picker'),
-                      onPressed: (profile?.notifDailyReminderEnabled ?? true)
-                          ? () async {
-                              final curMin =
-                                  profile?.notifDailyReminderTime ?? 1260;
-                              final picked = await showTimePicker(
-                                context: context,
-                                initialTime: TimeOfDay(
-                                  hour: curMin ~/ 60,
-                                  minute: curMin % 60,
-                                ),
-                              );
-                              if (picked != null) {
-                                final minutes =
-                                    picked.hour * 60 + picked.minute;
-                                await ref
-                                    .read(settingsRepositoryProvider)
-                                    .updateDailyReminder(
-                                      enabled: true,
-                                      timeMinutes: minutes,
-                                    );
-                              }
-                            }
-                          : null,
-                      icon: const Icon(Icons.schedule, size: 18),
-                      label: Text(
-                        l10n.settingsScreenChangeTimeButton(
-                          _formatTime(profile?.notifDailyReminderTime ?? 1260),
-                        ),
-                      ),
                     ),
                   ),
-                  const Divider(height: 20),
-                  // Limit alert switch
-                  SwitchListTile(
-                    key: const ValueKey('settings_limit_alert_switch'),
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(l10n.settingsScreenLimitAlertTitle),
-                    subtitle: Text(
-                      l10n.settingsScreenLimitAlertSubtitle,
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    value: profile?.notifLimitAlertEnabled ?? true,
-                    onChanged: (val) async {
-                      await ref
-                          .read(settingsRepositoryProvider)
-                          .updateLimitAlert(enabled: val);
-                    },
+                ),
+                const Divider(height: 20),
+                // Limit alert switch
+                SwitchListTile(
+                  key: const ValueKey('settings_limit_alert_switch'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.settingsScreenLimitAlertTitle),
+                  subtitle: Text(
+                    l10n.settingsScreenLimitAlertSubtitle,
+                    style: theme.textTheme.bodySmall,
                   ),
-                  const Divider(height: 20),
-                  // Pay cycle alert switch
-                  SwitchListTile(
-                    key: const ValueKey('settings_pay_cycle_switch'),
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(l10n.settingsScreenPayCycleTitle),
-                    subtitle: Text(
-                      l10n.settingsScreenPayCycleSubtitle,
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    value: profile?.notifPayCycleEnabled ?? true,
-                    onChanged: (val) async {
-                      await ref
-                          .read(settingsRepositoryProvider)
-                          .updatePayCycleAlert(enabled: val);
-                    },
+                  value: profile?.notifLimitAlertEnabled ?? true,
+                  onChanged: (val) async {
+                    await ref
+                        .read(settingsRepositoryProvider)
+                        .updateLimitAlert(enabled: val);
+                  },
+                ),
+                const Divider(height: 20),
+                // Pay cycle alert switch
+                SwitchListTile(
+                  key: const ValueKey('settings_pay_cycle_switch'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.settingsScreenPayCycleTitle),
+                  subtitle: Text(
+                    l10n.settingsScreenPayCycleSubtitle,
+                    style: theme.textTheme.bodySmall,
                   ),
-                  const Divider(height: 20),
-                  // Goal milestone alert switch
-                  SwitchListTile(
-                    key: const ValueKey('settings_goal_milestone_switch'),
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(l10n.settingsScreenGoalMilestoneTitle),
-                    subtitle: Text(
-                      l10n.settingsScreenGoalMilestoneSubtitle,
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    value: profile?.notifGoalMilestoneEnabled ?? true,
-                    onChanged: (val) async {
-                      await ref
-                          .read(settingsRepositoryProvider)
-                          .updateGoalMilestoneAlert(enabled: val);
-                    },
+                  value: profile?.notifPayCycleEnabled ?? true,
+                  onChanged: (val) async {
+                    await ref
+                        .read(settingsRepositoryProvider)
+                        .updatePayCycleAlert(enabled: val);
+                  },
+                ),
+                const Divider(height: 20),
+                // Goal milestone alert switch
+                SwitchListTile(
+                  key: const ValueKey('settings_goal_milestone_switch'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.settingsScreenGoalMilestoneTitle),
+                  subtitle: Text(
+                    l10n.settingsScreenGoalMilestoneSubtitle,
+                    style: theme.textTheme.bodySmall,
                   ),
-                ],
-              ),
+                  value: profile?.notifGoalMilestoneEnabled ?? true,
+                  onChanged: (val) async {
+                    await ref
+                        .read(settingsRepositoryProvider)
+                        .updateGoalMilestoneAlert(enabled: val);
+                  },
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
+        ),
+        const SizedBox(height: 20),
 
-          // 4. Wallets Management Card (FR-12, D16)
-          const _WalletsManagementCard(),
-          const SizedBox(height: 20),
+        // 4. Wallets Management Card (FR-12, D16)
+        const _WalletsManagementCard(),
+        const SizedBox(height: 20),
 
-          // 5. Category Management Card (FR-09)
-          const _CategoryManagementCard(),
-          const SizedBox(height: 20),
+        // 5. Category Management Card (FR-09)
+        const _CategoryManagementCard(),
+        const SizedBox(height: 20),
 
-          // 5. About & Architecture Info Card
-          Card(
-            key: const ValueKey('settings_about_card'),
-            margin: EdgeInsets.zero,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
-              ),
+        // 5. About & Architecture Info Card
+        Card(
+          key: const ValueKey('settings_about_card'),
+          margin: EdgeInsets.zero,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          // M19/D18: burgundy pulled off every section-header icon badge —
-                          // repeating it 5x on one screen was the clearest
-                          // case of the "accent used too heavily" audit
-                          // finding (docs/DESIGN.md ~10-15% guidance).
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.06,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        // M19/D18: burgundy pulled off every section-header icon badge —
+                        // repeating it 5x on one screen was the clearest
+                        // case of the "accent used too heavily" audit
+                        // finding (docs/DESIGN.md ~10-15% guidance).
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.06,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.info_outline,
+                        color: theme.textTheme.bodyLarge?.color,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.settingsScreenAboutTitle,
+                            style: AppTypography.script(fontSize: 17),
                           ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.info_outline,
-                          color: theme.textTheme.bodyLarge?.color,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.settingsScreenAboutTitle,
-                              style: AppTypography.script(fontSize: 17),
-                            ),
-                            const SizedBox(height: 2),
-                            // M19/D18: reads the REAL installed build's
-                            // version dynamically (package_info_plus)
-                            // instead of a hand-typed literal that
-                            // immediately drifted from the real version.
-                            packageInfoAsync.when(
-                              data: (info) => Text(
-                                l10n.settingsScreenVersionLabel(
-                                  info.version,
-                                  info.buildNumber,
-                                ),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.textTheme.bodySmall?.color
-                                      ?.withValues(alpha: 0.7),
-                                ),
+                          const SizedBox(height: 2),
+                          // M19/D18: reads the REAL installed build's
+                          // version dynamically (package_info_plus)
+                          // instead of a hand-typed literal that
+                          // immediately drifted from the real version.
+                          packageInfoAsync.when(
+                            data: (info) => Text(
+                              l10n.settingsScreenVersionLabel(
+                                info.version,
+                                info.buildNumber,
                               ),
-                              loading: () => Text(
-                                l10n.settingsScreenVersionLoading,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.textTheme.bodySmall?.color
-                                      ?.withValues(alpha: 0.7),
-                                ),
-                              ),
-                              error: (_, _) => Text(
-                                l10n.settingsScreenVersionFallback,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.textTheme.bodySmall?.color
-                                      ?.withValues(alpha: 0.7),
-                                ),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.textTheme.bodySmall?.color
+                                    ?.withValues(alpha: 0.7),
                               ),
                             ),
-                          ],
-                        ),
+                            loading: () => Text(
+                              l10n.settingsScreenVersionLoading,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.textTheme.bodySmall?.color
+                                    ?.withValues(alpha: 0.7),
+                              ),
+                            ),
+                            error: (_, _) => Text(
+                              l10n.settingsScreenVersionFallback,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.textTheme.bodySmall?.color
+                                    ?.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    l10n.settingsScreenAboutDescription,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.textTheme.bodySmall?.color?.withValues(
-                        alpha: 0.8,
-                      ),
-                      height: 1.4,
                     ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  l10n.settingsScreenAboutDescription,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.textTheme.bodySmall?.color?.withValues(
+                      alpha: 0.8,
+                    ),
+                    height: 1.4,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 5),
+        ),
+      ],
     );
   }
 }

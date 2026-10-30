@@ -85,6 +85,7 @@ class _InitialIncomeStepState extends ConsumerState<InitialIncomeStep> {
               labelText: isPeriodic
                   ? l10n.initialIncomeStepPeriodicLabel
                   : l10n.initialIncomeStepDailyLabel,
+              floatingLabelBehavior: FloatingLabelBehavior.always,
               prefixText: 'Rp ',
               errorText: _errorText,
               border: const OutlineInputBorder(),

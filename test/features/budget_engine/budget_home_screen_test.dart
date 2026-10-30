@@ -14,7 +14,6 @@ import 'package:ledgermate/features/budget_engine/presentation/budget_home_scree
 import 'package:ledgermate/features/pay_cycle/application/pay_cycle_providers.dart';
 import 'package:ledgermate/features/pay_cycle/presentation/pay_cycle_transition_screen.dart';
 import 'package:ledgermate/features/transactions/application/transaction_providers.dart';
-import 'package:ledgermate/features/transactions/presentation/transaction_form_screen.dart';
 import 'package:ledgermate/features/wallets/application/wallet_providers.dart';
 
 import '../analytics/fake_analytics_repository.dart';
@@ -111,7 +110,11 @@ void main() {
             locale: const Locale('id'),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: const BudgetHomeScreen(),
+            // M21/Bug 1: `BudgetHomeScreen` is now bare body content (no
+            // own `Scaffold`) — wrap it here so ink effects (e.g. the
+            // "Lihat Selengkapnya" InkWell) have a `Material` ancestor,
+            // matching what `AppShell` supplies in production.
+            home: const Scaffold(body: BudgetHomeScreen()),
           );
         },
       ),
@@ -243,134 +246,12 @@ void main() {
       },
     );
 
-    testWidgets(
-      'FAB opens speed-dial overlay, Catat Pengeluaran navigates to TransactionFormScreen (antislop R-26)',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
-        );
-        await tester.pumpAndSettle();
-
-        final fab = find.byKey(const ValueKey('home_fab_speed_dial'));
-        expect(fab, findsOneWidget);
-        await tester.tap(fab);
-        await tester.pumpAndSettle();
-
-        final expenseOption = find.byKey(const ValueKey('fab_option_expense'));
-        expect(expenseOption, findsOneWidget);
-        await tester.tap(expenseOption);
-        await tester.pumpAndSettle();
-
-        expect(find.byType(TransactionFormScreen), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'FAB speed-dial staggers its reveal bottom-to-top and collapses '
-      'top-to-bottom on close (docs/DESIGN.md §Motion touchpoint 4)',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
-        );
-        await tester.pumpAndSettle();
-
-        double opacityOf(Key key) {
-          final opacityFinder = find
-              .ancestor(of: find.byKey(key), matching: find.byType(Opacity))
-              .first;
-          return tester.widget<Opacity>(opacityFinder).opacity;
-        }
-
-        await tester.tap(find.byKey(const ValueKey('home_fab_speed_dial')));
-        await tester.pump(); // overlay mounts, stagger controller starts
-        await tester.pump(const Duration(milliseconds: 60)); // early reveal
-
-        // Pengeluaran (index 0, nearest the FAB) starts revealing first;
-        // Aset (index 4, top-most) starts last — so early into the
-        // animation it should still be much less visible.
-        final expenseOpacityEarly = opacityOf(
-          const ValueKey('fab_option_expense'),
-        );
-        final assetOpacityEarly = opacityOf(
-          const ValueKey('fab_option_add_asset'),
-        );
-        expect(
-          expenseOpacityEarly,
-          greaterThan(assetOpacityEarly),
-          reason: 'Pengeluaran should reveal before Aset (bottom-to-top)',
-        );
-
-        await tester.pumpAndSettle();
-        expect(opacityOf(const ValueKey('fab_option_expense')), 1.0);
-        expect(opacityOf(const ValueKey('fab_option_add_asset')), 1.0);
-
-        // Tap the scrim (not any option) to close — should collapse
-        // top-to-bottom (reverse of open), not hard-cut.
-        await tester.tapAt(const Offset(20, 20));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 60));
-
-        final expenseOpacityClosing = opacityOf(
-          const ValueKey('fab_option_expense'),
-        );
-        final assetOpacityClosing = opacityOf(
-          const ValueKey('fab_option_add_asset'),
-        );
-        expect(
-          assetOpacityClosing,
-          lessThan(expenseOpacityClosing),
-          reason:
-              'Aset (top-most, revealed last) should be the first to fade '
-              'out on close',
-        );
-
-        await tester.pumpAndSettle();
-        expect(find.byKey(const ValueKey('fab_option_expense')), findsNothing);
-        expect(find.byType(BudgetHomeScreen), findsOneWidget);
-      },
-    );
-
-    testWidgets('Bottom nav renders all 6 tabs with Home active', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
-      );
-      await tester.pumpAndSettle();
-
-      for (final label in [
-        'Home',
-        'Transaksi',
-        'Goals',
-        'Aset',
-        'Analitik',
-        'Pengaturan',
-      ]) {
-        expect(find.text(label), findsOneWidget);
-      }
-    });
-
-    testWidgets('Bottom nav item 4 navigates to AnalyticsScreen (M8 FR-07)', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
-      );
-      await tester.pumpAndSettle();
-
-      final navItem = find.text('Analitik');
-      expect(navItem, findsOneWidget);
-      // M18 (D18 perf item 5): tapping a nav item now only mutates
-      // `currentTabIndexProvider` — `BudgetHomeScreen` pumped standalone
-      // (no `AppShell` ancestor, as in this file's `buildTestWidget`) has
-      // nothing listening for that change, so an actual route/content
-      // swap can no longer be asserted at this level. That behavior is
-      // now covered end-to-end by
-      // `test/core/presentation/navigation/app_shell_test.dart`, which
-      // pumps the real `AppShell`.
-      await tester.tap(navItem);
-      await tester.pumpAndSettle();
-    });
+    // M21/Bug 1: the FAB speed-dial and the bottom nav bar are hoisted to
+    // `AppShell` and swapped/crossfaded per active tab — they are no longer
+    // part of the bare `BudgetHomeScreen` widget pumped standalone in this
+    // file. Coverage for the FAB options/stagger animation, the FAB's
+    // Tambah Dompet option (M21/Bug 2), and the persistent 6-tab bottom nav
+    // now lives in `test/core/presentation/navigation/app_shell_test.dart`.
 
     testWidgets('Loading and error states (antislop R-27)', (tester) async {
       // Loading
@@ -520,7 +401,7 @@ void main() {
                   localizationsDelegates:
                       AppLocalizations.localizationsDelegates,
                   supportedLocales: AppLocalizations.supportedLocales,
-                  home: const BudgetHomeScreen(),
+                  home: const Scaffold(body: BudgetHomeScreen()),
                 );
               },
             ),

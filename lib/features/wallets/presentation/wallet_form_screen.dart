@@ -263,6 +263,7 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
                   inputFormatters: [RupiahInputFormatter()],
                   decoration: InputDecoration(
                     labelText: l10n.walletFormScreenStartingBalanceLabel,
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
                     prefixText: 'Rp ',
                     helperText: l10n.walletFormScreenStartingBalanceHelper,
                     border: const OutlineInputBorder(),

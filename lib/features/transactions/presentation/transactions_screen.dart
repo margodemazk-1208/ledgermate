@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../../core/database/transaction.dart' as db;
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
-import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/icon_circle.dart';
 import '../../../core/presentation/widgets/filter_pill.dart';
 import '../../../core/presentation/widgets/skeleton_loader.dart';
@@ -45,74 +44,54 @@ class TransactionsScreen extends ConsumerWidget {
     final isDatabaseEmpty =
         ref.watch(transactionsStreamProvider).value?.isEmpty ?? false;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          l10n.transactionsScreenTitle,
-          style: AppTypography.script(fontSize: 20),
-        ),
-      ),
-      body: rowsAsync.when(
-        data: (rows) {
-          if (isDatabaseEmpty) {
-            return _buildEmptyState(context);
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-            // +1 for the filter-pill header row always at index 0.
-            itemCount: rows.length + 1 + (rows.isEmpty ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _FilterRow(
-                    selected: filter,
-                    onSelected: (f) => ref
-                        .read(transactionTypeFilterProvider.notifier)
-                        .select(f),
-                  ),
-                );
-              }
-              if (rows.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 40),
-                  child: Center(
-                    child: Text(l10n.transactionsScreenEmptyFilterMessage),
-                  ),
-                );
-              }
-              final row = rows[index - 1];
-              return switch (row) {
-                TransactionGroupHeaderRow() => _GroupHeaderTile(
-                  label: row.label,
+    return rowsAsync.when(
+      data: (rows) {
+        if (isDatabaseEmpty) {
+          return _buildEmptyState(context);
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          // +1 for the filter-pill header row always at index 0.
+          itemCount: rows.length + 1 + (rows.isEmpty ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _FilterRow(
+                  selected: filter,
+                  onSelected: (f) => ref
+                      .read(transactionTypeFilterProvider.notifier)
+                      .select(f),
                 ),
-                TransactionItemRow() => _TransactionRowTile(row: row),
-              };
-            },
-          );
-        },
-        loading: () => const TransactionsSkeletonList(),
-        error: (err, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              l10n.transactionsScreenLoadError(err),
-              style: const TextStyle(color: AppColors.expenseRed),
-              textAlign: TextAlign.center,
-            ),
+              );
+            }
+            if (rows.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                child: Center(
+                  child: Text(l10n.transactionsScreenEmptyFilterMessage),
+                ),
+              );
+            }
+            final row = rows[index - 1];
+            return switch (row) {
+              TransactionGroupHeaderRow() => _GroupHeaderTile(label: row.label),
+              TransactionItemRow() => _TransactionRowTile(row: row),
+            };
+          },
+        );
+      },
+      loading: () => const TransactionsSkeletonList(),
+      error: (err, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            l10n.transactionsScreenLoadError(err),
+            style: const TextStyle(color: AppColors.expenseRed),
+            textAlign: TextAlign.center,
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        key: const ValueKey('add_transaction_fab'),
-        onPressed: () {
-          Navigator.of(
-            context,
-          ).push(SlidePageRoute(builder: (_) => const TransactionFormScreen()));
-        },
-        child: const Icon(Icons.add),
-      ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 1),
     );
   }
 

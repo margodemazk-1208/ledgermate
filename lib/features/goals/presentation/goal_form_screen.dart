@@ -284,6 +284,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                   inputFormatters: [RupiahInputFormatter()],
                   decoration: InputDecoration(
                     labelText: l10n.goalFormScreenTargetAmountLabel,
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
                     prefixText: 'Rp ',
                     hintText: '0',
                     prefixIcon: const Icon(Icons.monetization_on_outlined),
@@ -307,6 +308,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                   inputFormatters: [RupiahInputFormatter()],
                   decoration: InputDecoration(
                     labelText: l10n.goalFormScreenCurrentAmountLabel,
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
                     prefixText: 'Rp ',
                     hintText: '0',
                     prefixIcon: const Icon(
@@ -379,6 +381,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
                     inputFormatters: [RupiahInputFormatter()],
                     decoration: InputDecoration(
                       labelText: l10n.goalFormScreenManualAllocationFieldLabel,
+                      floatingLabelBehavior: FloatingLabelBehavior.always,
                       prefixText: 'Rp ',
                       hintText: '0',
                       prefixIcon: const Icon(Icons.tune),

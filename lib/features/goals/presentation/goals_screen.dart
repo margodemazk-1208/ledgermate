@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/animated_progress_bar.dart';
-import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/dashed_add_card.dart';
 import '../../../core/presentation/widgets/skeleton_loader.dart';
 import '../../../core/presentation/widgets/slide_fade_in_once.dart';
@@ -25,161 +24,142 @@ class GoalsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final summaryAsync = ref.watch(goalsOverviewSummaryProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          l10n.goalsScreenTitle,
-          style: AppTypography.script(fontSize: 20),
-        ),
-      ),
-      body: summaryAsync.when(
-        loading: () => const GoalsSkeletonList(),
-        error: (err, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 48,
-                  color: AppColors.expenseRedText(theme.brightness),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.goalsScreenLoadError(err),
-                  style: theme.textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+    return summaryAsync.when(
+      loading: () => const GoalsSkeletonList(),
+      error: (err, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: AppColors.expenseRedText(theme.brightness),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.goalsScreenLoadError(err),
+                style: theme.textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
-        data: (summary) {
-          if (summary.goalCount == 0) {
-            // Empty state (antislop R-27)
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: theme.dividerColor.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.savings_outlined,
-                        size: 56,
-                        color: theme.textTheme.bodyMedium?.color,
-                      ),
+      ),
+      data: (summary) {
+        if (summary.goalCount == 0) {
+          // Empty state (antislop R-27)
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: theme.dividerColor.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      l10n.goalsScreenEmptyTitle,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    child: Icon(
+                      Icons.savings_outlined,
+                      size: 56,
+                      color: theme.textTheme.bodyMedium?.color,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      l10n.goalsScreenEmptyMessage,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.textTheme.bodySmall?.color,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton.icon(
-                      key: const ValueKey('create_first_goal_button'),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          SlidePageRoute(
-                            builder: (_) => const GoalFormScreen(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.add),
-                      label: Text(l10n.goalsScreenCreateFirstButton),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 90),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Aggregate overview card
-                _GoalsOverviewCard(summary: summary),
-                const SizedBox(height: 24),
-
-                // Section header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        l10n.goalsScreenActiveListHeader(summary.goalCount),
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.3,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (summary.completedCount > 0) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        l10n.goalsScreenCompletedCountLabel(
-                          summary.completedCount,
-                        ),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.savingsGreenText(theme.brightness),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Goals list
-                for (final proj in summary.projections)
-                  SlideFadeInOnce(
-                    key: ValueKey('goal_slide_${proj.goal.id}'),
-                    child: GoalCard(projection: proj),
                   ),
-                const SizedBox(height: 4),
-                DashedAddCard(
-                  key: const ValueKey('goals_dashed_add_card'),
-                  label: l10n.goalsScreenAddGoalCardLabel,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      SlidePageRoute(builder: (_) => const GoalFormScreen()),
-                    );
-                  },
-                ),
-              ],
+                  const SizedBox(height: 24),
+                  Text(
+                    l10n.goalsScreenEmptyTitle,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.goalsScreenEmptyMessage,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    key: const ValueKey('create_first_goal_button'),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        SlidePageRoute(builder: (_) => const GoalFormScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.add),
+                    label: Text(l10n.goalsScreenCreateFirstButton),
+                  ),
+                ],
+              ),
             ),
           );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        key: const ValueKey('add_goal_fab'),
-        onPressed: () {
-          Navigator.of(context)
-              .push(SlidePageRoute(builder: (_) => const GoalFormScreen()));
-        },
-        child: const Icon(Icons.add),
-      ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 90),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Aggregate overview card
+              _GoalsOverviewCard(summary: summary),
+              const SizedBox(height: 24),
+
+              // Section header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      l10n.goalsScreenActiveListHeader(summary.goalCount),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (summary.completedCount > 0) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      l10n.goalsScreenCompletedCountLabel(
+                        summary.completedCount,
+                      ),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.savingsGreenText(theme.brightness),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Goals list
+              for (final proj in summary.projections)
+                SlideFadeInOnce(
+                  key: ValueKey('goal_slide_${proj.goal.id}'),
+                  child: GoalCard(projection: proj),
+                ),
+              const SizedBox(height: 4),
+              DashedAddCard(
+                key: const ValueKey('goals_dashed_add_card'),
+                label: l10n.goalsScreenAddGoalCardLabel,
+                onTap: () {
+                  Navigator.of(context).push(
+                    SlidePageRoute(builder: (_) => const GoalFormScreen()),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

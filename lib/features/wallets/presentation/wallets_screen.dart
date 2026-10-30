@@ -387,36 +387,44 @@ class _WalletItemCard extends StatelessWidget {
                     Text(
                       wallet.name,
                       style: AppTypography.script(fontSize: 16),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            // M19/D18: "included in budget" is status
-                            // information, not a brand/action moment —
-                            // uses the semantic green (positive/active),
-                            // not the burgundy accent.
-                            color: wallet.includeInDailyBudget
-                                ? AppColors.savingsGreenText(theme.brightness)
-                                      .withValues(alpha: 0.12)
-                                : theme.dividerColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            wallet.includeInDailyBudget
-                                ? l10n.walletCardIncludedInBudgetBadge
-                                : l10n.walletCardExcludedFromBudgetBadge,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              // M19/D18: "included in budget" is status
+                              // information, not a brand/action moment —
+                              // uses the semantic green (positive/active),
+                              // not the burgundy accent.
                               color: wallet.includeInDailyBudget
                                   ? AppColors.savingsGreenText(theme.brightness)
-                                  : theme.textTheme.bodySmall?.color,
+                                        .withValues(alpha: 0.12)
+                                  : theme.dividerColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              wallet.includeInDailyBudget
+                                  ? l10n.walletCardIncludedInBudgetBadge
+                                  : l10n.walletCardExcludedFromBudgetBadge,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: wallet.includeInDailyBudget
+                                    ? AppColors.savingsGreenText(
+                                        theme.brightness,
+                                      )
+                                    : theme.textTheme.bodySmall?.color,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),

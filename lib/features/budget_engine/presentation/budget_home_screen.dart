@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/transaction.dart' as db;
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/presentation/navigation/app_shell.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
-import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/count_up_rupiah.dart';
-import '../../../core/presentation/widgets/fab_speed_dial.dart';
 import '../../../core/presentation/widgets/skeleton_loader.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -30,6 +27,11 @@ import '../application/budget_providers.dart';
 /// The daily safe-spend number ("Uang Jajan Aman Hari Ini") is ALWAYS the
 /// single largest, boldest element on screen. Every other metric is
 /// visually quieter.
+///
+/// M21/Bug 1: this is now BARE body content — no own `Scaffold`/`appBar`/
+/// `floatingActionButton`/`bottomNavigationBar`. `AppShell` owns the single
+/// persistent chrome (title "LedgerMate" + date, the FAB speed-dial, the
+/// bottom nav) and swaps/crossfades it per active tab without sliding it.
 class BudgetHomeScreen extends ConsumerWidget {
   const BudgetHomeScreen({super.key});
 
@@ -39,66 +41,34 @@ class BudgetHomeScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final budgetAsync = ref.watch(dailyBudgetSummaryProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text('LedgerMate', style: AppTypography.script(fontSize: 22)),
-            const SizedBox(width: 8),
-            // M19/D18: at 360dp width, "LedgerMate" + the longest Indonesian
-            // weekday names (e.g. "Jumat", "Minggu") together overflowed the
-            // title Row — Flexible+ellipsis lets the date clip gracefully
-            // instead, since the brand wordmark is the priority element.
-            Flexible(
-              child: Text(
-                DateFormat('EEEE: dd-MMM-yy', 'id_ID').format(DateTime.now()),
-                style: AppTypography.mono(
-                  fontSize: 11,
-                  color: theme.textTheme.bodySmall?.color,
-                  letterSpacing: 0.5,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+    return budgetAsync.when(
+      data: (summary) => _DashboardBody(summary: summary),
+      loading: () => const Center(
+        child: CircularProgressIndicator(
+          key: ValueKey('budget_loading_indicator'),
+        ),
+      ),
+      error: (error, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: AppColors.expenseRed,
               ),
-            ),
-          ],
-        ),
-      ),
-      body: budgetAsync.when(
-        data: (summary) => _DashboardBody(summary: summary),
-        loading: () => const Center(
-          child: CircularProgressIndicator(
-            key: ValueKey('budget_loading_indicator'),
-          ),
-        ),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 48,
-                  color: AppColors.expenseRed,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.homeScreenLoadError(error),
-                  style: theme.textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.homeScreenLoadError(error),
+                style: theme.textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       ),
-      floatingActionButton: const FabSpeedDial(),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 0),
     );
   }
 }

@@ -15,6 +15,7 @@ import 'package:ledgermate/core/database/transaction.dart' as db;
 import 'package:ledgermate/core/formulas/daily_budget_formulas.dart';
 import 'package:ledgermate/core/l10n/app_localizations.dart';
 import 'package:ledgermate/core/presentation/navigation/app_shell.dart';
+import 'package:ledgermate/core/presentation/widgets/app_bottom_nav.dart';
 import 'package:ledgermate/core/theme/app_theme.dart';
 import 'package:ledgermate/features/analytics/application/analytics_providers.dart';
 import 'package:ledgermate/features/assets/application/assets_providers.dart';
@@ -23,6 +24,7 @@ import 'package:ledgermate/features/goals/application/goals_providers.dart';
 import 'package:ledgermate/features/settings/application/settings_providers.dart';
 import 'package:ledgermate/features/transactions/application/transaction_providers.dart';
 import 'package:ledgermate/features/transactions/presentation/transactions_screen.dart';
+import 'package:ledgermate/features/wallets/presentation/wallet_form_screen.dart';
 
 import '../../../features/analytics/fake_analytics_repository.dart';
 import '../../../features/assets/fake_assets_repository.dart';
@@ -257,5 +259,167 @@ void main() {
             'its final resting position, not an instant swap',
       );
     });
+
+    testWidgets(
+      'M21/Bug 1: the bottom nav bar itself does NOT move during a tab '
+      'switch — only the body content slides',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+
+        Rect navRect() => tester.getRect(find.byType(AppBottomNav));
+
+        final before = navRect();
+
+        await tester.tap(find.text('Analitik').first);
+        await tester.pump(); // transition starts
+        await tester.pump(const Duration(milliseconds: 50)); // mid-flight
+
+        final mid = navRect();
+
+        await tester.pumpAndSettle();
+        final after = navRect();
+
+        expect(
+          mid,
+          before,
+          reason:
+              'the bottom nav bar must stay in the exact same place '
+              'mid-transition, unlike the pre-M21 bug where it slid with '
+              'the page content',
+        );
+        expect(after, before);
+      },
+    );
+
+    testWidgets(
+      'M21/Bug 1: the top app bar container stays static (same rect) while '
+      'only its title text changes per tab',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+
+        final appBarFinder = find.byKey(const ValueKey('app_shell_app_bar'));
+        final before = tester.getRect(appBarFinder);
+        expect(find.text('LedgerMate'), findsOneWidget);
+
+        await tester.tap(find.text('Aset').first);
+        await tester.pumpAndSettle();
+
+        final after = tester.getRect(appBarFinder);
+        expect(
+          after,
+          before,
+          reason:
+              'the AppBar container (position/size) must not move or '
+              'resize between tabs, even though its title text changed',
+        );
+        expect(find.text('LedgerMate'), findsNothing);
+        expect(find.text('Aset & Investasi'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'M21/Bug 1: the FAB swaps per active tab (no own Scaffold per screen '
+      'anymore) and Settings has none',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('home_fab_speed_dial')),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.text('Transaksi').first);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('add_transaction_fab')),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.text('Goals').first);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('add_goal_fab')), findsOneWidget);
+
+        await tester.tap(find.text('Aset').first);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('add_asset_fab')), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('appbar_add_asset_button')),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.text('Analitik').first);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('analytics_add_transaction_fab')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('analytics_theme_toggle_button')),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.text('Pengaturan').first);
+        await tester.pumpAndSettle();
+        expect(find.byType(FloatingActionButton), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'M21 Bug 2: Home FAB speed-dial has exactly 4 options (Goal/Aset '
+      'removed, Tambah Dompet added) and navigates to WalletFormScreen',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const ValueKey('home_fab_speed_dial')));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('fab_option_expense')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const ValueKey('fab_option_income')), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('fab_option_transfer')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('fab_option_add_wallet')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const ValueKey('fab_option_add_goal')), findsNothing);
+        expect(
+          find.byKey(const ValueKey('fab_option_add_asset')),
+          findsNothing,
+        );
+
+        await tester.tap(find.byKey(const ValueKey('fab_option_add_wallet')));
+        await tester.pumpAndSettle();
+        expect(find.byType(WalletFormScreen), findsOneWidget);
+      },
+    );
   });
 }

@@ -159,4 +159,46 @@ void main() {
     expect(find.text('BCA Tabungan'), findsNothing);
     expect(find.text('Dompet Utama'), findsOneWidget);
   });
+
+  testWidgets(
+    'M21: no RenderFlex overflow at 360dp width with long wallet badge text',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      // Create wallet with long name and English locale to test longer string "Included in Daily Budget"
+      final longWallet = Wallet()
+        ..id = 99
+        ..name = 'Very Long Bank Account Name For Testing'
+        ..icon = 'account_balance_wallet'
+        ..startingBalance = 500000
+        ..includeInDailyBudget = true
+        ..createdAt = DateTime(2026, 1, 1);
+      final customRepo = FakeWalletRepository(initialWallets: [longWallet]);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            walletRepositoryProvider.overrideWithValue(customRepo),
+            transactionsStreamProvider.overrideWith(
+              (ref) => Stream.value(<db.Transaction>[]),
+            ),
+          ],
+          child: const MaterialApp(
+            locale: Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: WalletsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify no exceptions were caught by Flutter error handler (e.g. RenderFlex overflow)
+      expect(tester.takeException(), isNull);
+      expect(find.text('Included in Daily Budget'), findsOneWidget);
+    },
+  );
 }

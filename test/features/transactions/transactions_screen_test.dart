@@ -41,7 +41,13 @@ void main() {
           locale: const Locale('id'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: home ?? const TransactionsScreen(),
+          // M21/Bug 1: `TransactionsScreen` is now bare body content (no own
+          // `Scaffold`) — `AppShell` supplies the real `Scaffold`/`Material`
+          // ancestor in production. Wrap it here too so ink effects
+          // (InkWell rows, etc.) have the `Material` ancestor they need.
+          home: home is TransactionsScreen || home == null
+              ? Scaffold(body: home ?? const TransactionsScreen())
+              : home,
         ),
       ),
     );
@@ -59,7 +65,9 @@ void main() {
         find.byKey(const ValueKey('empty_state_add_button')),
         findsOneWidget,
       );
-      expect(find.byKey(const ValueKey('add_transaction_fab')), findsOneWidget);
+      // M21/Bug 1: the "+" FAB is hoisted to `AppShell` and swapped per
+      // active tab — it's no longer part of the bare `TransactionsScreen`
+      // widget. Covered by `test/core/presentation/navigation/app_shell_test.dart`.
     });
 
     testWidgets('renders transaction list with category, amount, and notes', (
@@ -97,21 +105,6 @@ void main() {
       expect(find.text('Lainnya'), findsOneWidget);
       expect(find.text('+ Rp 500.000'), findsOneWidget);
       expect(find.textContaining('Freelance bonus'), findsOneWidget);
-    });
-
-    testWidgets('tapping FAB navigates to TransactionFormScreen in add mode', (
-      tester,
-    ) async {
-      await pumpScreen(tester);
-
-      await tester.tap(find.byKey(const ValueKey('add_transaction_fab')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Catat Transaksi'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('transaction_save_button')),
-        findsOneWidget,
-      );
     });
 
     testWidgets('tapping empty state add button opens TransactionFormScreen', (
@@ -302,8 +295,14 @@ void main() {
         expect(lockedBtn, findsOneWidget);
         expect(find.text('Hapus Transaksi (Terkunci)'), findsOneWidget);
 
-        // Informational text referencing FR-03 and integrity of history
-        expect(find.textContaining('FR-03'), findsOneWidget);
+        // Informational text explaining the past-transaction delete lock
+        // is still present (M21/Bug 4: the literal "(FR-03)" code suffix
+        // was stripped from the user-facing string, so match on the
+        // actual message content instead of the leaked code).
+        expect(
+          find.textContaining('tidak dapat dihapus untuk menjaga integritas'),
+          findsOneWidget,
+        );
       },
     );
   });

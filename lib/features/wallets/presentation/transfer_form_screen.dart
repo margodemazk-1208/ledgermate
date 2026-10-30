@@ -299,6 +299,7 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
                     inputFormatters: [RupiahInputFormatter()],
                     decoration: InputDecoration(
                       labelText: l10n.transferFormScreenAmountLabel,
+                      floatingLabelBehavior: FloatingLabelBehavior.always,
                       prefixText: 'Rp ',
                       border: const OutlineInputBorder(),
                     ),

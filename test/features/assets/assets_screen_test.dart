@@ -49,7 +49,12 @@ void main() {
             locale: const Locale('id'),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: child ?? const AssetsScreen(),
+            // M21/Bug 1: `AssetsScreen` is now bare body content (no own
+            // `Scaffold`) — wrap it here so ink effects have a `Material`
+            // ancestor, matching what `AppShell` supplies in production.
+            home: child == null || child is AssetsScreen
+                ? Scaffold(body: child ?? const AssetsScreen())
+                : child,
           );
         },
       ),
@@ -63,17 +68,14 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('Aset & Investasi'), findsOneWidget);
       expect(find.text('Belum Ada Aset Terdaftar'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('empty_add_asset_button')),
         findsOneWidget,
       );
-      expect(find.byKey(const ValueKey('add_asset_fab')), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('assets_bottom_nav_bar')),
-        findsOneWidget,
-      );
+      // M21/Bug 1: the "+" FAB and the bottom nav bar are hoisted to
+      // `AppShell` and no longer part of the bare `AssetsScreen` widget —
+      // covered by `app_shell_test.dart`, not here.
     });
 
     testWidgets(

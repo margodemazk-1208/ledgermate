@@ -44,7 +44,12 @@ void main() {
             locale: const Locale('id'),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: child ?? const GoalsScreen(),
+            // M21/Bug 1: `GoalsScreen` is now bare body content (no own
+            // `Scaffold`) — wrap it here so ink effects have a `Material`
+            // ancestor, matching what `AppShell` supplies in production.
+            home: child == null || child is GoalsScreen
+                ? Scaffold(body: child ?? const GoalsScreen())
+                : child,
           );
         },
       ),
@@ -58,7 +63,6 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('Target Tabungan'), findsOneWidget);
       expect(find.text('Belum Ada Target Tabungan'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('create_first_goal_button')),
@@ -82,7 +86,8 @@ void main() {
       expect(find.text('Total Progres Tabungan'), findsOneWidget);
       expect(find.text('Dana Darurat'), findsOneWidget);
       expect(find.textContaining('25%'), findsWidgets);
-      expect(find.byKey(const ValueKey('add_goal_fab')), findsOneWidget);
+      // M21/Bug 1: the "+" FAB is hoisted to `AppShell` and swapped per
+      // active tab — covered by `app_shell_test.dart`, not here.
     });
 
     testWidgets(
@@ -178,6 +183,27 @@ void main() {
       expect(find.text('Nama target tidak boleh kosong'), findsOneWidget);
       expect(await repository.getAllGoals(), isEmpty);
     });
+
+    testWidgets(
+      'M21 Bug 3: Rupiah prefix renders at all times (empty-unfocused and focused)',
+      (tester) async {
+        await tester.pumpWidget(buildTestWidget(child: const GoalFormScreen()));
+        await tester.pumpAndSettle();
+
+        // Empty and unfocused state: prefixText 'Rp ' must be rendered/visible
+        // (with FloatingLabelBehavior.always, prefixText is not suppressed by floating label)
+        expect(find.text('Rp '), findsWidgets);
+
+        // Focus target amount field
+        await tester.tap(
+          find.byKey(const ValueKey('goal_target_amount_field')),
+        );
+        await tester.pumpAndSettle();
+
+        // Focused state: prefixText 'Rp ' remains visible
+        expect(find.text('Rp '), findsWidgets);
+      },
+    );
   });
 
   group('RealismWarningDialog (FR-06b, BR-03)', () {

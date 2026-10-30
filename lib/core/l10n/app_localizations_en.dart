@@ -191,7 +191,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get walletSetupStepIncludeBudgetSubtitle =>
-      'Money in this wallet will be counted into today\'s Safe Allowance (BR-04).';
+      'Money in this wallet will be counted into today\'s Safe Allowance.';
 
   @override
   String get onboardingScreenBackButton => 'Back';
@@ -279,10 +279,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fabSpeedDialCloseBarrierLabel => 'Close';
 
   @override
-  String get fabSpeedDialAddAssetLabel => 'Add New Asset';
-
-  @override
-  String get fabSpeedDialAddGoalLabel => 'Add New Goal';
+  String get fabSpeedDialAddWalletLabel => 'Add New Wallet';
 
   @override
   String get fabSpeedDialTransferLabel => 'Transfer Between Wallets';
@@ -1029,7 +1026,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get walletFormScreenIncludeBudgetToggleSubtitle =>
-      'If enabled, transactions in this wallet will affect your remaining daily allowance (BR-04). Turn off for savings/investment wallets.';
+      'If enabled, transactions in this wallet will affect your remaining daily allowance. Turn off for savings/investment wallets.';
 
   @override
   String get walletFormScreenSaveSuccessToast => 'Wallet saved successfully';
@@ -1215,7 +1212,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get transactionFormScreenDeleteLockedNotice =>
-      'Only transactions dated today can be deleted. Past transactions cannot be deleted to preserve history integrity (FR-03).';
+      'Only transactions dated today can be deleted. Past transactions cannot be deleted to preserve history integrity.';
 
   @override
   String get transactionFormScreenTypeExpenseLabel => 'Expense';
@@ -1706,7 +1703,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get payCycleTransitionCarryOverMessage =>
-      'Yesterday\'s remaining Safe Spend amount automatically accumulates into today\'s balance (BR-01).';
+      'Yesterday\'s remaining Safe Spend amount automatically accumulates into today\'s balance.';
 
   @override
   String get payCycleTransitionBekelLabel => 'Today\'s Allowance (Optional)';

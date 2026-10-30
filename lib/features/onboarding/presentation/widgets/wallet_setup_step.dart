@@ -146,6 +146,7 @@ class _WalletSetupStepState extends ConsumerState<WalletSetupStep> {
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(
               labelText: l10n.walletSetupStepStartingBalanceLabel,
+              floatingLabelBehavior: FloatingLabelBehavior.always,
               prefixText: 'Rp ',
               hintText: '0',
               helperText: l10n.walletSetupStepStartingBalanceHelper,

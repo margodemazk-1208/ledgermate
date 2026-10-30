@@ -5,14 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/l10n/app_localizations.dart';
-import '../../../core/presentation/navigation/slide_page_route.dart';
-import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/filter_pill.dart';
 import '../../../core/presentation/widgets/skeleton_loader.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../core/theme/theme_provider.dart';
-import '../../transactions/presentation/transaction_form_screen.dart';
 import '../application/analytics_providers.dart';
 import '../domain/analytics_models.dart';
 import 'widgets/analytics_empty_state.dart';
@@ -33,138 +28,106 @@ class AnalyticsScreen extends ConsumerWidget {
     final summaryAsync = ref.watch(periodAnalyticsSummaryProvider);
     final momAsync = ref.watch(monthOverMonthSummaryProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          l10n.analyticsScreenTitle,
-          style: AppTypography.script(fontSize: 18),
-        ),
-        actions: [
-          IconButton(
-            key: const ValueKey('analytics_theme_toggle_button'),
-            tooltip: isDark
-                ? l10n.analyticsScreenThemeToggleToLight
-                : l10n.analyticsScreenThemeToggleToDark,
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () {
-              ref
-                  .read(themeModeProvider.notifier)
-                  .set(isDark ? ThemeMode.light : ThemeMode.dark);
-            },
+    return summaryAsync.when(
+      loading: () => const AnalyticsSkeletonList(),
+      error: (err, _) => Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: AppColors.expenseRed,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.analyticsScreenLoadError(err),
+                style: theme.textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-      body: summaryAsync.when(
-        loading: () => const AnalyticsSkeletonList(),
-        error: (err, _) => Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+      data: (summary) {
+        return momAsync.when(
+          loading: () => const AnalyticsSkeletonList(),
+          error: (err, _) =>
+              Center(child: Text(l10n.analyticsScreenTrendLoadError(err))),
+          data: (momSummary) {
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 48,
-                  color: AppColors.expenseRed,
+                // Period Filter Control
+                _PeriodFilterSelector(
+                  selectedFilter: periodFilter,
+                  onFilterChanged: (filter) {
+                    ref.read(periodFilterProvider.notifier).setFilter(filter);
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                // Active Date Range Label
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.darkSurface
+                          : AppColors.lightSurface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: theme.dividerColor.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 13,
+                          color: AppColors.brandTeal,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          summary.dateRange.label,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  l10n.analyticsScreenLoadError(err),
-                  style: theme.textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-        data: (summary) {
-          return momAsync.when(
-            loading: () => const AnalyticsSkeletonList(),
-            error: (err, _) =>
-                Center(child: Text(l10n.analyticsScreenTrendLoadError(err))),
-            data: (momSummary) {
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                children: [
-                  // Period Filter Control
-                  _PeriodFilterSelector(
-                    selectedFilter: periodFilter,
-                    onFilterChanged: (filter) {
-                      ref.read(periodFilterProvider.notifier).setFilter(filter);
-                    },
-                  ),
-                  const SizedBox(height: 8),
 
-                  // Active Date Range Label
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? AppColors.darkSurface
-                            : AppColors.lightSurface,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: theme.dividerColor.withValues(alpha: 0.1),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.calendar_today_outlined,
-                            size: 13,
-                            color: AppColors.brandTeal,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            summary.dateRange.label,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                // Empty State or Data Content
+                if (summary.isEmpty && momSummary.isEmpty) ...[
+                  const AnalyticsEmptyState(
+                    key: ValueKey('analytics_empty_state'),
                   ),
+                ] else ...[
+                  // Total Expense vs Total Income Ratio
+                  IncomeExpenseRatioCard(summary: summary),
                   const SizedBox(height: 16),
 
-                  // Empty State or Data Content
-                  if (summary.isEmpty && momSummary.isEmpty) ...[
-                    const AnalyticsEmptyState(
-                      key: ValueKey('analytics_empty_state'),
-                    ),
-                  ] else ...[
-                    // Total Expense vs Total Income Ratio
-                    IncomeExpenseRatioCard(summary: summary),
-                    const SizedBox(height: 16),
+                  // Category Breakdown (Pie or Bar Chart)
+                  CategoryBreakdownCard(summary: summary),
+                  const SizedBox(height: 16),
 
-                    // Category Breakdown (Pie or Bar Chart)
-                    CategoryBreakdownCard(summary: summary),
-                    const SizedBox(height: 16),
-
-                    // Month-over-Month Trend Comparison
-                    MonthOverMonthSection(summary: momSummary),
-                  ],
+                  // Month-over-Month Trend Comparison
+                  MonthOverMonthSection(summary: momSummary),
                 ],
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        key: const ValueKey('analytics_add_transaction_fab'),
-        onPressed: () {
-          Navigator.of(
-            context,
-          ).push(SlidePageRoute(builder: (_) => const TransactionFormScreen()));
-        },
-        child: const Icon(Icons.add),
-      ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 4),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

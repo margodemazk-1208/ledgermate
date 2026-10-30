@@ -193,7 +193,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get walletSetupStepIncludeBudgetSubtitle =>
-      'Uang di dompet ini akan dihitung ke dalam Uang Jajan Aman Hari Ini (BR-04).';
+      'Uang di dompet ini akan dihitung ke dalam Uang Jajan Aman Hari Ini.';
 
   @override
   String get onboardingScreenBackButton => 'Kembali';
@@ -281,10 +281,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get fabSpeedDialCloseBarrierLabel => 'Tutup';
 
   @override
-  String get fabSpeedDialAddAssetLabel => 'Tambah Aset Baru';
-
-  @override
-  String get fabSpeedDialAddGoalLabel => 'Tambah Goal Baru';
+  String get fabSpeedDialAddWalletLabel => 'Tambah Dompet Baru';
 
   @override
   String get fabSpeedDialTransferLabel => 'Transfer Antar Dompet';
@@ -1034,7 +1031,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get walletFormScreenIncludeBudgetToggleSubtitle =>
-      'Jika aktif, transaksi di dompet ini akan memengaruhi sisa uang jajan harianmu (BR-04). Matikan untuk dompet tabungan/investasi.';
+      'Jika aktif, transaksi di dompet ini akan memengaruhi sisa uang jajan harianmu. Matikan untuk dompet tabungan/investasi.';
 
   @override
   String get walletFormScreenSaveSuccessToast => 'Dompet berhasil disimpan';
@@ -1220,7 +1217,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get transactionFormScreenDeleteLockedNotice =>
-      'Hanya transaksi bertanggal hari ini yang dapat dihapus. Transaksi lampau tidak dapat dihapus untuk menjaga integritas histori (FR-03).';
+      'Hanya transaksi bertanggal hari ini yang dapat dihapus. Transaksi lampau tidak dapat dihapus untuk menjaga integritas histori.';
 
   @override
   String get transactionFormScreenTypeExpenseLabel => 'Pengeluaran';
@@ -1714,7 +1711,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get payCycleTransitionCarryOverMessage =>
-      'Sisa Uang Jajan Aman kemarin terakumulasi otomatis ke saldo hari ini (BR-01).';
+      'Sisa Uang Jajan Aman kemarin terakumulasi otomatis ke saldo hari ini.';
 
   @override
   String get payCycleTransitionBekelLabel => 'Bekel Hari Ini (Opsional)';

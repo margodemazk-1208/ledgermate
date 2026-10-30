@@ -104,7 +104,11 @@ void main() {
         locale: const Locale('id'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const SettingsScreen(),
+        // M21/Bug 1: `SettingsScreen` is now bare body content (no own
+        // `Scaffold`) — wrap it here so ink effects (switches, ListTiles)
+        // have a `Material` ancestor, matching what `AppShell` supplies in
+        // production.
+        home: const Scaffold(body: SettingsScreen()),
       ),
     );
   }
@@ -125,7 +129,6 @@ void main() {
           await tester.pumpWidget(createTestWidget());
           await tester.pumpAndSettle();
 
-          expect(find.widgetWithText(AppBar, 'Pengaturan'), findsOneWidget);
           expect(
             find.byKey(const ValueKey('data_management_card')),
             findsOneWidget,
@@ -259,7 +262,7 @@ void main() {
                     localizationsDelegates:
                         AppLocalizations.localizationsDelegates,
                     supportedLocales: AppLocalizations.supportedLocales,
-                    home: const SettingsScreen(),
+                    home: const Scaffold(body: SettingsScreen()),
                   );
                 },
               ),
@@ -267,7 +270,6 @@ void main() {
           );
           await tester.pumpAndSettle();
 
-          expect(find.widgetWithText(AppBar, 'Pengaturan'), findsOneWidget);
           expect(find.text('Tampilan & Bahasa'), findsOneWidget);
 
           final langDropdown = find.byType(DropdownButton<AppLanguage>);
@@ -280,7 +282,6 @@ void main() {
           await tester.tap(enOption);
           await tester.pumpAndSettle();
 
-          expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
           expect(find.text('Appearance & Language'), findsOneWidget);
           expect(find.text('Dark Mode'), findsOneWidget);
         },
