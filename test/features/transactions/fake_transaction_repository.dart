@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:ledgermate/core/database/category.dart';
+import 'package:ledgermate/core/database/isar_provider.dart';
 import 'package:ledgermate/core/database/transaction.dart' as db;
 import 'package:ledgermate/features/transactions/data/transaction_repository.dart';
 
@@ -23,6 +24,13 @@ class FakeTransactionRepository implements TransactionRepositoryBase {
             ..isDefault = true,
         );
       }
+      _categories.add(
+        Category()
+          ..id = ++_nextId
+          ..name = systemIncomeCategoryName
+          ..isDefault = false
+          ..isSystemGenerated = true,
+      );
     }
     if (initialTransactions != null) {
       _transactions.addAll(initialTransactions);
@@ -101,7 +109,14 @@ class FakeTransactionRepository implements TransactionRepositoryBase {
         'Jumlah transaksi harus lebih besar dari nol.',
       );
     }
-    if (categoryId <= 0) {
+    int effectiveCategoryId = categoryId;
+    if (type == db.TransactionType.transfer) {
+      effectiveCategoryId = 0;
+    } else if (type == db.TransactionType.income && effectiveCategoryId <= 0) {
+      effectiveCategoryId = await resolveSystemIncomeCategoryId();
+    }
+
+    if (type != db.TransactionType.transfer && effectiveCategoryId <= 0) {
       throw ArgumentError.value(
         categoryId,
         'categoryId',
@@ -125,7 +140,7 @@ class FakeTransactionRepository implements TransactionRepositoryBase {
 
     tx.type = type;
     tx.amount = amount;
-    tx.categoryId = categoryId;
+    tx.categoryId = effectiveCategoryId;
     tx.date = date;
     tx.notes = notes;
     tx.payCycleId = payCycleId;
@@ -172,16 +187,46 @@ class FakeTransactionRepository implements TransactionRepositoryBase {
 
   @override
   Future<void> seedDefaultCategories() async {
-    if (_categories.isNotEmpty) return;
-    for (var i = 0; i < defaultCategoryNames.length; i++) {
+    if (_categories.isEmpty) {
+      for (var i = 0; i < defaultCategoryNames.length; i++) {
+        _categories.add(
+          Category()
+            ..id = i + 1
+            ..name = defaultCategoryNames[i]
+            ..isDefault = true,
+        );
+      }
+    }
+    final hasIncome = _categories.any(
+      (c) => c.name == systemIncomeCategoryName && c.isSystemGenerated,
+    );
+    if (!hasIncome) {
       _categories.add(
         Category()
-          ..id = i + 1
-          ..name = defaultCategoryNames[i]
-          ..isDefault = true,
+          ..id = ++_nextId
+          ..name = systemIncomeCategoryName
+          ..isDefault = false
+          ..isSystemGenerated = true,
       );
     }
     _notifyCategories();
+  }
+
+  @override
+  Future<int> resolveSystemIncomeCategoryId() async {
+    for (final c in _categories) {
+      if (c.name == systemIncomeCategoryName && c.isSystemGenerated) {
+        return c.id;
+      }
+    }
+    final cat = Category()
+      ..id = ++_nextId
+      ..name = systemIncomeCategoryName
+      ..isDefault = false
+      ..isSystemGenerated = true;
+    _categories.add(cat);
+    _notifyCategories();
+    return cat.id;
   }
 
   void dispose() {

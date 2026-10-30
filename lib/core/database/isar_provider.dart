@@ -29,6 +29,11 @@ const String defaultWalletIcon = 'account_balance_wallet';
 /// (which happened to be "Makan" in practice, D18/M16 bug #2 & #3).
 const String systemCategoryName = 'Penyesuaian Sistem';
 
+/// Name of the dedicated system-generated category used to attribute
+/// income transactions behind the scenes (M23 / v1.4 Phase 3), since income
+/// does not have a user-selectable category.
+const String systemIncomeCategoryName = 'Pemasukan';
+
 /// Resolves a real, existing wallet id to attribute a system-generated
 /// transaction to (goal withdrawals, Mode B bekel rollover — D18/M16 bug
 /// #2 & #3). Deliberately NEVER returns `0`/a placeholder: writing a
@@ -81,12 +86,39 @@ Future<int> resolveDefaultWalletId(Isar isar) async {
 Future<int> resolveSystemCategoryId(Isar isar) async {
   final existing = await isar.categorys
       .filter()
+      .nameEqualTo(systemCategoryName)
+      .and()
       .isSystemGeneratedEqualTo(true)
       .findFirst();
   if (existing != null) return existing.id;
 
   final created = Category()
     ..name = systemCategoryName
+    ..isDefault = false
+    ..isSystemGenerated = true;
+  await isar.writeTxn(() async {
+    final id = await isar.categorys.put(created);
+    created.id = id;
+  });
+  return created.id;
+}
+
+/// Resolves the dedicated system-generated income [Category] id, creating it if
+/// it doesn't exist yet (M23 / v1.4 Phase 3).
+///
+/// Like [resolveDefaultWalletId], call this BEFORE opening the caller's own
+/// `writeTxn` block — it opens its own transaction for the creation path.
+Future<int> resolveSystemIncomeCategoryId(Isar isar) async {
+  final existing = await isar.categorys
+      .filter()
+      .nameEqualTo(systemIncomeCategoryName)
+      .and()
+      .isSystemGeneratedEqualTo(true)
+      .findFirst();
+  if (existing != null) return existing.id;
+
+  final created = Category()
+    ..name = systemIncomeCategoryName
     ..isDefault = false
     ..isSystemGenerated = true;
   await isar.writeTxn(() async {
@@ -145,6 +177,9 @@ Future<void> migrateIsarSchema(Isar isar) async {
       await isar.transactions.put(tx);
     }
   });
+
+  // Ensure the system income category exists (M23 / v1.4 Phase 3).
+  await resolveSystemIncomeCategoryId(isar);
 }
 
 /// Opens the single Isar instance that stores all PRD §8 collections (including Wallet for v1.1).

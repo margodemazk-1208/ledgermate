@@ -76,6 +76,9 @@ abstract class TransactionRepositoryBase {
   Future<List<Category>> getCategories();
 
   Future<void> seedDefaultCategories();
+
+  /// Resolves the dedicated system-generated income category ID (M23).
+  Future<int> resolveSystemIncomeCategoryId();
 }
 
 class TransactionRepository implements TransactionRepositoryBase {
@@ -131,7 +134,14 @@ class TransactionRepository implements TransactionRepositoryBase {
         'Jumlah transaksi harus lebih besar dari nol.',
       );
     }
-    if (type != db.TransactionType.transfer && categoryId <= 0) {
+    int effectiveCategoryId = categoryId;
+    if (type == db.TransactionType.transfer) {
+      effectiveCategoryId = 0;
+    } else if (type == db.TransactionType.income && effectiveCategoryId <= 0) {
+      effectiveCategoryId = await resolveSystemIncomeCategoryId();
+    }
+
+    if (type != db.TransactionType.transfer && effectiveCategoryId <= 0) {
       throw ArgumentError.value(
         categoryId,
         'categoryId',
@@ -189,7 +199,7 @@ class TransactionRepository implements TransactionRepositoryBase {
       }
       tx.type = type;
       tx.amount = amount;
-      tx.categoryId = categoryId;
+      tx.categoryId = effectiveCategoryId;
       tx.date = date;
       tx.notes = notes?.trim().isEmpty == true ? null : notes?.trim();
       tx.payCycleId = effectivePayCycleId;
@@ -280,22 +290,31 @@ class TransactionRepository implements TransactionRepositoryBase {
     return _isar.categorys.where().findAll();
   }
 
-  /// Seeds default categories if no category exists in the collection yet.
+  /// Seeds default categories if no category exists in the collection yet,
+  /// and ensures the system income category exists (M23).
   @override
   Future<void> seedDefaultCategories() async {
     final count = await _isar.categorys.count();
-    if (count > 0) return;
+    if (count == 0) {
+      await _isar.writeTxn(() async {
+        final existingCount = await _isar.categorys.count();
+        if (existingCount > 0) return;
 
-    await _isar.writeTxn(() async {
-      final existingCount = await _isar.categorys.count();
-      if (existingCount > 0) return;
+        for (final name in defaultCategoryNames) {
+          final cat = Category()
+            ..name = name
+            ..isDefault = true;
+          await _isar.categorys.put(cat);
+        }
+      });
+    }
 
-      for (final name in defaultCategoryNames) {
-        final cat = Category()
-          ..name = name
-          ..isDefault = true;
-        await _isar.categorys.put(cat);
-      }
-    });
+    // Ensure the system income category exists (M23).
+    await resolveSystemIncomeCategoryId();
+  }
+
+  @override
+  Future<int> resolveSystemIncomeCategoryId() {
+    return resolveSystemIncomeCategoryId(_isar);
   }
 }
