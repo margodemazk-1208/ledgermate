@@ -26,14 +26,27 @@ int? parseRupiah(String input) {
 /// separators), keeping the cursor at the end — simple and predictable
 /// for a field that's always "type digits, see it grouped".
 class RupiahInputFormatter extends TextInputFormatter {
+  /// M19/D18: 15 digits is already Rp 999 trillion — far beyond any real
+  /// LedgerMate figure — and comfortably inside `int`'s 64-bit range (max
+  /// ~9.2 * 10^18, 19 digits). Without a cap, 20+ digit input previously
+  /// crashed `formatEditUpdate` because `NumberFormat.format` on a value
+  /// that overflows `int.parse`'s safe range threw instead of degrading
+  /// gracefully. Extra digits beyond the cap are simply dropped rather
+  /// than throwing, so pasting a huge/garbage string never crashes the
+  /// form.
+  static const int maxDigits = 15;
+
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final digitsOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    var digitsOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (digitsOnly.isEmpty) {
       return const TextEditingValue(text: '');
+    }
+    if (digitsOnly.length > maxDigits) {
+      digitsOnly = digitsOnly.substring(0, maxDigits);
     }
     final value = int.parse(digitsOnly);
     final formatted = _groupingFormat.format(value);

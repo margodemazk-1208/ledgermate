@@ -180,7 +180,12 @@ class _SpeedDialOverlayState extends State<_SpeedDialOverlay>
                   child: _SpeedDialOption(
                     key: const ValueKey('fab_option_income'),
                     label: 'Catat Pemasukan',
-                    icon: Icons.arrow_upward,
+                    // M19: was `arrow_upward`, mirrored vs. the convention
+                    // used everywhere else (transaction list rows +
+                    // transaction form's type toggle both use
+                    // arrow_downward for income / arrow_upward for
+                    // expense) — aligned to match.
+                    icon: Icons.arrow_downward,
                     dark: false,
                     onTap: () => _openScreen(
                       context,
@@ -199,7 +204,8 @@ class _SpeedDialOverlayState extends State<_SpeedDialOverlay>
                   child: _SpeedDialOption(
                     key: const ValueKey('fab_option_expense'),
                     label: 'Catat Pengeluaran',
-                    icon: Icons.arrow_downward,
+                    // M19: was `arrow_downward` — see note above.
+                    icon: Icons.arrow_upward,
                     dark: false,
                     onTap: () => _openScreen(
                       context,

@@ -113,4 +113,136 @@ void main() {
     final wallets = await fakeRepo.getWallets();
     expect(wallets, isEmpty);
   });
+
+  group('M19/D18 unsaved-changes guard', () {
+    // Pushes WalletFormScreen with a real route below it (instead of as
+    // `home:`) so the AppBar grows a real back button whose tap goes
+    // through `Navigator.maybePop()` — the path that actually respects
+    // `PopScope.canPop`, unlike a direct `Navigator.pop()` call.
+    Widget createNavigableTestWidget() {
+      return ProviderScope(
+        overrides: [walletRepositoryProvider.overrideWithValue(fakeRepo)],
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const WalletFormScreen()),
+                  ),
+                  child: const Text('Open Form'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    testWidgets(
+      'back navigation on a pristine (untouched) form pops without a dialog',
+      (tester) async {
+        await tester.pumpWidget(createNavigableTestWidget());
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Open Form'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(WalletFormScreen), findsOneWidget);
+        await tester.tap(find.byType(BackButton));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(WalletFormScreen), findsNothing);
+        expect(
+          find.byKey(const ValueKey('discard_changes_dialog')),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets(
+      'back navigation on a dirty form shows the discard-changes dialog, '
+      'and cancelling keeps the form open',
+      (tester) async {
+        await tester.pumpWidget(createNavigableTestWidget());
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Open Form'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byKey(const ValueKey('wallet_name_field')),
+          'Dompet Baru',
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byType(BackButton));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('discard_changes_dialog')),
+          findsOneWidget,
+        );
+        expect(find.byType(WalletFormScreen), findsOneWidget);
+
+        // Cancel -> stays on the form with the entered text intact.
+        await tester.tap(
+          find.byKey(const ValueKey('discard_changes_cancel_button')),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(WalletFormScreen), findsOneWidget);
+        expect(find.text('Dompet Baru'), findsOneWidget);
+      },
+    );
+
+    testWidgets('confirming discard on a dirty form actually pops the screen', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createNavigableTestWidget());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open Form'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const ValueKey('wallet_name_field')),
+        'Dompet Baru',
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey('discard_changes_confirm_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(WalletFormScreen), findsNothing);
+      expect(await fakeRepo.getWallets(), isEmpty);
+    });
+
+    testWidgets(
+      'a successful save pops cleanly without triggering the discard dialog',
+      (tester) async {
+        await tester.pumpWidget(createNavigableTestWidget());
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Open Form'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byKey(const ValueKey('wallet_name_field')),
+          'Dompet Tersimpan',
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('wallet_save_button')));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(WalletFormScreen), findsNothing);
+        expect(
+          find.byKey(const ValueKey('discard_changes_dialog')),
+          findsNothing,
+        );
+        final wallets = await fakeRepo.getWallets();
+        expect(wallets.single.name, 'Dompet Tersimpan');
+      },
+    );
+  });
 }

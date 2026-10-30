@@ -7,6 +7,7 @@ import 'package:ledgermate/features/export_import/domain/backup_data.dart';
 import 'package:ledgermate/features/notifications/data/notification_service.dart';
 import 'package:ledgermate/features/settings/application/settings_providers.dart';
 import 'package:ledgermate/features/settings/presentation/settings_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../notifications/fake_notification_service.dart';
 import '../fake_settings_repository.dart';
@@ -144,6 +145,58 @@ void main() {
           expect(find.text('Kelola Kategori'), findsOneWidget);
           expect(find.text('Tentang LedgerMate'), findsOneWidget);
           expect(find.textContaining('100% Offline'), findsAtLeast(1));
+        },
+      );
+
+      testWidgets(
+        'M19/D18: version string reads dynamically (never the hardcoded '
+        '"Versi 1.0.0" literal)',
+        (tester) async {
+          tester.view.physicalSize = const Size(1200, 6000);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() {
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+
+          await tester.pumpWidget(createTestWidget());
+          await tester.pumpAndSettle();
+
+          // No platform channel mock is registered for package_info_plus in
+          // this widget-test harness, so `appPackageInfoProvider` resolves
+          // to an AsyncError and the About card falls back to its `error:`
+          // branch — which must NOT be the old literal string.
+          expect(
+            find.text('Versi 1.0.0 (100% Offline, Tanpa Server)'),
+            findsNothing,
+          );
+          expect(find.textContaining('100% Offline'), findsAtLeast(1));
+        },
+      );
+
+      testWidgets(
+        'M19/D18: with package_info mocked, the real version is rendered '
+        '(proves this reads from PackageInfo, not a literal)',
+        (tester) async {
+          PackageInfo.setMockInitialValues(
+            appName: 'LedgerMate',
+            packageName: 'com.example.ledgermate',
+            version: '1.3.0',
+            buildNumber: '42',
+            buildSignature: '',
+          );
+
+          tester.view.physicalSize = const Size(1200, 6000);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() {
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+
+          await tester.pumpWidget(createTestWidget());
+          await tester.pumpAndSettle();
+
+          expect(find.textContaining('Versi 1.3.0+42'), findsOneWidget);
         },
       );
 

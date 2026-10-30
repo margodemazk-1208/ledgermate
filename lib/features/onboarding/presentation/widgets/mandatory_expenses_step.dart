@@ -97,6 +97,7 @@ class _MandatoryExpensesStepState extends ConsumerState<MandatoryExpensesStep> {
                   subtitle: Text(formatRupiah(item.amount)),
                   trailing: IconButton(
                     key: ValueKey('remove_expense_$index'),
+                    tooltip: 'Hapus Pengeluaran',
                     icon: Icon(
                       Icons.delete_outline,
                       color: AppColors.expenseRed,

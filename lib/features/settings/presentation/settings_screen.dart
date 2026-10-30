@@ -5,7 +5,6 @@ import '../../../core/database/category.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../export_import/presentation/widgets/data_management_card.dart';
@@ -36,6 +35,7 @@ class SettingsScreen extends ConsumerWidget {
     final profileAsync = ref.watch(settingsProfileStreamProvider);
     final profile = profileAsync.value;
     final currentLanguage = profile?.language ?? AppLanguage.id;
+    final packageInfoAsync = ref.watch(appPackageInfoProvider);
 
     // D18/M17 bug #2: safety net for installs that completed onboarding
     // BEFORE this fix shipped (so the onboarding-completion hook never ran
@@ -85,12 +85,18 @@ class SettingsScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppColors.brandTeal.withValues(alpha: 0.12),
+                          // M19/D18: burgundy pulled off every section-header icon badge —
+                          // repeating it 5x on one screen was the clearest
+                          // case of the "accent used too heavily" audit
+                          // finding (docs/DESIGN.md ~10-15% guidance).
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.06,
+                          ),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.tune,
-                          color: AppColors.brandTeal,
+                          color: theme.textTheme.bodyLarge?.color,
                           size: 24,
                         ),
                       ),
@@ -129,7 +135,7 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     secondary: Icon(
                       isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                      color: AppColors.brandTeal,
+                      color: theme.textTheme.bodyLarge?.color,
                     ),
                     value: isDarkMode,
                     onChanged: (val) {
@@ -146,9 +152,9 @@ class SettingsScreen extends ConsumerWidget {
                   ListTile(
                     key: const ValueKey('settings_language_tile'),
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(
+                    leading: Icon(
                       Icons.language,
-                      color: AppColors.brandTeal,
+                      color: theme.textTheme.bodyLarge?.color,
                     ),
                     title: const Text('Bahasa Aplikasi'),
                     subtitle: Text(
@@ -208,12 +214,18 @@ class SettingsScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppColors.brandTeal.withValues(alpha: 0.12),
+                          // M19/D18: burgundy pulled off every section-header icon badge —
+                          // repeating it 5x on one screen was the clearest
+                          // case of the "accent used too heavily" audit
+                          // finding (docs/DESIGN.md ~10-15% guidance).
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.06,
+                          ),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.notifications_active,
-                          color: AppColors.brandTeal,
+                          color: theme.textTheme.bodyLarge?.color,
                           size: 24,
                         ),
                       ),
@@ -384,12 +396,18 @@ class SettingsScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppColors.brandTeal.withValues(alpha: 0.12),
+                          // M19/D18: burgundy pulled off every section-header icon badge —
+                          // repeating it 5x on one screen was the clearest
+                          // case of the "accent used too heavily" audit
+                          // finding (docs/DESIGN.md ~10-15% guidance).
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.06,
+                          ),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.info_outline,
-                          color: AppColors.brandTeal,
+                          color: theme.textTheme.bodyLarge?.color,
                           size: 24,
                         ),
                       ),
@@ -403,11 +421,32 @@ class SettingsScreen extends ConsumerWidget {
                               style: AppTypography.script(fontSize: 17),
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              'Versi 1.0.0 (100% Offline, Tanpa Server)',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.textTheme.bodySmall?.color
-                                    ?.withValues(alpha: 0.7),
+                            // M19/D18: reads the REAL installed build's
+                            // version dynamically (package_info_plus)
+                            // instead of a hand-typed literal that
+                            // immediately drifted from the real version.
+                            packageInfoAsync.when(
+                              data: (info) => Text(
+                                'Versi ${info.version}+${info.buildNumber} '
+                                '(100% Offline, Tanpa Server)',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.textTheme.bodySmall?.color
+                                      ?.withValues(alpha: 0.7),
+                                ),
+                              ),
+                              loading: () => Text(
+                                'Memuat versi...',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.textTheme.bodySmall?.color
+                                      ?.withValues(alpha: 0.7),
+                                ),
+                              ),
+                              error: (_, _) => Text(
+                                '100% Offline, Tanpa Server',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.textTheme.bodySmall?.color
+                                      ?.withValues(alpha: 0.7),
+                                ),
                               ),
                             ),
                           ],
@@ -661,12 +700,16 @@ class _CategoryManagementCard extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.brandTeal.withValues(alpha: 0.12),
+                    // M19/D18: burgundy pulled off every section-header icon badge —
+                    // repeating it 5x on one screen was the clearest
+                    // case of the "accent used too heavily" audit
+                    // finding (docs/DESIGN.md ~10-15% guidance).
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.category,
-                    color: AppColors.brandTeal,
+                    color: theme.textTheme.bodyLarge?.color,
                     size: 24,
                   ),
                 ),
@@ -814,12 +857,16 @@ class _WalletsManagementCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.brandTeal.withValues(alpha: 0.12),
+                    // M19/D18: burgundy pulled off every section-header icon badge —
+                    // repeating it 5x on one screen was the clearest
+                    // case of the "accent used too heavily" audit
+                    // finding (docs/DESIGN.md ~10-15% guidance).
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.account_balance_wallet,
-                    color: AppColors.brandTeal,
+                    color: theme.textTheme.bodyLarge?.color,
                     size: 24,
                   ),
                 ),
@@ -834,7 +881,7 @@ class _WalletsManagementCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Atur dompet, rekening bank, saldo awal & transfer (FR-12)',
+                        'Atur dompet, rekening bank, saldo awal & transfer',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.textTheme.bodySmall?.color?.withValues(
                             alpha: 0.7,

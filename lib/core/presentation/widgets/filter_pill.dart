@@ -21,25 +21,39 @@ class FilterPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.burgundy : Colors.transparent,
+    // M19/D18: pills visually stay compact (per mockup), but the tap target
+    // is grown to the 48dp Material minimum via this outer SizedBox + a
+    // full-height InkWell — only the AnimatedContainer inside is centered
+    // at its natural (smaller) visual size.
+    return SizedBox(
+      height: 48,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: selected ? AppColors.burgundy : theme.dividerColor,
-          ),
-        ),
-        child: Text(
-          label,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontSize: 12,
-            color: selected ? Colors.white : theme.textTheme.bodySmall?.color,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: selected ? AppColors.burgundy : Colors.transparent,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: selected ? AppColors.burgundy : theme.dividerColor,
+                ),
+              ),
+              child: Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: 12,
+                  color: selected
+                      ? Colors.white
+                      : theme.textTheme.bodySmall?.color,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                ),
+              ),
+            ),
           ),
         ),
       ),

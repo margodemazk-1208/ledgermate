@@ -102,6 +102,31 @@ void main() {
         expect(find.text('Liburan'), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'M19/D18: no RenderFlex overflow at 360dp width with large amounts',
+      (tester) async {
+        tester.view.physicalSize = const Size(360, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await repository.saveGoal(
+          name: 'Dana Darurat Keluarga Besar Jangka Panjang',
+          targetAmount: 999999999999,
+          currentAmount: 123456789012,
+          targetDate: DateTime(2027, 1, 1),
+        );
+
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(
+          find.text('Dana Darurat Keluarga Besar Jangka Panjang'),
+          findsOneWidget,
+        );
+      },
+    );
   });
 
   group('GoalFormScreen (FR-06, FR-06b, BR-03)', () {

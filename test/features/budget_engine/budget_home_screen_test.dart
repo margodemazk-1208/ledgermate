@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:ledgermate/core/database/local_profile.dart';
 import 'package:ledgermate/core/formulas/daily_budget_formulas.dart';
+import 'package:ledgermate/core/presentation/widgets/skeleton_loader.dart';
 import 'package:ledgermate/core/theme/app_colors.dart';
 import 'package:ledgermate/core/theme/theme_provider.dart';
 import 'package:ledgermate/features/analytics/application/analytics_providers.dart';
@@ -13,6 +14,7 @@ import 'package:ledgermate/features/pay_cycle/application/pay_cycle_providers.da
 import 'package:ledgermate/features/pay_cycle/presentation/pay_cycle_transition_screen.dart';
 import 'package:ledgermate/features/transactions/application/transaction_providers.dart';
 import 'package:ledgermate/features/transactions/presentation/transaction_form_screen.dart';
+import 'package:ledgermate/features/wallets/application/wallet_providers.dart';
 
 import '../analytics/fake_analytics_repository.dart';
 import '../pay_cycle/fake_pay_cycle_repository.dart';
@@ -131,7 +133,13 @@ void main() {
       expect(focalFinder, findsOneWidget);
       final textWidget = tester.widget<Text>(focalFinder);
       expect(textWidget.data, 'Rp 150.000');
-      expect(textWidget.style?.color, AppColors.brandTeal);
+      // M19/D18 contrast fix: dark-mode burgundy text on the card surface
+      // measured ~2.2:1 — `burgundyOnDark` is the same hue, lightened to
+      // clear WCAG AA (see test/core/theme/contrast_test.dart). This test
+      // runs in dark mode (buildTestWidget's default), so the positive
+      // focal number now resolves to the dark-safe variant, not the base
+      // `burgundy`/`brandTeal` constant.
+      expect(textWidget.style?.color, AppColors.burgundyOnDark);
 
       // Subtitle
       expect(
@@ -450,6 +458,112 @@ void main() {
           find.byKey(const ValueKey('cycle_transition_banner')),
           findsNothing,
         );
+      },
+    );
+
+    testWidgets(
+      'M19/D18: Total Saldo shows a skeleton, never a fabricated "Rp 0", '
+      'while totalSaldoProvider is still loading',
+      (tester) async {
+        final fakeRepo = FakePayCycleRepository();
+        final testProfile = LocalProfile()
+          ..incomeFrequency = IncomeFrequency.periodic
+          ..incomeIntervalType = IncomeIntervalType.monthly
+          ..fixedSalary = 5000000
+          ..nextPaydayDate = DateTime(2026, 11, 25)
+          ..onboardingComplete = true;
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              dailyBudgetSummaryProvider.overrideWithValue(
+                const AsyncValue.data(modeASummary),
+              ),
+              themeModeProvider.overrideWith(
+                () => _TestThemeNotifier(ThemeMode.dark),
+              ),
+              payCycleRepositoryProvider.overrideWithValue(fakeRepo),
+              budgetProfileStreamProvider.overrideWith(
+                (ref) => Stream.value(testProfile),
+              ),
+              budgetLatestPayCycleStreamProvider.overrideWith(
+                (ref) => Stream.value(null),
+              ),
+              budgetTransactionsStreamProvider.overrideWith(
+                (ref) => Stream.value([]),
+              ),
+              budgetGoalsStreamProvider.overrideWith((ref) => Stream.value([])),
+              analyticsRepositoryProvider.overrideWithValue(
+                FakeAnalyticsRepository(),
+              ),
+              transactionsStreamProvider.overrideWith(
+                (ref) => Stream.value([]),
+              ),
+              // Never-emitting stream == permanently "loading", exactly the
+              // window this fix targets.
+              walletBalancesProvider.overrideWithValue(
+                const AsyncValue.loading(),
+              ),
+              totalSaldoProvider.overrideWithValue(const AsyncValue.loading()),
+            ],
+            child: Consumer(
+              builder: (context, ref, _) {
+                return MaterialApp(
+                  themeMode: ref.watch(themeModeProvider),
+                  theme: ref.watch(lightThemeProvider),
+                  darkTheme: ref.watch(darkThemeProvider),
+                  home: const BudgetHomeScreen(),
+                );
+              },
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final cardFinder = find.byKey(const ValueKey('home_total_saldo_card'));
+        expect(cardFinder, findsOneWidget);
+
+        // No fabricated "Rp 0" anywhere on screen, and the card contains
+        // the skeleton shimmer primitive, not a formatted amount.
+        expect(find.text('Rp 0'), findsNothing);
+        expect(
+          find.descendant(of: cardFinder, matching: find.byType(ShimmerBox)),
+          findsWidgets,
+        );
+      },
+    );
+    testWidgets(
+      'M19/D18: no RenderFlex overflow at 360dp width with long labels + '
+      'large values (Mode A breakdown + Mode B metric rows)',
+      (tester) async {
+        // Pin the test view to a real small-Android width (360dp logical,
+        // matching the task's "360dp width" verification requirement) so
+        // this is a measured check, not an eyeballed one (antislop R-35).
+        tester.view.physicalSize = const Size(360, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        const wideModeBSummary = DailyBudgetSummary(
+          incomeFrequency: IncomeFrequency.daily,
+          uangJajanAmanHariIni: 123456789,
+          dailySavingsReserve: 98765432,
+          modeB: ModeBBudgetResult(
+            saldoCarryOver: 987654321,
+            bekelHariIni: 123456789,
+            pengeluaranWajibHariIni: 111222333,
+            pengeluaranHariIni: 444555666,
+            dailySavingsReserve: 98765432,
+            uangJajanAmanHariIni: 123456789,
+          ),
+        );
+
+        await tester.pumpWidget(
+          buildTestWidget(budgetValue: const AsyncValue.data(wideModeBSummary)),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('Pengeluaran Dicatat Hari Ini'), findsOneWidget);
       },
     );
   });

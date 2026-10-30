@@ -43,7 +43,12 @@ abstract final class AppTheme {
       onPrimary: Colors.white,
       secondary: AppColors.burgundySoft,
       onSecondary: Colors.white,
-      error: AppColors.expenseRed,
+      // M19/D18: `expenseRed` only clears ~2:1 against light surfaces —
+      // every Flutter-default form validation message (`TextFormField`'s
+      // `errorText`, which styles itself from `colorScheme.error`) was
+      // inheriting that failing color. `expenseRedOnLight` is the same hue,
+      // darkened to clear 4.5:1 — see `test/core/theme/contrast_test.dart`.
+      error: AppColors.expenseRedOnLight,
       onError: Colors.white,
       outline: AppColors.lightBorder,
     );

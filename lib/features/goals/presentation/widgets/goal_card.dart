@@ -106,25 +106,27 @@ class GoalCard extends ConsumerWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.savingsGreen.withValues(alpha: 0.15),
+                      color: AppColors.savingsGreenText(theme.brightness)
+                          .withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.savingsGreen.withValues(alpha: 0.4),
+                        color: AppColors.savingsGreenText(theme.brightness)
+                            .withValues(alpha: 0.4),
                       ),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.check_circle,
                           size: 14,
-                          color: AppColors.savingsGreen,
+                          color: AppColors.savingsGreenText(theme.brightness),
                         ),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Text(
                           'Tercapai',
                           style: TextStyle(
-                            color: AppColors.savingsGreen,
+                            color: AppColors.savingsGreenText(theme.brightness),
                             fontWeight: FontWeight.w600,
                             fontSize: 12,
                           ),
@@ -133,22 +135,27 @@ class GoalCard extends ConsumerWidget {
                     ),
                   ),
                 ] else if (goal.manualDailyAllocation != null) ...[
+                  // M19/D18: "Override Manual" is informational, not a
+                  // brand/action moment — pulled the burgundy tint per
+                  // docs/DESIGN.md's "~10-15% of visible area" guidance
+                  // (every goal card showing this badge in burgundy was
+                  // part of the Goals-screen overuse the audit flagged).
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.brandTeal.withValues(alpha: 0.15),
+                      color: theme.dividerColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.brandTeal.withValues(alpha: 0.3),
+                        color: theme.dividerColor.withValues(alpha: 0.3),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Override Manual',
                       style: TextStyle(
-                        color: AppColors.brandTeal,
+                        color: theme.textTheme.bodySmall?.color,
                         fontWeight: FontWeight.w600,
                         fontSize: 11,
                       ),
@@ -163,18 +170,28 @@ class GoalCard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  formatRupiah(goal.currentAmount),
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: isCompleted
-                        ? AppColors.savingsGreen
-                        : theme.textTheme.titleSmall?.color,
+                Flexible(
+                  child: Text(
+                    formatRupiah(goal.currentAmount),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: isCompleted
+                          ? AppColors.savingsGreenText(theme.brightness)
+                          : theme.textTheme.titleSmall?.color,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Text(
-                  '${formatRupiah(goal.targetAmount)} ($percentInt%)',
-                  style: theme.textTheme.bodySmall,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    '${formatRupiah(goal.targetAmount)} ($percentInt%)',
+                    style: theme.textTheme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                  ),
                 ),
               ],
             ),
@@ -204,10 +221,13 @@ class GoalCard extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  // M19/D18: pulled burgundy off this purely decorative
+                  // icon — part of the Goals-screen burgundy-overuse fix
+                  // (every goal card repeated this icon).
+                  Icon(
                     Icons.trending_up,
                     size: 16,
-                    color: AppColors.brandTeal,
+                    color: theme.textTheme.bodySmall?.color,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -222,13 +242,17 @@ class GoalCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  Text(
-                    isCompleted
-                        ? 'Selesai'
-                        : '${formatRupiah(projection.dailyAllocation)}/hari',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.savingsGreen,
+                  Flexible(
+                    child: Text(
+                      isCompleted
+                          ? 'Selesai'
+                          : '${formatRupiah(projection.dailyAllocation)}/hari',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.savingsGreenText(theme.brightness),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -287,7 +311,7 @@ class GoalCard extends ConsumerWidget {
                   child: IconButton(
                     key: ValueKey('delete_goal_button_${goal.id}'),
                     tooltip: 'Hapus Target',
-                    color: AppColors.expenseRed,
+                    color: AppColors.expenseRedText(theme.brightness),
                     icon: const Icon(Icons.delete_outline, size: 20),
                     onPressed: () => _handleDelete(context, ref),
                   ),

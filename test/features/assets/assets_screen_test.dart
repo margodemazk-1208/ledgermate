@@ -106,6 +106,31 @@ void main() {
       },
     );
 
+    testWidgets(
+      'M19/D18: no RenderFlex overflow at 360dp width with a large gain/loss',
+      (tester) async {
+        tester.view.physicalSize = const Size(360, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await repository.saveAsset(
+          name: 'Reksadana Saham Agresif Jangka Panjang',
+          type: 'Reksadana',
+          purchaseValue: 50000000,
+          currentValue: 987654321,
+        );
+
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(
+          find.text('Reksadana Saham Agresif Jangka Panjang'),
+          findsOneWidget,
+        );
+      },
+    );
+
     testWidgets('UpdateValueDialog updates asset current value successfully', (
       tester,
     ) async {

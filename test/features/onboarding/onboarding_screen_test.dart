@@ -250,4 +250,54 @@ void main() {
     // Still on the wizard, not silently stuck or crashed.
     expect(find.text('Pengeluaran Wajib'), findsOneWidget);
   });
+
+  group('M19/D18: system back steps the wizard back, never exits early', () {
+    testWidgets(
+      'PopScope.canPop is false on step 2+, and invoking the pop handler '
+      'steps the wizard back instead of letting it close',
+      (tester) async {
+        await pumpScreen(tester);
+        final nextButtonFinder = find.byKey(
+          const ValueKey('onboarding_next_button'),
+        );
+
+        await tester.tap(find.byKey(const ValueKey('mode_card_harian')));
+        await tester.pumpAndSettle();
+        await tester.tap(nextButtonFinder);
+        await tester.pumpAndSettle();
+        expect(find.text('Atur Dompet Pertamamu'), findsOneWidget);
+
+        final popScope = tester.widget<PopScope>(
+          find.byWidgetPredicate((w) => w is PopScope),
+        );
+        // Not the first step -> system back must NOT be allowed to pop the
+        // (only) route, or it would silently exit the app.
+        expect(popScope.canPop, isFalse);
+
+        // Simulate what the system back button/gesture triggers: Flutter
+        // calls onPopInvokedWithResult(false, null) whenever canPop is
+        // false and a pop was attempted.
+        popScope.onPopInvokedWithResult!(false, null);
+        await tester.pumpAndSettle();
+
+        // Intercepted into a wizard step-back, not an app exit.
+        expect(find.byType(OnboardingScreen), findsOneWidget);
+        expect(find.text('Pola Pendapatanmu'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'PopScope.canPop is true on the first step (nothing left for the '
+      'wizard to intercept; normal app-exit territory)',
+      (tester) async {
+        await pumpScreen(tester);
+        expect(find.text('Pola Pendapatanmu'), findsOneWidget);
+
+        final popScope = tester.widget<PopScope>(
+          find.byWidgetPredicate((w) => w is PopScope),
+        );
+        expect(popScope.canPop, isTrue);
+      },
+    );
+  });
 }

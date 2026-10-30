@@ -51,16 +51,18 @@ class AppBottomNav extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               for (var i = 0; i < _items.length; i++)
-                _NavItem(
-                  key: ValueKey('bottom_nav_item_$i'),
-                  data: _items[i],
-                  active: i == currentIndex,
-                  activeColor: AppColors.burgundySoft,
-                  inactiveColor: unselected,
-                  onTap: () {
-                    if (i == currentIndex) return;
-                    ref.read(currentTabIndexProvider.notifier).setIndex(i);
-                  },
+                Expanded(
+                  child: _NavItem(
+                    key: ValueKey('bottom_nav_item_$i'),
+                    data: _items[i],
+                    active: i == currentIndex,
+                    activeColor: AppColors.burgundySoft,
+                    inactiveColor: unselected,
+                    onTap: () {
+                      if (i == currentIndex) return;
+                      ref.read(currentTabIndexProvider.notifier).setIndex(i);
+                    },
+                  ),
                 ),
             ],
           ),
@@ -114,9 +116,16 @@ class _NavItem extends StatelessWidget {
             const SizedBox(height: 4),
             Icon(active ? data.activeIcon : data.icon, size: 22, color: color),
             const SizedBox(height: 4),
-            Text(
-              data.label,
-              style: AppTypography.script(fontSize: 10, color: color),
+            // M19/D18: at 360dp width, 6 equal-width nav slots leave less
+            // room than some Indonesian labels (e.g. "Pengaturan") need at
+            // their natural size — FittedBox scales the label down instead
+            // of letting the Row overflow.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                data.label,
+                style: AppTypography.script(fontSize: 10, color: color),
+              ),
             ),
           ],
         ),

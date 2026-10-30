@@ -7,6 +7,7 @@ import '../../../core/database/financial_goal.dart';
 import '../../../core/formulas/daily_budget_formulas.dart';
 import '../../../core/presentation/widgets/press_scale.dart';
 import '../../../core/presentation/widgets/success_toast.dart';
+import '../../../core/presentation/widgets/unsaved_changes_guard.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
@@ -44,27 +45,54 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
   bool _isSubmitting = false;
   String? _formError;
 
+  // M19/D18: unsaved-changes guard — any field edit marks the form dirty
+  // so back-navigation confirms before discarding (see
+  // UnsavedChangesGuard doc comment). Needs `setState` because
+  // `UnsavedChangesGuard`'s `PopScope.canPop` only re-evaluates on rebuild.
+  bool _dirty = false;
+  void _markDirty() {
+    if (!_dirty) setState(() => _dirty = true);
+  }
+
   @override
   void initState() {
     super.initState();
     final g = widget.goal;
     _nameController = TextEditingController(text: g?.goalName ?? '');
+    // M19/D18: Rupiah fields now follow the SAME canonical pattern as
+    // every other form in the app (transaction/asset/wallet) —
+    // `RupiahInputFormatter` on the controller + a separate `prefixText:
+    // 'Rp '` in the decoration — instead of embedding "Rp" into the
+    // controller text itself via a manual onChanged re-format, which was
+    // the one form in the app doing it differently.
     _targetAmountController = TextEditingController(
-      text: g != null && g.targetAmount > 0 ? formatRupiah(g.targetAmount) : '',
+      text: g != null && g.targetAmount > 0
+          ? _groupedDigits(g.targetAmount)
+          : '',
     );
     _currentAmountController = TextEditingController(
       text: g != null && g.currentAmount > 0
-          ? formatRupiah(g.currentAmount)
-          : 'Rp 0',
+          ? _groupedDigits(g.currentAmount)
+          : '0',
     );
     _targetDate = g?.targetDate ?? DateTime.now().add(const Duration(days: 30));
     _hasManualAllocation = g?.manualDailyAllocation != null;
     _manualAllocationController = TextEditingController(
       text: g?.manualDailyAllocation != null
-          ? formatRupiah(g!.manualDailyAllocation!)
+          ? _groupedDigits(g!.manualDailyAllocation!)
           : '',
     );
+    _nameController.addListener(_markDirty);
+    _targetAmountController.addListener(_markDirty);
+    _currentAmountController.addListener(_markDirty);
+    _manualAllocationController.addListener(_markDirty);
   }
+
+  /// `formatRupiah` without the "Rp " prefix — the prefix now lives in
+  /// each field's `InputDecoration.prefixText` instead (canonical pattern,
+  /// matches transaction/asset/wallet forms).
+  static String _groupedDigits(int amount) =>
+      formatRupiah(amount).replaceFirst('Rp ', '');
 
   @override
   void dispose() {
@@ -89,6 +117,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
       setState(() {
         _targetDate = picked;
       });
+      _markDirty();
     }
   }
 
@@ -188,6 +217,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
           );
       if (mounted) {
         showSuccessToast(context, 'Target tabungan berhasil disimpan');
+        _dirty = false;
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -207,239 +237,209 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
     final isEditing = widget.goal != null;
     final dateText = DateFormat('d MMMM yyyy', 'id_ID').format(_targetDate);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          isEditing ? 'Edit Target Tabungan' : 'Tambah Target Baru',
-          style: AppTypography.script(fontSize: 18),
+    return UnsavedChangesGuard(
+      isDirty: () => _dirty,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            isEditing ? 'Edit Target Tabungan' : 'Tambah Target Baru',
+            style: AppTypography.script(fontSize: 18),
+          ),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Goal Name
-              TextFormField(
-                key: const ValueKey('goal_name_field'),
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nama Target',
-                  hintText: 'Misal: Laptop Baru, Dana Darurat',
-                  prefixIcon: Icon(Icons.flag_outlined),
-                ),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Nama target tidak boleh kosong';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Target Amount
-              TextFormField(
-                key: const ValueKey('goal_target_amount_field'),
-                controller: _targetAmountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Target Nominal',
-                  hintText: 'Rp 0',
-                  prefixIcon: Icon(Icons.monetization_on_outlined),
-                ),
-                onChanged: (val) {
-                  final parsed = parseRupiah(val);
-                  if (parsed != null) {
-                    final formatted = formatRupiah(parsed);
-                    if (formatted != val) {
-                      _targetAmountController.value = TextEditingValue(
-                        text: formatted,
-                        selection: TextSelection.collapsed(
-                          offset: formatted.length,
-                        ),
-                      );
-                    }
-                  }
-                },
-                validator: (val) {
-                  final parsed = parseRupiah(val ?? '');
-                  if (parsed == null || parsed <= 0) {
-                    return 'Target nominal harus lebih besar dari 0';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Current Amount
-              TextFormField(
-                key: const ValueKey('goal_current_amount_field'),
-                controller: _currentAmountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Saldo Awal / Sudah Terkumpul',
-                  hintText: 'Rp 0',
-                  prefixIcon: Icon(Icons.account_balance_wallet_outlined),
-                  helperText:
-                      'Isi jika sudah mulai menabung sebelum target ini dibuat',
-                ),
-                onChanged: (val) {
-                  final parsed = parseRupiah(val);
-                  if (parsed != null) {
-                    final formatted = formatRupiah(parsed);
-                    if (formatted != val) {
-                      _currentAmountController.value = TextEditingValue(
-                        text: formatted,
-                        selection: TextSelection.collapsed(
-                          offset: formatted.length,
-                        ),
-                      );
-                    }
-                  }
-                },
-                validator: (val) {
-                  final parsed = parseRupiah(val ?? '');
-                  if (parsed == null || parsed < 0) {
-                    return 'Saldo tidak boleh negatif';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Target Date Picker Tile
-              ListTile(
-                key: const ValueKey('goal_target_date_tile'),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: theme.dividerColor.withValues(alpha: 0.3),
-                  ),
-                ),
-                leading: const Icon(
-                  Icons.calendar_today,
-                  color: AppColors.brandTeal,
-                ),
-                title: const Text('Target Tanggal Tercapai'),
-                subtitle: Text(
-                  dateText,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: AppColors.brandTeal,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: _pickTargetDate,
-              ),
-              const SizedBox(height: 20),
-
-              // Manual Daily Allocation Override (BR-03)
-              SwitchListTile(
-                key: const ValueKey('goal_manual_allocation_switch'),
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Override Alokasi Harian Manual'),
-                subtitle: const Text(
-                  'Tetapkan nominal tabungan harian tetap, bukan hasil hitungan otomatis formula.',
-                ),
-                value: _hasManualAllocation,
-                activeTrackColor: AppColors.brandTeal,
-                onChanged: (enabled) {
-                  setState(() {
-                    _hasManualAllocation = enabled;
-                  });
-                },
-              ),
-              if (_hasManualAllocation) ...[
-                const SizedBox(height: 8),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Goal Name
                 TextFormField(
-                  key: const ValueKey('goal_manual_allocation_field'),
-                  controller: _manualAllocationController,
-                  keyboardType: TextInputType.number,
+                  key: const ValueKey('goal_name_field'),
+                  controller: _nameController,
                   decoration: const InputDecoration(
-                    labelText: 'Nominal Alokasi Harian (Rp/hari)',
-                    hintText: 'Rp 0',
-                    prefixIcon: Icon(Icons.tune),
-                    helperText: 'Nominal ini langsung menggantikan kalkulasi formula otomatis',
+                    labelText: 'Nama Target',
+                    hintText: 'Misal: Laptop Baru, Dana Darurat',
+                    prefixIcon: Icon(Icons.flag_outlined),
                   ),
-                  onChanged: (val) {
-                    final parsed = parseRupiah(val);
-                    if (parsed != null) {
-                      final formatted = formatRupiah(parsed);
-                      if (formatted != val) {
-                        _manualAllocationController.value = TextEditingValue(
-                          text: formatted,
-                          selection: TextSelection.collapsed(
-                            offset: formatted.length,
-                          ),
-                        );
-                      }
-                    }
-                  },
                   validator: (val) {
-                    if (!_hasManualAllocation) return null;
-                    final parsed = parseRupiah(val ?? '');
-                    if (parsed == null || parsed <= 0) {
-                      return 'Masukkan alokasi harian yang lebih besar dari 0';
+                    if (val == null || val.trim().isEmpty) {
+                      return 'Nama target tidak boleh kosong';
                     }
                     return null;
                   },
                 ),
-              ],
-
-              if (_formError != null) ...[
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.expenseRed.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: AppColors.expenseRed.withValues(alpha: 0.3),
+
+                // Target Amount
+                TextFormField(
+                  key: const ValueKey('goal_target_amount_field'),
+                  controller: _targetAmountController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [RupiahInputFormatter()],
+                  decoration: const InputDecoration(
+                    labelText: 'Target Nominal',
+                    prefixText: 'Rp ',
+                    hintText: '0',
+                    prefixIcon: Icon(Icons.monetization_on_outlined),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                  validator: (val) {
+                    final parsed = parseRupiah(val ?? '');
+                    if (parsed == null || parsed <= 0) {
+                      return 'Target nominal harus lebih besar dari 0';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Current Amount
+                TextFormField(
+                  key: const ValueKey('goal_current_amount_field'),
+                  controller: _currentAmountController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [RupiahInputFormatter()],
+                  decoration: const InputDecoration(
+                    labelText: 'Saldo Awal / Sudah Terkumpul',
+                    prefixText: 'Rp ',
+                    hintText: '0',
+                    prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                    helperText: 'Isi jika sudah mulai menabung sebelum target ini dibuat',
+                  ),
+                  onChanged: (_) => setState(() {}),
+                  validator: (val) {
+                    final parsed = parseRupiah(val ?? '');
+                    if (parsed == null || parsed < 0) {
+                      return 'Saldo tidak boleh negatif';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Target Date Picker Tile
+                ListTile(
+                  key: const ValueKey('goal_target_date_tile'),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: theme.dividerColor.withValues(alpha: 0.3),
                     ),
                   ),
-                  child: Text(
-                    _formError!,
-                    style: const TextStyle(
-                      color: AppColors.expenseRed,
-                      fontSize: 13,
+                  leading: const Icon(
+                    Icons.calendar_today,
+                    color: AppColors.brandTeal,
+                  ),
+                  title: const Text('Target Tanggal Tercapai'),
+                  subtitle: Text(
+                    dateText,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: AppColors.burgundyText(theme.brightness),
+                      fontWeight: FontWeight.w600,
                     ),
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: _pickTargetDate,
+                ),
+                const SizedBox(height: 20),
+
+                // Manual Daily Allocation Override (BR-03)
+                SwitchListTile(
+                  key: const ValueKey('goal_manual_allocation_switch'),
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Override Alokasi Harian Manual'),
+                  subtitle: const Text(
+                    'Tetapkan nominal tabungan harian tetap, bukan hasil hitungan otomatis formula.',
+                  ),
+                  value: _hasManualAllocation,
+                  activeTrackColor: AppColors.brandTeal,
+                  onChanged: (enabled) {
+                    setState(() {
+                      _hasManualAllocation = enabled;
+                    });
+                    _markDirty();
+                  },
+                ),
+                if (_hasManualAllocation) ...[
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    key: const ValueKey('goal_manual_allocation_field'),
+                    controller: _manualAllocationController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [RupiahInputFormatter()],
+                    decoration: const InputDecoration(
+                      labelText: 'Nominal Alokasi Harian (Rp/hari)',
+                      prefixText: 'Rp ',
+                      hintText: '0',
+                      prefixIcon: Icon(Icons.tune),
+                      helperText: 'Nominal ini langsung menggantikan kalkulasi formula otomatis',
+                    ),
+                    onChanged: (_) => setState(() {}),
+                    validator: (val) {
+                      if (!_hasManualAllocation) return null;
+                      final parsed = parseRupiah(val ?? '');
+                      if (parsed == null || parsed <= 0) {
+                        return 'Masukkan alokasi harian yang lebih besar dari 0';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+
+                if (_formError != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.expenseRed.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppColors.expenseRed.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Text(
+                      _formError!,
+                      style: TextStyle(
+                        color: AppColors.expenseRedText(theme.brightness),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 32),
+
+                // Submit Button
+                PressScale(
+                  enabled: !_isBusy,
+                  child: FilledButton(
+                    key: const ValueKey('save_goal_button'),
+                    onPressed: _isBusy ? null : _handleSave,
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: AppColors.brandTeal,
+                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            isEditing ? 'Perbarui Target' : 'Simpan Target',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                   ),
                 ),
               ],
-              const SizedBox(height: 32),
-
-              // Submit Button
-              PressScale(
-                enabled: !_isBusy,
-                child: FilledButton(
-                  key: const ValueKey('save_goal_button'),
-                  onPressed: _isBusy ? null : _handleSave,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: AppColors.brandTeal,
-                  ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          isEditing ? 'Perbarui Target' : 'Simpan Target',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

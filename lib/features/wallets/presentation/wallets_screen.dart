@@ -29,7 +29,7 @@ class WalletsScreen extends ConsumerWidget {
         title: const Text('Hapus Dompet?'),
         content: Text(
           'Apakah kamu yakin ingin menghapus dompet "${wallet.name}"?\n\n'
-          'Catatan: Dompet tidak dapat dihapus jika masih memiliki transaksi atau transfer terkait (FR-12).',
+          'Catatan: Dompet tidak dapat dihapus jika masih memiliki transaksi atau transfer terkait.',
         ),
         actions: [
           TextButton(
@@ -154,9 +154,20 @@ class WalletsScreen extends ConsumerWidget {
                       const SizedBox(height: 6),
                       Text(
                         formatRupiah(totalSaldo),
-                        style: theme.textTheme.headlineMedium?.copyWith(
+                        // M19/D18 font-rule fix: this is numeric data, so it
+                        // must use Space Mono (AppTypography.mono), not the
+                        // Playfair-backed `headlineMedium` text style — see
+                        // docs/DESIGN.md's typography rule (display/script
+                        // for brand+labels, mono for ALL numeric/data text).
+                        style: AppTypography.mono(
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.burgundy,
+                          // M19/D18 contrast fix: see AppColors.burgundyText
+                          // doc — this is the one deliberate focal-number
+                          // accent moment on this screen (parallels Home's
+                          // identity motif), kept, just lightened for dark
+                          // mode.
+                          color: AppColors.burgundyText(theme.brightness),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -229,10 +240,10 @@ class WalletsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(32),
                     child: Column(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.account_balance_wallet_outlined,
                           size: 48,
-                          color: AppColors.brandTeal,
+                          color: theme.textTheme.bodyMedium?.color,
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -288,7 +299,9 @@ class WalletsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(24),
             child: Text(
               'Gagal memuat daftar dompet: $err',
-              style: const TextStyle(color: AppColors.expenseRed),
+              style: TextStyle(
+                color: AppColors.expenseRedText(theme.brightness),
+              ),
             ),
           ),
         ),
@@ -341,12 +354,12 @@ class _WalletItemCard extends StatelessWidget {
           child: Row(
             children: [
               // Wallet Icon container
-              IconCircle(
-                icon: getWalletIcon(wallet.icon),
-                size: 48,
-                color: AppColors.burgundy,
-                background: AppColors.burgundy.withValues(alpha: 0.12),
-              ),
+              // M19/D18: pulled the burgundy tint — every wallet card
+              // using it made Wallets the clearest case of the "accent
+              // used too heavily" audit finding (docs/DESIGN.md's
+              // ~10-15%-of-visible-area guidance). Matches the neutral
+              // icon-circle treatment already used for Asset cards.
+              IconCircle(icon: getWalletIcon(wallet.icon), size: 48),
               const SizedBox(width: 14),
 
               // Name + Budget status badge
@@ -367,8 +380,13 @@ class _WalletItemCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
+                            // M19/D18: "included in budget" is status
+                            // information, not a brand/action moment —
+                            // uses the semantic green (positive/active),
+                            // not the burgundy accent.
                             color: wallet.includeInDailyBudget
-                                ? AppColors.brandTeal.withValues(alpha: 0.1)
+                                ? AppColors.savingsGreenText(theme.brightness)
+                                      .withValues(alpha: 0.12)
                                 : theme.dividerColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
@@ -380,7 +398,7 @@ class _WalletItemCard extends StatelessWidget {
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                               color: wallet.includeInDailyBudget
-                                  ? AppColors.brandTeal
+                                  ? AppColors.savingsGreenText(theme.brightness)
                                   : theme.textTheme.bodySmall?.color,
                             ),
                           ),
@@ -397,8 +415,12 @@ class _WalletItemCard extends StatelessWidget {
                 children: [
                   Text(
                     formatRupiah(balance),
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    // M19/D18 font-rule fix: numeric data uses Space Mono,
+                    // not the Playfair-backed `titleMedium` style.
+                    style: AppTypography.mono(
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: theme.textTheme.titleMedium?.color,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -444,19 +466,21 @@ class _WalletItemCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
                     child: Row(
                       children: [
                         Icon(
                           Icons.delete_outline,
                           size: 18,
-                          color: AppColors.expenseRed,
+                          color: AppColors.expenseRedText(theme.brightness),
                         ),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(
                           'Hapus',
-                          style: TextStyle(color: AppColors.expenseRed),
+                          style: TextStyle(
+                            color: AppColors.expenseRedText(theme.brightness),
+                          ),
                         ),
                       ],
                     ),

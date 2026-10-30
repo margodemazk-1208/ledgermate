@@ -154,8 +154,8 @@ class AssetsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final isTotalGain = summary.isTotalGain;
     final totalGainColor = isTotalGain
-        ? AppColors.savingsGreen
-        : AppColors.expenseRed;
+        ? AppColors.savingsGreenText(theme.brightness)
+        : AppColors.expenseRedText(theme.brightness);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
@@ -176,25 +176,35 @@ class AssetsScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Total Portofolio Aset',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
+                    Flexible(
+                      child: Text(
+                        'Total Portofolio Aset',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.brandTeal.withValues(alpha: 0.12),
+                        // M19/D18: pulled the burgundy tint on this purely
+                        // decorative count badge — `05_aset.html`'s overview
+                        // card has no such badge at all, and burgundy is
+                        // meant for deliberate accent moments, not every
+                        // small label (docs/DESIGN.md §Palette).
+                        color: theme.dividerColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         '${summary.assetCount} Aset',
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: AppColors.brandTeal,
+                          color: theme.textTheme.bodySmall?.color,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -208,8 +218,12 @@ class AssetsScreen extends ConsumerWidget {
                   child: Text(
                     key: const ValueKey('total_assets_value'),
                     formatRupiah(summary.totalCurrentValue),
-                    style: theme.textTheme.headlineMedium?.copyWith(
+                    // M19/D18 font-rule fix: numeric data uses Space Mono,
+                    // not the Playfair-backed `headlineMedium` style.
+                    style: AppTypography.mono(
+                      fontSize: 24,
                       fontWeight: FontWeight.w700,
+                      color: theme.textTheme.headlineMedium?.color,
                     ),
                   ),
                 ),

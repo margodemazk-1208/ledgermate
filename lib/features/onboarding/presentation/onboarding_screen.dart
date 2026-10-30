@@ -27,28 +27,39 @@ class OnboardingScreen extends ConsumerWidget {
       }
     });
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: KeyedSubtree(
-                  key: ValueKey(state.step),
-                  child: switch (state.step) {
-                    OnboardingStep.incomeFrequency =>
-                      const IncomeFrequencyStep(),
-                    OnboardingStep.walletSetup => const WalletSetupStep(),
-                    OnboardingStep.initialIncome => const InitialIncomeStep(),
-                    OnboardingStep.mandatoryExpenses =>
-                      const MandatoryExpensesStep(),
-                  },
+    return PopScope(
+      // M19/D18: system back (gesture/button) on a non-first step must step
+      // the wizard backward, not exit the app — OnboardingScreen has no
+      // previous route to pop to since it gates app entry, so without this
+      // the system back action silently closes the whole app.
+      canPop: state.step == OnboardingStep.incomeFrequency,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (!state.isSubmitting) notifier.goBack();
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: KeyedSubtree(
+                    key: ValueKey(state.step),
+                    child: switch (state.step) {
+                      OnboardingStep.incomeFrequency =>
+                        const IncomeFrequencyStep(),
+                      OnboardingStep.walletSetup => const WalletSetupStep(),
+                      OnboardingStep.initialIncome => const InitialIncomeStep(),
+                      OnboardingStep.mandatoryExpenses =>
+                        const MandatoryExpensesStep(),
+                    },
+                  ),
                 ),
               ),
-            ),
-            _WizardNavBar(state: state, notifier: notifier),
-          ],
+              _WizardNavBar(state: state, notifier: notifier),
+            ],
+          ),
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../core/database/category.dart';
 import '../../../core/database/isar_provider.dart';
@@ -19,6 +20,17 @@ final settingsProfileStreamProvider = StreamProvider<LocalProfile?>((ref) {
 
 final settingsCategoriesStreamProvider = StreamProvider<List<Category>>((ref) {
   return ref.watch(settingsRepositoryProvider).watchCategories();
+});
+
+/// M19/D18: Settings previously showed a manually-typed "1.0.0" literal
+/// that drifted from the real build the moment any release shipped
+/// (already stale — the app is on v1.2.0+ at the time of this fix). Reads
+/// the real build's version/build-number via `package_info_plus` instead,
+/// so it can never drift again. `PackageInfo.fromPlatform()` reads from
+/// native Android package metadata, so this only reflects the real
+/// installed APK's version — it is NOT a hardcoded value.
+final appPackageInfoProvider = FutureProvider<PackageInfo>((ref) {
+  return PackageInfo.fromPlatform();
 });
 
 /// Converts the persisted [AppLanguage] into a Flutter [Locale].

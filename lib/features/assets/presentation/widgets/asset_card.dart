@@ -81,7 +81,9 @@ class AssetCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isGain = item.isGain;
-    final gainColor = isGain ? AppColors.savingsGreen : AppColors.expenseRed;
+    final gainColor = isGain
+        ? AppColors.savingsGreenText(theme.brightness)
+        : AppColors.expenseRedText(theme.brightness);
 
     return Card(
       elevation: 0,
@@ -220,17 +222,27 @@ class AssetCard extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Keuntungan / Kerugian',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w500,
+                  Flexible(
+                    child: Text(
+                      'Keuntungan / Kerugian',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Text(
-                    '${isGain ? '+' : ''}${formatRupiah(item.gainLoss)} (${isGain ? '+' : ''}${item.returnPercentage.toStringAsFixed(1)}%)',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: gainColor,
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      '${isGain ? '+' : ''}${formatRupiah(item.gainLoss)} (${isGain ? '+' : ''}${item.returnPercentage.toStringAsFixed(1)}%)',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: gainColor,
+                      ),
+                      textAlign: TextAlign.right,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

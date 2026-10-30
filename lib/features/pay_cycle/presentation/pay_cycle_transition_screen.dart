@@ -533,6 +533,7 @@ class _MandatoryExpensesSection extends StatelessWidget {
                 subtitle: Text(formatRupiah(item.amount)),
                 trailing: IconButton(
                   key: ValueKey('transition_remove_expense_$index'),
+                  tooltip: 'Hapus Pengeluaran',
                   icon: const Icon(
                     Icons.delete_outline,
                     color: AppColors.expenseRed,

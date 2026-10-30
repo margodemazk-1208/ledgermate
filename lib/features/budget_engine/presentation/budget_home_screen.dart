@@ -9,6 +9,7 @@ import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/count_up_rupiah.dart';
 import '../../../core/presentation/widgets/fab_speed_dial.dart';
+import '../../../core/presentation/widgets/skeleton_loader.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
@@ -45,12 +46,21 @@ class BudgetHomeScreen extends ConsumerWidget {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Text('LedgerMate', style: AppTypography.script(fontSize: 22)),
-            Text(
-              DateFormat('EEEE: dd-MMM-yy', 'id_ID').format(DateTime.now()),
-              style: AppTypography.mono(
-                fontSize: 11,
-                color: theme.textTheme.bodySmall?.color,
-                letterSpacing: 0.5,
+            const SizedBox(width: 8),
+            // M19/D18: at 360dp width, "LedgerMate" + the longest Indonesian
+            // weekday names (e.g. "Jumat", "Minggu") together overflowed the
+            // title Row — Flexible+ellipsis lets the date clip gracefully
+            // instead, since the brand wordmark is the priority element.
+            Flexible(
+              child: Text(
+                DateFormat('EEEE: dd-MMM-yy', 'id_ID').format(DateTime.now()),
+                style: AppTypography.mono(
+                  fontSize: 11,
+                  color: theme.textTheme.bodySmall?.color,
+                  letterSpacing: 0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -100,7 +110,13 @@ class _DashboardBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isPositive = summary.isPositive;
-    final focalColor = isPositive ? AppColors.burgundy : AppColors.expenseRed;
+    // M19/D18 contrast fix: dark-mode burgundy text directly on the card
+    // surface measured ~2.2:1 (D18 audit) — `burgundyText` swaps in a
+    // lighter same-hue variant for dark mode only (light mode was already
+    // compliant at ~7.6:1). See test/core/theme/contrast_test.dart.
+    final focalColor = isPositive
+        ? AppColors.burgundyText(theme.brightness)
+        : AppColors.expenseRedText(theme.brightness);
 
     final totalSaldoAsync = ref.watch(totalSaldoProvider);
     final walletsAsync = ref.watch(walletsStreamProvider);
@@ -158,11 +174,18 @@ class _DashboardBody extends ConsumerWidget {
           const SizedBox(height: 20),
 
           // Total Saldo card (net worth across all wallets, FR-12/D16)
-          _SimpleValueCard(
-            key: const ValueKey('home_total_saldo_card'),
-            label: 'Total Saldo',
-            value: formatRupiah(totalSaldoAsync.value ?? 0),
-          ),
+          // M19/D18: while the real balance is still loading, show the
+          // skeleton primitive instead of a fabricated "Rp 0" — a finance
+          // app must never display a plausible-looking-but-wrong number.
+          totalSaldoAsync.isLoading
+              ? const _SimpleValueCardSkeleton(
+                  key: ValueKey('home_total_saldo_card'),
+                )
+              : _SimpleValueCard(
+                  key: const ValueKey('home_total_saldo_card'),
+                  label: 'Total Saldo',
+                  value: formatRupiah(totalSaldoAsync.value ?? 0),
+                ),
           const SizedBox(height: 16),
 
           // Per-wallet balance cards (M12 Wallet data — fully user-defined,
@@ -179,11 +202,18 @@ class _DashboardBody extends ConsumerWidget {
                       separatorBuilder: (_, _) => const SizedBox(width: 10),
                       itemBuilder: (context, i) {
                         final w = wallets[i];
-                        return _WalletMiniCard(
-                          name: w.name,
-                          icon: getWalletIcon(w.icon),
-                          balance: balances[w.id] ?? w.startingBalance,
-                        );
+                        // M19/D18: `w.startingBalance` is NOT the current
+                        // balance — while `walletBalancesProvider` is still
+                        // computing the real on-the-fly balance, show a
+                        // shimmer placeholder instead of that misleading
+                        // fallback number.
+                        return ref.watch(walletBalancesProvider).isLoading
+                            ? const _WalletMiniCardSkeleton()
+                            : _WalletMiniCard(
+                                name: w.name,
+                                icon: getWalletIcon(w.icon),
+                                balance: balances[w.id] ?? w.startingBalance,
+                              );
                       },
                     ),
                   ),
@@ -288,7 +318,7 @@ class _CycleTransitionBanner extends StatelessWidget {
                       : 'Rollover Harian Dibutuhkan',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: AppColors.expenseRed,
+                    color: AppColors.expenseRedText(theme.brightness),
                   ),
                 ),
               ),
@@ -437,6 +467,67 @@ class _WalletMiniCard extends StatelessWidget {
   }
 }
 
+/// M19/D18: skeleton placeholder matching [_SimpleValueCard]'s shape,
+/// shown instead of a fabricated "Rp 0" while [totalSaldoProvider] loads.
+class _SimpleValueCardSkeleton extends StatelessWidget {
+  const _SimpleValueCardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          ShimmerBox(width: 90, height: 14),
+          ShimmerBox(width: 110, height: 20),
+        ],
+      ),
+    );
+  }
+}
+
+/// M19/D18: skeleton placeholder matching [_WalletMiniCard]'s shape, shown
+/// instead of the misleading `startingBalance` fallback while
+/// [walletBalancesProvider] computes the real on-the-fly balance.
+class _WalletMiniCardSkeleton extends StatelessWidget {
+  const _WalletMiniCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: 140,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              ShimmerBox(width: 24, height: 24, borderRadius: 12),
+              SizedBox(width: 8),
+              Expanded(child: ShimmerBox(width: double.infinity, height: 12)),
+            ],
+          ),
+          Spacer(),
+          ShimmerBox(width: 70, height: 14),
+        ],
+      ),
+    );
+  }
+}
+
 class _BreakdownCard extends StatelessWidget {
   const _BreakdownCard({required this.summary});
 
@@ -478,7 +569,7 @@ class _BreakdownCard extends StatelessWidget {
               label: 'Tabungan Goal / Hari',
               value: '- ${formatRupiah(modeA.dailySavingsReserve)}',
               valueColor: modeA.dailySavingsReserve > 0
-                  ? AppColors.savingsGreen
+                  ? AppColors.savingsGreenText(theme.brightness)
                   : null,
             ),
           ] else if (modeB != null) ...[
@@ -501,7 +592,7 @@ class _BreakdownCard extends StatelessWidget {
               label: 'Pengeluaran Dicatat Hari Ini',
               value: '- ${formatRupiah(modeB.pengeluaranHariIni)}',
               valueColor: modeB.pengeluaranHariIni > 0
-                  ? AppColors.expenseRed
+                  ? AppColors.expenseRedText(theme.brightness)
                   : null,
             ),
             const Divider(height: 20),
@@ -509,7 +600,7 @@ class _BreakdownCard extends StatelessWidget {
               label: 'Tabungan Goal / Hari',
               value: '- ${formatRupiah(modeB.dailySavingsReserve)}',
               valueColor: modeB.dailySavingsReserve > 0
-                  ? AppColors.savingsGreen
+                  ? AppColors.savingsGreenText(theme.brightness)
                   : null,
             ),
           ],
@@ -519,6 +610,10 @@ class _BreakdownCard extends StatelessWidget {
   }
 }
 
+/// M19/D18: labels like "Pengeluaran Dicatat Hari Ini" combined with a
+/// large formatted value overflowed `RenderFlex` at 360dp — the label now
+/// shrinks/ellipsizes in the space left after the value claims what it
+/// needs, instead of both widgets fighting for unconstrained width.
 class _MetricRow extends StatelessWidget {
   const _MetricRow({required this.label, required this.value, this.valueColor});
 
@@ -532,13 +627,26 @@ class _MetricRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: theme.textTheme.bodyMedium),
-        Text(
-          value,
-          style: AppTypography.mono(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: valueColor ?? theme.textTheme.bodyLarge?.color,
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.bodyMedium,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.mono(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: valueColor ?? theme.textTheme.bodyLarge?.color,
+            ),
           ),
         ),
       ],
@@ -580,10 +688,15 @@ class _RincianTransaksiCard extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Rincian Transaksi',
-                style: AppTypography.script(fontSize: 16),
+              Flexible(
+                child: Text(
+                  'Rincian Transaksi',
+                  style: AppTypography.script(fontSize: 16),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               InkWell(
                 key: const ValueKey('home_view_all_transactions_link'),
                 onTap: () {
@@ -595,11 +708,15 @@ class _RincianTransaksiCard extends ConsumerWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'Lihat Selengkapnya',
-                      style: AppTypography.mono(
-                        fontSize: 11,
-                        color: theme.textTheme.bodySmall?.color,
+                    Flexible(
+                      child: Text(
+                        'Lihat Selengkapnya',
+                        style: AppTypography.mono(
+                          fontSize: 11,
+                          color: theme.textTheme.bodySmall?.color,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -637,7 +754,7 @@ class _RincianTransaksiCard extends ConsumerWidget {
                   child: _RincianColumn(
                     label: 'Pemasukan',
                     amounts: income.map((t) => t.amount).toList(),
-                    color: AppColors.savingsGreen,
+                    color: AppColors.savingsGreenText(theme.brightness),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -645,7 +762,7 @@ class _RincianTransaksiCard extends ConsumerWidget {
                   child: _RincianColumn(
                     label: 'Pengeluaran',
                     amounts: expense.map((t) => t.amount).toList(),
-                    color: AppColors.expenseRed,
+                    color: AppColors.expenseRedText(theme.brightness),
                   ),
                 ),
               ],

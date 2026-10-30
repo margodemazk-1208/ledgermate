@@ -38,10 +38,10 @@ class GoalsScreen extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.error_outline,
                   size: 48,
-                  color: AppColors.expenseRed,
+                  color: AppColors.expenseRedText(theme.brightness),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -65,13 +65,13 @@ class GoalsScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: AppColors.brandTeal.withValues(alpha: 0.1),
+                        color: theme.dividerColor.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.savings_outlined,
                         size: 56,
-                        color: AppColors.brandTeal,
+                        color: theme.textTheme.bodyMedium?.color,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -121,18 +121,23 @@ class GoalsScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Daftar Target Aktif (${summary.goalCount})',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.3,
+                    Flexible(
+                      child: Text(
+                        'Daftar Target Aktif (${summary.goalCount})',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (summary.completedCount > 0) ...[
+                      const SizedBox(width: 8),
                       Text(
                         '${summary.completedCount} selesai',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.savingsGreen,
+                          color: AppColors.savingsGreenText(theme.brightness),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -200,16 +205,22 @@ class _GoalsOverviewCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Total Progres Tabungan',
-                  style: AppTypography.script(fontSize: 16),
+                Flexible(
+                  child: Text(
+                    'Total Progres Tabungan',
+                    style: AppTypography.script(fontSize: 16),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   '$percent%',
                   style: AppTypography.mono(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.burgundy,
+                    // M19/D18 contrast fix: see AppColors.burgundyText doc.
+                    color: AppColors.burgundyText(theme.brightness),
                   ),
                 ),
               ],
@@ -228,21 +239,31 @@ class _GoalsOverviewCard extends StatelessWidget {
             const Divider(height: 1),
             const SizedBox(height: 14),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _StatColumn(
-                  label: 'Terkumpul',
-                  value: formatRupiah(summary.totalCurrentAmount),
-                  valueColor: AppColors.savingsGreen,
+                Expanded(
+                  child: _StatColumn(
+                    label: 'Terkumpul',
+                    value: formatRupiah(summary.totalCurrentAmount),
+                    valueColor: AppColors.savingsGreenText(theme.brightness),
+                  ),
                 ),
-                _StatColumn(
-                  label: 'Total Target',
-                  value: formatRupiah(summary.totalTargetAmount),
+                Expanded(
+                  child: _StatColumn(
+                    label: 'Total Target',
+                    value: formatRupiah(summary.totalTargetAmount),
+                  ),
                 ),
-                _StatColumn(
-                  label: 'Cadangan/Hari',
-                  value: '${formatRupiah(summary.totalDailySavingsReserve)}/h',
-                  valueColor: AppColors.brandTeal,
+                Expanded(
+                  // M19/D18: "Cadangan/Hari" is a plain data figure, not a
+                  // brand/action moment — dropped the burgundy color-coding
+                  // here (part of the Goals-screen burgundy-overuse fix),
+                  // it now reads in the default body text color like
+                  // "Total Target" next to it.
+                  child: _StatColumn(
+                    label: 'Cadangan/Hari',
+                    value:
+                        '${formatRupiah(summary.totalDailySavingsReserve)}/h',
+                  ),
                 ),
               ],
             ),
@@ -270,7 +291,12 @@ class _StatColumn extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: theme.textTheme.bodySmall),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         const SizedBox(height: 2),
         Text(
           value,
@@ -278,6 +304,8 @@ class _StatColumn extends StatelessWidget {
             fontWeight: FontWeight.w700,
             color: valueColor ?? theme.textTheme.bodyMedium?.color,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );

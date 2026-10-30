@@ -8,7 +8,7 @@ class WalletHasTransactionsException implements Exception {
   const WalletHasTransactionsException([
     this.message =
         'Dompet tidak dapat dihapus karena masih memiliki transaksi terkait. '
-        'Pindahkan atau hapus transaksi terlebih dahulu (FR-12).',
+        'Pindahkan atau hapus transaksi terlebih dahulu.',
   ]);
 
   final String message;
@@ -20,7 +20,7 @@ class WalletHasTransactionsException implements Exception {
 /// Thrown when attempting to delete the last remaining wallet (FR-12).
 class WalletDeleteRestrictedException implements Exception {
   const WalletDeleteRestrictedException([
-    this.message = 'Minimal harus ada 1 dompet aktif di aplikasi (FR-12).',
+    this.message = 'Minimal harus ada 1 dompet aktif di aplikasi.',
   ]);
 
   final String message;

@@ -243,7 +243,9 @@ class _TransactionRowTile extends StatelessWidget {
 
     final color = isTransfer
         ? theme.textTheme.bodySmall?.color
-        : (isExpense ? AppColors.expenseRed : AppColors.savingsGreen);
+        : (isExpense
+              ? AppColors.expenseRedText(theme.brightness)
+              : AppColors.savingsGreenText(theme.brightness));
 
     return Container(
       margin: EdgeInsets.only(bottom: row.isLastInGroup ? 16 : 0),
