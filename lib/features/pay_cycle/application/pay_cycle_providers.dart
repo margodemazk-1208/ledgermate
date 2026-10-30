@@ -8,6 +8,7 @@ import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
 import '../../../core/database/wallet.dart';
 import '../../../core/formulas/daily_budget_formulas.dart';
+import '../../../core/time/current_day_provider.dart';
 import '../../budget_engine/application/budget_providers.dart';
 import '../../notifications/application/pay_cycle_notification_hook.dart';
 import '../../wallets/application/wallet_providers.dart';
@@ -46,7 +47,9 @@ final isCycleTransitionDueProvider = Provider<AsyncValue<bool>>((ref) {
     return const AsyncValue.data(false);
   }
 
-  final now = DateTime.now();
+  // D18/M17 bug #4: watched so this re-evaluates on a midnight/resume
+  // day-rollover alone, without requiring a data write to trigger a rebuild.
+  final now = ref.watch(currentDayProvider);
 
   if (profile.incomeFrequency == IncomeFrequency.periodic) {
     final latestCycle = cycleAsync.value;
@@ -139,17 +142,27 @@ DateTime calculateDefaultNextPayday(
 }
 
 /// Manages transition form state for FR-05 pay cycle transition.
+///
+/// D18/M17 bug #5a: `build()` previously used `ref.watch(...)` on the
+/// profile/transactions/goals/wallets streams. Since this is a `Notifier`,
+/// `build()` re-runs and completely resets `state` every time ANY of those
+/// streams emits a new value for ANY reason (e.g. the user adds an
+/// unrelated transaction on another screen while this form is open in the
+/// background stack) — wiping out whatever the user had already typed into
+/// the transition form. `build()` must only read these ONCE to seed the
+/// form's initial values, never re-trigger on later upstream changes —
+/// hence `ref.read` below instead of `ref.watch`.
 class PayCycleTransitionNotifier extends Notifier<PayCycleTransitionState> {
   @override
   PayCycleTransitionState build() {
-    final profile = ref.watch(budgetProfileStreamProvider).value;
+    final profile = ref.read(budgetProfileStreamProvider).value;
     if (profile == null) {
       return const PayCycleTransitionState(
         incomeFrequency: IncomeFrequency.periodic,
       );
     }
 
-    final now = DateTime.now();
+    final now = ref.read(currentDayProvider);
     final intervalType =
         profile.incomeIntervalType ?? IncomeIntervalType.monthly;
     DateTime? nextPayday;
@@ -159,8 +172,8 @@ class PayCycleTransitionNotifier extends Notifier<PayCycleTransitionState> {
 
     var carryOver = 0;
     if (profile.incomeFrequency == IncomeFrequency.daily) {
-      final txs = ref.watch(budgetTransactionsStreamProvider).value ?? [];
-      final goals = ref.watch(budgetGoalsStreamProvider).value ?? [];
+      final txs = ref.read(budgetTransactionsStreamProvider).value ?? [];
+      final goals = ref.read(budgetGoalsStreamProvider).value ?? [];
 
       final goalInputs = goals.map((g) {
         return GoalAllocationInput(
@@ -171,7 +184,7 @@ class PayCycleTransitionNotifier extends Notifier<PayCycleTransitionState> {
         );
       }).toList();
 
-      final wallets = ref.watch(walletsStreamProvider).value ?? [];
+      final wallets = ref.read(walletsStreamProvider).value ?? [];
 
       carryOver = computeModeBYesterdayCarryOver(
         profile: profile,
@@ -243,6 +256,16 @@ class PayCycleTransitionNotifier extends Notifier<PayCycleTransitionState> {
   }
 
   Future<bool> submitTransition({DateTime? referenceNow}) async {
+    // D18/M17 bug #5b: re-entrancy guard against double-submit. Checking
+    // the NOTIFIER's own authoritative `state.isSubmitting` (not a
+    // widget-captured snapshot) closes the race even if two taps land in
+    // the same frame before the UI has a chance to rebuild and disable the
+    // button — the first call's synchronous `isSubmitting: true` write
+    // below is visible to the second call immediately.
+    if (state.isSubmitting) {
+      return false;
+    }
+
     if (!state.canSubmit) {
       state = state.copyWith(
         submitError: 'Harap lengkapi semua data yang diperlukan.',

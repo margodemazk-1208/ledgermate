@@ -33,6 +33,14 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
 
   late DateTime _targetDate;
   late bool _hasManualAllocation;
+  // D18/M17 bug #8: `_isBusy` guards re-entrancy across the WHOLE flow
+  // (including the realism-warning `showDialog` await below) and disables
+  // the button; `_isSubmitting` is purely visual (drives the spinner) and
+  // is only ever true during the actual async `saveGoal` write — kept
+  // separate so an indeterminate spinner isn't animating underneath the
+  // realism dialog for its whole duration (that previously hung
+  // `pumpAndSettle` in widget tests).
+  bool _isBusy = false;
   bool _isSubmitting = false;
   String? _formError;
 
@@ -85,6 +93,12 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
   }
 
   Future<void> _handleSave() async {
+    // D18/M17 bug #8: entry guard BEFORE any async work (including the
+    // realism-warning `showDialog` below) — a double-tap landing before
+    // `_isBusy` flips true and the button visually disables would
+    // otherwise race through validation+realism-check twice and save the
+    // goal twice.
+    if (_isBusy) return;
     if (!_formKey.currentState!.validate()) return;
 
     final name = _nameController.text.trim();
@@ -112,6 +126,11 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
       ..currentAmount = currentAmount
       ..targetDate = _targetDate
       ..manualDailyAllocation = manualAlloc;
+
+    setState(() {
+      _isBusy = true;
+      _formError = null;
+    });
 
     // Check realism against M4 budget engine (FR-06b, BR-03)
     final profile = ref.read(budgetProfileStreamProvider).value;
@@ -142,20 +161,19 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
 
         if (action == RealismWarningAction.extendDate) {
           // Action 1: "Perpanjang tanggal target"
+          setState(() => _isBusy = false);
           await _pickTargetDate();
           return;
         } else if (action != RealismWarningAction.proceed) {
           // Dismissed dialog without picking proceed
+          setState(() => _isBusy = false);
           return;
         }
         // Action 2: "Lanjut, saya paham risikonya" -> proceed to save
       }
     }
 
-    setState(() {
-      _isSubmitting = true;
-      _formError = null;
-    });
+    setState(() => _isSubmitting = true);
 
     try {
       await ref
@@ -175,6 +193,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
+          _isBusy = false;
           _isSubmitting = false;
           _formError = 'Gagal menyimpan target: $e';
         });
@@ -397,10 +416,10 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
 
               // Submit Button
               PressScale(
-                enabled: !_isSubmitting,
+                enabled: !_isBusy,
                 child: FilledButton(
                   key: const ValueKey('save_goal_button'),
-                  onPressed: _isSubmitting ? null : _handleSave,
+                  onPressed: _isBusy ? null : _handleSave,
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: AppColors.brandTeal,

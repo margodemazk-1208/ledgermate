@@ -10,9 +10,17 @@ import 'package:ledgermate/features/export_import/presentation/widgets/restore_c
 
 class FakeFilePickerService implements FilePickerService {
   String? pickedPath;
+  String? savedPath = '/mock/saf/backup.json';
 
   @override
   Future<String?> pickJsonFile() async => pickedPath;
+
+  @override
+  Future<String?> saveFile({
+    required String fileName,
+    required String content,
+    String mimeType = 'application/octet-stream',
+  }) async => savedPath;
 }
 
 class FakeExportImportRepository implements ExportImportRepository {
@@ -20,6 +28,7 @@ class FakeExportImportRepository implements ExportImportRepository {
   String csvExportPath =
       '/storage/emulated/0/Download/ledgermate_transaksi.csv';
   bool shouldFail = false;
+  bool buildShouldFail = false;
   BackupData? lastRestored;
 
   @override
@@ -34,6 +43,24 @@ class FakeExportImportRepository implements ExportImportRepository {
       assets: [],
     );
   }
+
+  @override
+  Future<String> buildBackupJson() async {
+    if (buildShouldFail) throw Exception('Simulated JSON build failure');
+    return '{}';
+  }
+
+  @override
+  Future<String> buildTransactionsCsv() async {
+    if (buildShouldFail) throw Exception('Simulated CSV build failure');
+    return '';
+  }
+
+  @override
+  String defaultBackupFileName() => 'ledgermate_backup_test.json';
+
+  @override
+  String defaultCsvFileName() => 'ledgermate_transaksi_test.csv';
 
   @override
   Future<String> exportBackupToJson({
@@ -152,6 +179,7 @@ void main() {
 
     testWidgets('renders error banner when export fails', (tester) async {
       fakeRepo.shouldFail = true;
+      fakeRepo.buildShouldFail = true;
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();

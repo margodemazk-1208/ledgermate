@@ -90,6 +90,55 @@ void main() {
         expect(profile.notifGoalMilestoneEnabled, isFalse);
       },
     );
+
+    // D18/M17 bug #2 regression: default-enabled notifications were never
+    // actually scheduled, and the POST_NOTIFICATIONS permission was never
+    // requested, until the user manually toggled a Settings switch that
+    // already visually showed as "on" — so a fresh install's reminders
+    // silently never fired.
+    group('bootstrapDefaultNotificationsIfNeeded (D18/M17 bug #2)', () {
+      test('schedules the default-enabled daily reminder and requests '
+          'permission on first run', () async {
+        final profileBefore = await repository.getProfile();
+        expect(profileBefore.notificationsBootstrapped, isFalse);
+        expect(profileBefore.notifDailyReminderEnabled, isTrue);
+
+        await repository.bootstrapDefaultNotificationsIfNeeded();
+
+        expect(fakeNotifService.requestPermissionCallCount, 1);
+        expect(fakeNotifService.lastDailyReminderEnabled, isTrue);
+        expect(fakeNotifService.lastDailyReminderTime, 1260);
+
+        final profileAfter = await repository.getProfile();
+        expect(profileAfter.notificationsBootstrapped, isTrue);
+      });
+
+      test('is a no-op on a second call (idempotent)', () async {
+        await repository.bootstrapDefaultNotificationsIfNeeded();
+        expect(fakeNotifService.requestPermissionCallCount, 1);
+
+        await repository.bootstrapDefaultNotificationsIfNeeded();
+        // Still 1 — the second call must short-circuit on the persisted
+        // `notificationsBootstrapped` flag, not request permission again.
+        expect(fakeNotifService.requestPermissionCallCount, 1);
+      });
+
+      test('does not request permission when the daily reminder is disabled, '
+          'but still records the bootstrap as done', () async {
+        await repository.updateDailyReminder(enabled: false, timeMinutes: 1260);
+        // updateDailyReminder's own scheduleDailyReminder call above
+        // doesn't touch notificationsBootstrapped — confirm the
+        // bootstrap flow still runs correctly afterward.
+        final profileBefore = await repository.getProfile();
+        expect(profileBefore.notificationsBootstrapped, isFalse);
+
+        await repository.bootstrapDefaultNotificationsIfNeeded();
+
+        expect(fakeNotifService.requestPermissionCallCount, 0);
+        final profileAfter = await repository.getProfile();
+        expect(profileAfter.notificationsBootstrapped, isTrue);
+      });
+    });
   });
 
   group('SettingsRepository - Category CRUD (FR-09)', () {

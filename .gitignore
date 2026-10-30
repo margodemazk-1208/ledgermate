@@ -44,6 +44,15 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# D18/M17 bug #7: real release-signing keystore + credentials — generated
+# locally per docs/RELEASE.md, NEVER committed. `key.properties.example` in
+# this same `android/` directory is the (secret-free) template.
+/android/key.properties
+/android/*.jks
+/android/*.keystore
+/android/app/*.jks
+/android/app/*.keystore
+
 # Widget Preview related
 .widget_preview/
 

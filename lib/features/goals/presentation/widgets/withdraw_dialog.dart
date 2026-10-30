@@ -21,6 +21,14 @@ class WithdrawDialog extends ConsumerStatefulWidget {
 class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
+  // D18/M17 bug #8: `_isBusy` is the re-entrancy guard, set from the very
+  // top of `_handleWithdraw` through the whole confirm-dialog + write
+  // flow (disables both buttons, no spinner). `_isSubmitting` is purely
+  // visual — true ONLY during the actual async write — kept separate so
+  // the indeterminate `CircularProgressIndicator` isn't animating (and
+  // hanging `pumpAndSettle` in tests) for the whole duration the user is
+  // looking at the confirm dialog.
+  bool _isBusy = false;
   bool _isSubmitting = false;
   String? _errorMsg;
 
@@ -43,6 +51,8 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
   }
 
   Future<void> _handleWithdraw() async {
+    // D18/M17 bug #8: entry guard before the confirm `showDialog` gap below.
+    if (_isBusy) return;
     if (!_formKey.currentState!.validate()) return;
 
     final amount = _parseAmount();
@@ -54,6 +64,11 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
       setState(() => _errorMsg = 'Nominal melebihi tabungan saat ini.');
       return;
     }
+
+    setState(() {
+      _isBusy = true;
+      _errorMsg = null;
+    });
 
     // PRD FR-06c: "Konfirmasi dialog ditampilkan sebelum penarikan diproses"
     final confirmed = await showDialog<bool>(
@@ -83,12 +98,13 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
       ),
     );
 
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true) {
+      if (mounted) setState(() => _isBusy = false);
+      return;
+    }
+    if (!mounted) return;
 
-    setState(() {
-      _isSubmitting = true;
-      _errorMsg = null;
-    });
+    setState(() => _isSubmitting = true);
 
     try {
       await ref
@@ -101,6 +117,7 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
     } catch (e) {
       if (mounted) {
         setState(() {
+          _isBusy = false;
           _isSubmitting = false;
           _errorMsg = 'Gagal melakukan penarikan: $e';
         });
@@ -204,14 +221,14 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
       actions: [
         TextButton(
           key: const ValueKey('withdraw_cancel_button'),
-          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+          onPressed: _isBusy ? null : () => Navigator.of(context).pop(),
           child: const Text('Batal'),
         ),
         PressScale(
-          enabled: !_isSubmitting,
+          enabled: !_isBusy,
           child: FilledButton(
             key: const ValueKey('withdraw_submit_button'),
-            onPressed: _isSubmitting ? null : _handleWithdraw,
+            onPressed: _isBusy ? null : _handleWithdraw,
             child: _isSubmitting
                 ? const SizedBox(
                     width: 18,

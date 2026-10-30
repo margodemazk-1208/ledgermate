@@ -51,6 +51,8 @@ class _WalletFormScreenState extends ConsumerState<WalletFormScreen> {
   }
 
   Future<void> _save() async {
+    // D18/M17 bug #8: re-entrancy guard against double-tap.
+    if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) {
       return;
     }

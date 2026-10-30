@@ -92,13 +92,18 @@ const LocalProfileSchema = CollectionSchema(
       name: r'notifPayCycleEnabled',
       type: IsarType.bool,
     ),
-    r'onboardingComplete': PropertySchema(
+    r'notificationsBootstrapped': PropertySchema(
       id: 14,
+      name: r'notificationsBootstrapped',
+      type: IsarType.bool,
+    ),
+    r'onboardingComplete': PropertySchema(
+      id: 15,
       name: r'onboardingComplete',
       type: IsarType.bool,
     ),
     r'theme': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'theme',
       type: IsarType.byte,
       enumMap: _LocalProfilethemeEnumValueMap,
@@ -166,8 +171,9 @@ void _localProfileSerialize(
   writer.writeBool(offsets[11], object.notifGoalMilestoneEnabled);
   writer.writeBool(offsets[12], object.notifLimitAlertEnabled);
   writer.writeBool(offsets[13], object.notifPayCycleEnabled);
-  writer.writeBool(offsets[14], object.onboardingComplete);
-  writer.writeByte(offsets[15], object.theme.index);
+  writer.writeBool(offsets[14], object.notificationsBootstrapped);
+  writer.writeBool(offsets[15], object.onboardingComplete);
+  writer.writeByte(offsets[16], object.theme.index);
 }
 
 LocalProfile _localProfileDeserialize(
@@ -208,9 +214,10 @@ LocalProfile _localProfileDeserialize(
   object.notifGoalMilestoneEnabled = reader.readBool(offsets[11]);
   object.notifLimitAlertEnabled = reader.readBool(offsets[12]);
   object.notifPayCycleEnabled = reader.readBool(offsets[13]);
-  object.onboardingComplete = reader.readBool(offsets[14]);
+  object.notificationsBootstrapped = reader.readBool(offsets[14]);
+  object.onboardingComplete = reader.readBool(offsets[15]);
   object.theme =
-      _LocalProfilethemeValueEnumMap[reader.readByteOrNull(offsets[15])] ??
+      _LocalProfilethemeValueEnumMap[reader.readByteOrNull(offsets[16])] ??
       AppThemeSetting.dark;
   return object;
 }
@@ -271,6 +278,8 @@ P _localProfileDeserializeProp<P>(
     case 14:
       return (reader.readBool(offset)) as P;
     case 15:
+      return (reader.readBool(offset)) as P;
+    case 16:
       return (_LocalProfilethemeValueEnumMap[reader.readByteOrNull(offset)] ??
               AppThemeSetting.dark)
           as P;
@@ -1150,6 +1159,18 @@ extension LocalProfileQueryFilter
   }
 
   QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
+  notificationsBootstrappedEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'notificationsBootstrapped',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterFilterCondition>
   onboardingCompleteEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -1411,6 +1432,20 @@ extension LocalProfileQuerySortBy
   }
 
   QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  sortByNotificationsBootstrapped() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notificationsBootstrapped', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  sortByNotificationsBootstrappedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notificationsBootstrapped', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
   sortByOnboardingComplete() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'onboardingComplete', Sort.asc);
@@ -1631,6 +1666,20 @@ extension LocalProfileQuerySortThenBy
   }
 
   QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  thenByNotificationsBootstrapped() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notificationsBootstrapped', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
+  thenByNotificationsBootstrappedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notificationsBootstrapped', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QAfterSortBy>
   thenByOnboardingComplete() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'onboardingComplete', Sort.asc);
@@ -1749,6 +1798,13 @@ extension LocalProfileQueryWhereDistinct
   }
 
   QueryBuilder<LocalProfile, LocalProfile, QDistinct>
+  distinctByNotificationsBootstrapped() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'notificationsBootstrapped');
+    });
+  }
+
+  QueryBuilder<LocalProfile, LocalProfile, QDistinct>
   distinctByOnboardingComplete() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'onboardingComplete');
@@ -1862,6 +1918,13 @@ extension LocalProfileQueryProperty
   notifPayCycleEnabledProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'notifPayCycleEnabled');
+    });
+  }
+
+  QueryBuilder<LocalProfile, bool, QQueryOperations>
+  notificationsBootstrappedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'notificationsBootstrapped');
     });
   }
 

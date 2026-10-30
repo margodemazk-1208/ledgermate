@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/l10n/app_localizations.dart';
 import 'core/theme/theme_provider.dart';
+import 'core/time/current_day_provider.dart';
 import 'features/budget_engine/presentation/budget_home_screen.dart';
 import 'features/onboarding/application/onboarding_providers.dart';
 import 'features/onboarding/presentation/onboarding_screen.dart';
@@ -28,9 +29,51 @@ class LedgerMateApp extends ConsumerWidget {
       locale: appLocale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const _OnboardingGate(),
+      home: const _DayRolloverObserver(child: _OnboardingGate()),
     );
   }
+}
+
+/// D18/M17 bug #4: "Today" never advanced if the app was resumed from the
+/// background on a later calendar day — nothing previously re-checked the
+/// wall-clock date on resume, only on a full cold restart. Wraps the whole
+/// app body and forwards every `AppLifecycleState.resumed` event into
+/// `currentDayProvider`'s notifier, which every date-dependent provider
+/// (daily budget summary, cycle-transition-due check, etc) watches instead
+/// of calling `DateTime.now()` inline — see `core/time/current_day_provider.dart`.
+class _DayRolloverObserver extends ConsumerStatefulWidget {
+  const _DayRolloverObserver({required this.child});
+
+  final Widget child;
+
+  @override
+  ConsumerState<_DayRolloverObserver> createState() =>
+      _DayRolloverObserverState();
+}
+
+class _DayRolloverObserverState extends ConsumerState<_DayRolloverObserver>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(currentDayProvider.notifier).refresh();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// Routes to Onboarding while incomplete, BudgetHomeScreen once done.

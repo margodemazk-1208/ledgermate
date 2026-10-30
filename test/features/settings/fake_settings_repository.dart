@@ -84,6 +84,13 @@ class FakeSettingsRepository implements SettingsRepositoryBase {
   }
 
   @override
+  Future<void> bootstrapDefaultNotificationsIfNeeded() async {
+    if (profile.notificationsBootstrapped) return;
+    profile.notificationsBootstrapped = true;
+    _profileController.add(profile);
+  }
+
+  @override
   Stream<List<Category>> watchCategories() async* {
     yield List.unmodifiable(categories);
     yield* _categoriesController.stream;

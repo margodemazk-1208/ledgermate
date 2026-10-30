@@ -14,6 +14,13 @@ import '../fake_settings_repository.dart';
 class FakeFilePickerService implements FilePickerService {
   @override
   Future<String?> pickJsonFile() async => null;
+
+  @override
+  Future<String?> saveFile({
+    required String fileName,
+    required String content,
+    String mimeType = 'application/octet-stream',
+  }) async => '/mock/saf/backup.json';
 }
 
 class FakeExportImportRepository implements ExportImportRepository {
@@ -29,6 +36,18 @@ class FakeExportImportRepository implements ExportImportRepository {
       assets: [],
     );
   }
+
+  @override
+  Future<String> buildBackupJson() async => '{}';
+
+  @override
+  Future<String> buildTransactionsCsv() async => '';
+
+  @override
+  String defaultBackupFileName() => 'ledgermate_backup_test.json';
+
+  @override
+  String defaultCsvFileName() => 'ledgermate_transaksi_test.csv';
 
   @override
   Future<String> exportBackupToJson({

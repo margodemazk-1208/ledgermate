@@ -125,4 +125,18 @@ class LocalProfile {
   /// M16). Distinct from [lastRolloverDate], which tracks the user-facing
   /// manual Pay Cycle Transition screen (FR-05), a separate concern.
   DateTime? lastAccrualDate;
+
+  /// M17 schema addition (D18/M17 bug #2): before this field existed, the
+  /// default-enabled notifications (`notifDailyReminderEnabled` etc, all
+  /// `true` by default above) were only ever ACTUALLY scheduled, and the
+  /// Android 13+ `POST_NOTIFICATIONS` runtime permission only ever
+  /// requested, the moment the user manually toggled a switch in Settings —
+  /// so on a fresh install every alert silently never fired unless the user
+  /// happened to open Settings and flip a switch that was already showing
+  /// as "on". `false` by default; flipped to `true` (and the one-time
+  /// permission request + default schedule performed) the first time
+  /// `SettingsRepositoryBase.bootstrapDefaultNotificationsIfNeeded()` runs
+  /// — called from both onboarding completion and Settings' first build, so
+  /// both new installs and upgrades from a pre-M17 build are covered.
+  bool notificationsBootstrapped = false;
 }

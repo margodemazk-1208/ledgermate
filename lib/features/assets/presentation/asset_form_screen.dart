@@ -71,6 +71,8 @@ class _AssetFormScreenState extends ConsumerState<AssetFormScreen> {
   int? _getCurrentValue() => parseRupiah(_currentValueController.text);
 
   Future<void> _handleSave() async {
+    // D18/M17 bug #8: re-entrancy guard against double-tap.
+    if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
     final purchase = _getPurchaseValue();

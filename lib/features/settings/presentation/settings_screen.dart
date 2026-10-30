@@ -37,6 +37,21 @@ class SettingsScreen extends ConsumerWidget {
     final profile = profileAsync.value;
     final currentLanguage = profile?.language ?? AppLanguage.id;
 
+    // D18/M17 bug #2: safety net for installs that completed onboarding
+    // BEFORE this fix shipped (so the onboarding-completion hook never ran
+    // for them) — the first time this screen is shown with a loaded
+    // profile that hasn't been bootstrapped yet, schedule the
+    // default-enabled notifications and request the permission. No-ops
+    // once `notificationsBootstrapped` is persisted as true (the condition
+    // below stops re-scheduling once that flips).
+    if (profile != null && !profile.notificationsBootstrapped) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(settingsRepositoryProvider)
+            .bootstrapDefaultNotificationsIfNeeded();
+      });
+    }
+
     return Scaffold(
       key: const ValueKey('settings_screen'),
       appBar: AppBar(
@@ -427,47 +442,66 @@ class _CategoryManagementCard extends ConsumerWidget {
 
   void _showAddCategoryDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
+    var isSubmitting = false;
     showDialog(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Tambah Kategori Baru'),
-        content: TextField(
-          key: const ValueKey('add_category_name_field'),
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Nama Kategori',
-            hintText: 'Contoh: Investasi, Zakat, Liburan',
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          title: const Text('Tambah Kategori Baru'),
+          content: TextField(
+            key: const ValueKey('add_category_name_field'),
+            controller: controller,
+            autofocus: true,
+            enabled: !isSubmitting,
+            decoration: const InputDecoration(
+              labelText: 'Nama Kategori',
+              hintText: 'Contoh: Investasi, Zakat, Liburan',
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              key: const ValueKey('add_category_confirm_button'),
+              // D18/M17 bug #8: category dialogs previously had no
+              // isSubmitting guard at all — a double-tap could fire
+              // `addCategory` twice concurrently.
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      final name = controller.text.trim();
+                      if (name.isEmpty) return;
+                      setDialogState(() => isSubmitting = true);
+                      try {
+                        await ref
+                            .read(settingsRepositoryProvider)
+                            .addCategory(name);
+                        if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                      } catch (e) {
+                        setDialogState(() => isSubmitting = false);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                e.toString().replaceAll('ArgumentError: ', ''),
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Simpan'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            key: const ValueKey('add_category_confirm_button'),
-            onPressed: () async {
-              final name = controller.text.trim();
-              if (name.isEmpty) return;
-              try {
-                await ref.read(settingsRepositoryProvider).addCategory(name);
-                if (dialogCtx.mounted) Navigator.pop(dialogCtx);
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        e.toString().replaceAll('ArgumentError: ', ''),
-                      ),
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
       ),
     );
   }
@@ -478,46 +512,60 @@ class _CategoryManagementCard extends ConsumerWidget {
     Category category,
   ) {
     final controller = TextEditingController(text: category.name);
+    var isSubmitting = false;
     showDialog(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Ubah Nama Kategori'),
-        content: TextField(
-          key: const ValueKey('edit_category_name_field'),
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Nama Kategori'),
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          title: const Text('Ubah Nama Kategori'),
+          content: TextField(
+            key: const ValueKey('edit_category_name_field'),
+            controller: controller,
+            autofocus: true,
+            enabled: !isSubmitting,
+            decoration: const InputDecoration(labelText: 'Nama Kategori'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              key: const ValueKey('edit_category_confirm_button'),
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      final name = controller.text.trim();
+                      if (name.isEmpty) return;
+                      setDialogState(() => isSubmitting = true);
+                      try {
+                        await ref
+                            .read(settingsRepositoryProvider)
+                            .updateCategory(category.id, name);
+                        if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                      } catch (e) {
+                        setDialogState(() => isSubmitting = false);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                e.toString().replaceAll('ArgumentError: ', ''),
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Simpan'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            key: const ValueKey('edit_category_confirm_button'),
-            onPressed: () async {
-              final name = controller.text.trim();
-              if (name.isEmpty) return;
-              try {
-                await ref
-                    .read(settingsRepositoryProvider)
-                    .updateCategory(category.id, name);
-                if (dialogCtx.mounted) Navigator.pop(dialogCtx);
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        e.toString().replaceAll('ArgumentError: ', ''),
-                      ),
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
       ),
     );
   }
@@ -527,46 +575,63 @@ class _CategoryManagementCard extends ConsumerWidget {
     WidgetRef ref,
     Category category,
   ) {
+    var isSubmitting = false;
     showDialog(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Hapus Kategori?'),
-        content: Text(
-          'Apakah Anda yakin ingin menghapus kategori "${category.name}"?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('Batal'),
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          title: const Text('Hapus Kategori?'),
+          content: Text(
+            'Apakah Anda yakin ingin menghapus kategori "${category.name}"?',
           ),
-          FilledButton(
-            key: const ValueKey('delete_category_confirm_button'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+          actions: [
+            TextButton(
+              onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
+              child: const Text('Batal'),
             ),
-            onPressed: () async {
-              try {
-                await ref
-                    .read(settingsRepositoryProvider)
-                    .deleteCategory(category.id);
-                if (dialogCtx.mounted) Navigator.pop(dialogCtx);
-              } catch (e) {
-                if (dialogCtx.mounted) Navigator.pop(dialogCtx);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        e.toString().replaceAll('StateError: ', ''),
+            FilledButton(
+              key: const ValueKey('delete_category_confirm_button'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      setDialogState(() => isSubmitting = true);
+                      try {
+                        await ref
+                            .read(settingsRepositoryProvider)
+                            .deleteCategory(category.id);
+                        if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                      } catch (e) {
+                        if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                e.toString().replaceAll('StateError: ', ''),
+                              ),
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .error,
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
                       ),
-                      backgroundColor: Theme.of(context).colorScheme.error,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Hapus'),
-          ),
-        ],
+                    )
+                  : const Text('Hapus'),
+            ),
+          ],
+        ),
       ),
     );
   }

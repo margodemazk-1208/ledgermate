@@ -20,6 +20,14 @@ abstract class SettingsRepositoryBase {
   Future<void> updatePayCycleAlert({required bool enabled});
   Future<void> updateGoalMilestoneAlert({required bool enabled});
 
+  /// D18/M17 bug #2: one-time bootstrap that actually schedules the
+  /// default-enabled notifications and proactively requests the Android
+  /// 13+ `POST_NOTIFICATIONS` permission, instead of waiting for the user
+  /// to manually toggle a Settings switch that already visually shows as
+  /// "on". No-ops if already run once for this profile
+  /// ([LocalProfile.notificationsBootstrapped]).
+  Future<void> bootstrapDefaultNotificationsIfNeeded();
+
   Stream<List<Category>> watchCategories();
   Future<List<Category>> getCategories();
   Future<Category> addCategory(String name);
@@ -115,6 +123,27 @@ class SettingsRepository implements SettingsRepositoryBase {
   Future<void> updateGoalMilestoneAlert({required bool enabled}) async {
     final profile = await getProfile();
     profile.notifGoalMilestoneEnabled = enabled;
+    await _isar.writeTxn(() async {
+      await _isar.localProfiles.put(profile);
+    });
+  }
+
+  @override
+  Future<void> bootstrapDefaultNotificationsIfNeeded() async {
+    final profile = await getProfile();
+    if (profile.notificationsBootstrapped) return;
+
+    if (_notificationService != null) {
+      if (profile.notifDailyReminderEnabled) {
+        await _notificationService.requestPermission();
+      }
+      await _notificationService.scheduleDailyReminder(
+        enabled: profile.notifDailyReminderEnabled,
+        timeMinutes: profile.notifDailyReminderTime,
+      );
+    }
+
+    profile.notificationsBootstrapped = true;
     await _isar.writeTxn(() async {
       await _isar.localProfiles.put(profile);
     });

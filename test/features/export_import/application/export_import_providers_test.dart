@@ -9,15 +9,28 @@ import 'package:ledgermate/features/export_import/domain/backup_data.dart';
 
 class FakeFilePickerService implements FilePickerService {
   String? pickedPath;
+  String? savedPath = '/mock/saf/backup.json';
 
   @override
   Future<String?> pickJsonFile() async => pickedPath;
+
+  @override
+  Future<String?> saveFile({
+    required String fileName,
+    required String content,
+    String mimeType = 'application/octet-stream',
+  }) async => savedPath;
 }
 
 class FakeExportImportRepository implements ExportImportRepository {
   String jsonExportPath = '/mock/path/backup.json';
   String csvExportPath = '/mock/path/transactions.csv';
   bool shouldFail = false;
+  // D18/M17 bug #9: separate from `shouldFail` (which only governs the
+  // direct-path `exportBackupToJson`/`exportTransactionsToCsv` writes) so
+  // tests can simulate "direct write fails, SAF fallback succeeds" as well
+  // as "both fail" without the two being coupled.
+  bool buildShouldFail = false;
   BackupData? lastRestored;
   BackupData? dataToReturn;
 
@@ -34,6 +47,24 @@ class FakeExportImportRepository implements ExportImportRepository {
           assets: [],
         );
   }
+
+  @override
+  Future<String> buildBackupJson() async {
+    if (buildShouldFail) throw Exception('Simulated JSON build failure');
+    return '{}';
+  }
+
+  @override
+  Future<String> buildTransactionsCsv() async {
+    if (buildShouldFail) throw Exception('Simulated CSV build failure');
+    return '';
+  }
+
+  @override
+  String defaultBackupFileName() => 'ledgermate_backup_test.json';
+
+  @override
+  String defaultCsvFileName() => 'ledgermate_transaksi_test.csv';
 
   @override
   Future<String> exportBackupToJson({
@@ -125,8 +156,12 @@ void main() {
       expect(state.errorMessage, isNull);
     });
 
-    test('exportJson handles failure and sets error message', () async {
+    test('exportJson surfaces an error when BOTH the direct write AND the '
+        'SAF fallback fail (D18/M17 bug #9 added the fallback — a direct '
+        'write failure alone no longer surfaces as an error on its own, see '
+        'the dedicated "Export SAF fallback" group below)', () async {
       fakeRepo.shouldFail = true;
+      fakeRepo.buildShouldFail = true;
       final notifier = container.read(exportImportNotifierProvider.notifier);
       final path = await notifier.exportJson();
 
@@ -226,6 +261,67 @@ void main() {
       final state = container.read(exportImportNotifierProvider);
       expect(state.pendingRestore, isNull);
       expect(state.errorMessage, isNull);
+    });
+
+    // D18/M17 bug #9: direct-path writes to the public Downloads folder are
+    // unreliable on some Android 7-10 (API 24-29) devices/OEMs. When the
+    // direct write throws, `exportJson`/`exportCsv` must fall back to the
+    // Storage Access Framework "save as" picker instead of just surfacing
+    // an error.
+    group('Export SAF fallback (D18/M17 bug #9)', () {
+      test('exportJson falls back to the SAF picker when the direct write '
+          'throws, and records the SAF path on success', () async {
+        fakeRepo.shouldFail = true;
+        fakePicker.savedPath = '/saf/uri/backup.json';
+
+        final notifier = container.read(exportImportNotifierProvider.notifier);
+        final path = await notifier.exportJson();
+
+        expect(path, '/saf/uri/backup.json');
+        final state = container.read(exportImportNotifierProvider);
+        expect(state.lastExportedPath, '/saf/uri/backup.json');
+        expect(state.errorMessage, isNull);
+      });
+
+      test('exportCsv falls back to the SAF picker when the direct write '
+          'throws, and records the SAF path on success', () async {
+        fakeRepo.shouldFail = true;
+        fakePicker.savedPath = '/saf/uri/transaksi.csv';
+
+        final notifier = container.read(exportImportNotifierProvider.notifier);
+        final path = await notifier.exportCsv();
+
+        expect(path, '/saf/uri/transaksi.csv');
+        final state = container.read(exportImportNotifierProvider);
+        expect(state.lastExportedPath, '/saf/uri/transaksi.csv');
+      });
+
+      test('treats a user-cancelled SAF picker as a plain cancellation, not '
+          'an error', () async {
+        fakeRepo.shouldFail = true;
+        fakePicker.savedPath = null; // user backed out of the picker
+
+        final notifier = container.read(exportImportNotifierProvider.notifier);
+        final path = await notifier.exportJson();
+
+        expect(path, isNull);
+        final state = container.read(exportImportNotifierProvider);
+        expect(state.isLoading, isFalse);
+        expect(state.errorMessage, isNull);
+      });
+
+      test('surfaces an error only when BOTH the direct write and the SAF '
+          'fallback fail', () async {
+        fakeRepo.shouldFail = true;
+        fakeRepo.buildShouldFail = true;
+        final notifier = container.read(exportImportNotifierProvider.notifier);
+        final path = await notifier.exportJson();
+
+        expect(path, isNull);
+        final state = container.read(exportImportNotifierProvider);
+        expect(state.errorMessage, contains('Gagal mengekspor data cadangan'));
+        expect(state.errorMessage, contains('fallback juga gagal'));
+      });
     });
   });
 }

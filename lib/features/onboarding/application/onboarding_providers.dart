@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/isar_provider.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
+import '../../settings/application/settings_providers.dart';
 import '../data/onboarding_repository.dart';
 import 'onboarding_wizard_state.dart';
 
@@ -145,6 +146,19 @@ class OnboardingWizardNotifier extends Notifier<OnboardingWizardState> {
             walletStartingBalance: state.walletStartingBalance,
             walletIncludeInDailyBudget: state.walletIncludeInDailyBudget,
           );
+      // D18/M17 bug #2: onboarding completion is the first guaranteed
+      // moment a fresh install has a persisted LocalProfile to read
+      // defaults from — bootstrap the (default-enabled) notifications here
+      // so a new install's reminders actually fire without the user ever
+      // having to visit Settings. Best-effort: a notification-scheduling
+      // failure must never block onboarding from completing.
+      try {
+        await ref
+            .read(settingsRepositoryProvider)
+            .bootstrapDefaultNotificationsIfNeeded();
+      } catch (_) {
+        // Notification setup is a nicety, not a blocker for onboarding.
+      }
       state = state.copyWith(isSubmitting: false);
       return true;
     } catch (e) {

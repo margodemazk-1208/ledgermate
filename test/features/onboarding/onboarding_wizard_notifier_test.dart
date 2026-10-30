@@ -9,7 +9,9 @@ import 'package:ledgermate/core/database/local_profile.dart';
 import 'package:ledgermate/core/database/pay_cycle.dart';
 import 'package:ledgermate/features/onboarding/application/onboarding_providers.dart';
 import 'package:ledgermate/features/onboarding/application/onboarding_wizard_state.dart';
+import 'package:ledgermate/features/settings/application/settings_providers.dart';
 
+import '../settings/fake_settings_repository.dart';
 import 'fake_onboarding_repository.dart';
 
 void main() {
@@ -194,4 +196,52 @@ void main() {
       contains('disk full'),
     );
   });
+
+  // D18/M17 bug #2 regression: onboarding completion must bootstrap the
+  // default-enabled notifications (schedule + permission request) so a
+  // fresh install's reminders actually fire without the user ever
+  // visiting Settings.
+  test(
+    'submit() bootstraps default notifications on successful completion',
+    () async {
+      final fakeSettingsRepo = FakeSettingsRepository();
+      final isolatedContainer = ProviderContainer(
+        overrides: [
+          onboardingRepositoryProvider.overrideWithValue(fakeRepository),
+          settingsRepositoryProvider.overrideWithValue(fakeSettingsRepo),
+        ],
+      );
+      addTearDown(isolatedContainer.dispose);
+
+      final notifier = isolatedContainer.read(
+        onboardingWizardProvider.notifier,
+      );
+      notifier.selectFrequency(IncomeFrequency.daily);
+      notifier.setInitialIncomeAmount(25000);
+
+      final result = await notifier.submit();
+
+      expect(result, isTrue);
+      expect(fakeSettingsRepo.profile.notificationsBootstrapped, isTrue);
+    },
+  );
+
+  test(
+    'submit() still completes successfully even if the notification '
+    'bootstrap step throws (notifications are a nicety, not a blocker)',
+    () async {
+      final notifier = container.read(onboardingWizardProvider.notifier);
+      notifier.selectFrequency(IncomeFrequency.daily);
+      notifier.setInitialIncomeAmount(25000);
+
+      // No settingsRepositoryProvider/isarProvider override in this
+      // container — reading settingsRepositoryProvider throws
+      // UnimplementedError internally. `submit()` must still report
+      // success for the onboarding write itself.
+      final result = await notifier.submit();
+
+      expect(result, isTrue);
+      expect(fakeRepository.completedCalls, hasLength(1));
+    },
+  );
 }

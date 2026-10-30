@@ -21,10 +21,23 @@ final settingsCategoriesStreamProvider = StreamProvider<List<Category>>((ref) {
   return ref.watch(settingsRepositoryProvider).watchCategories();
 });
 
+/// Converts the persisted [AppLanguage] into a Flutter [Locale].
+/// Pure/stateless so it is trivially unit-testable — see D18/M17 bug #3.
+Locale localeFromLanguage(AppLanguage language) {
+  return language == AppLanguage.en ? const Locale('en') : const Locale('id');
+}
+
+/// Overridden by `main.dart` with the persisted `LocalProfile.language`
+/// value (read from Isar before `runApp`) so the UI boots in the user's
+/// last-saved language instead of always resetting to Bahasa Indonesia
+/// (D18/M17 bug #3). Defaults to `id` (PRD default) when no profile exists
+/// yet or in tests that don't override it.
+final initialAppLocaleProvider = Provider<Locale>((ref) => const Locale('id'));
+
 class AppLocaleNotifier extends Notifier<Locale> {
   @override
   Locale build() {
-    return const Locale('id');
+    return ref.watch(initialAppLocaleProvider);
   }
 
   void setLocale(Locale locale) {
@@ -32,9 +45,7 @@ class AppLocaleNotifier extends Notifier<Locale> {
   }
 
   void setFromLanguage(AppLanguage language) {
-    state = language == AppLanguage.en
-        ? const Locale('en')
-        : const Locale('id');
+    state = localeFromLanguage(language);
   }
 }
 

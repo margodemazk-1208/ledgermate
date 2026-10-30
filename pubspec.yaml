@@ -46,6 +46,7 @@ dependencies:
   path_provider: ^2.1.6
   file_picker: ^13.3.0
   timezone: ^0.11.2
+  flutter_timezone: ^4.1.1
 
 dev_dependencies:
   flutter_test:

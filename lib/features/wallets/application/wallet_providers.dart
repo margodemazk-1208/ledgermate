@@ -151,7 +151,10 @@ class WalletFormNotifier extends Notifier<WalletFormState> {
     state = state.copyWith(includeInDailyBudget: value);
   }
 
+  /// D18/M17 bug #8: re-entrancy guard, same pattern as
+  /// `pay_cycle_providers.dart`'s `submitTransition`.
   Future<bool> save() async {
+    if (state.isSubmitting) return false;
     if (!state.isValid) {
       state = state.copyWith(submitError: 'Nama dompet tidak boleh kosong.');
       return false;

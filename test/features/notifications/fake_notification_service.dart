@@ -3,6 +3,7 @@ import 'package:ledgermate/features/notifications/data/notification_service.dart
 class FakeNotificationService implements NotificationServiceBase {
   bool initialized = false;
   bool permissionGranted = true;
+  int requestPermissionCallCount = 0;
 
   bool? lastDailyReminderEnabled;
   int? lastDailyReminderTime;
@@ -27,6 +28,7 @@ class FakeNotificationService implements NotificationServiceBase {
 
   @override
   Future<bool> requestPermission() async {
+    requestPermissionCallCount++;
     return permissionGranted;
   }
 

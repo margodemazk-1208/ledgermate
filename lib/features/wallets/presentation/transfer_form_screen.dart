@@ -46,6 +46,8 @@ class _TransferFormScreenState extends ConsumerState<TransferFormScreen> {
   }
 
   Future<void> _submit() async {
+    // D18/M17 bug #8: re-entrancy guard against double-tap.
+    if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) {
       return;
     }

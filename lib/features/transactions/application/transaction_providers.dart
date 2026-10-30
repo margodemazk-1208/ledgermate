@@ -193,7 +193,14 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
   }
 
   /// Validates and persists the transaction via [TransactionRepositoryBase].
+  ///
+  /// D18/M17 bug #8: re-entrancy guard so a double-tap on "Simpan" before
+  /// the first save's `isSubmitting: true` has been reflected in a rebuilt
+  /// UI cannot write the same transaction twice — see
+  /// `pay_cycle_providers.dart`'s `submitTransition` for the identical
+  /// pattern and rationale.
   Future<bool> save() async {
+    if (state.isSubmitting) return false;
     if (!state.isValid) {
       if (state.type == db.TransactionType.transfer) {
         state = state.copyWith(
@@ -235,6 +242,7 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
 
   /// Deletes the current transaction if dated today, enforcing FR-03.
   Future<bool> delete() async {
+    if (state.isSubmitting) return false;
     final id = state.initialTransactionId;
     if (id == null) return false;
 

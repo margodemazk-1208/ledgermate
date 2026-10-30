@@ -8,6 +8,7 @@ import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
 import '../../../core/formulas/daily_budget_formulas.dart';
+import '../../../core/time/current_day_provider.dart';
 import '../../wallets/application/wallet_providers.dart';
 import '../data/budget_repository.dart';
 
@@ -193,6 +194,10 @@ final dailyBudgetSummaryProvider = Provider<AsyncValue<DailyBudgetSummary>>((
   final txsAsync = ref.watch(budgetTransactionsStreamProvider);
   final goalsAsync = ref.watch(budgetGoalsStreamProvider);
   final walletsAsync = ref.watch(walletsStreamProvider);
+  // D18/M17 bug #4: watched (not read) so a midnight/resume day-rollover
+  // alone forces this provider to recompute even when none of the data
+  // streams above emitted a new value — see `core/time/current_day_provider.dart`.
+  final currentDay = ref.watch(currentDayProvider);
 
   if (profileAsync.hasError) {
     return AsyncValue.error(profileAsync.error!, profileAsync.stackTrace!);
@@ -232,6 +237,7 @@ final dailyBudgetSummaryProvider = Provider<AsyncValue<DailyBudgetSummary>>((
     transactions: txsAsync.value ?? const [],
     goals: goalsAsync.value ?? const [],
     includedWalletIds: includedWalletIds,
+    referenceNow: currentDay,
   );
 
   return AsyncValue.data(summary);

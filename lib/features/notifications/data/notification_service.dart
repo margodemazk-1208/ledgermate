@@ -1,10 +1,44 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../../core/utils/rupiah_formatter.dart';
+
+/// D18/M17 bug #1: `tz.setLocalLocation` was never called anywhere in the
+/// app, so the `timezone` package silently defaulted `tz.local` to UTC —
+/// every `zonedSchedule` call in [LocalNotificationService.scheduleDailyReminder]
+/// then computed "21:00" in UTC, which displays as 04:00 the next day for a
+/// WIB (UTC+7) device. Must run BEFORE any notification is scheduled, so
+/// `main.dart` calls this once at app startup rather than waiting for the
+/// lazily-created [notificationServiceProvider] to be first read.
+///
+/// [resolveTimezoneName] is injectable so this is unit-testable without the
+/// `flutter_timezone` platform channel (unavailable under `flutter test`) —
+/// real callers rely on the default, which asks the OS via that plugin.
+/// Failures (plugin unavailable, unrecognized name) are swallowed and
+/// logged: falling back to `tz.local`'s previous value (UTC by default) is
+/// strictly better than crashing app boot over a notification nicety.
+Future<void> configureLocalTimezone({
+  Future<String> Function()? resolveTimezoneName,
+}) async {
+  tz.initializeTimeZones();
+  try {
+    final name = await (resolveTimezoneName ?? _defaultResolveTimezoneName)();
+    tz.setLocalLocation(tz.getLocation(name));
+  } catch (e) {
+    debugPrint(
+      'Could not resolve device timezone, notification times may be off '
+      '(defaulting to ${tz.local.name}): $e',
+    );
+  }
+}
+
+Future<String> _defaultResolveTimezoneName() {
+  return FlutterTimezone.getLocalTimezone();
+}
 
 /// Contract for local notification scheduling and immediate triggers (FR-11, D9).
 abstract class NotificationServiceBase {

@@ -20,6 +20,17 @@ abstract class ExportImportRepository {
   /// Creates an in-memory snapshot of all 6 PRD §8 Isar collections.
   Future<BackupData> createBackupData();
 
+  /// Builds the full JSON backup content in-memory WITHOUT writing it to
+  /// disk anywhere. D18/M17 bug #9: the Storage Access Framework fallback
+  /// (`ExportImportNotifier`) needs the raw bytes to hand to
+  /// `FilePicker.saveFile`, which writes through the SAF picker itself
+  /// rather than a direct `File` path.
+  Future<String> buildBackupJson();
+
+  /// Builds the full transactions CSV content in-memory, same rationale as
+  /// [buildBackupJson].
+  Future<String> buildTransactionsCsv();
+
   /// Serializes all collections to a JSON backup file in the downloads/documents folder.
   /// Returns the absolute path of the created file.
   Future<String> exportBackupToJson({
@@ -41,6 +52,15 @@ abstract class ExportImportRepository {
   /// Replaces the entire local database with the records from [backupData].
   /// Performed atomically inside a single Isar write transaction.
   Future<void> restoreDatabase(BackupData backupData);
+
+  /// A default file name for a fresh JSON backup, timestamped at the
+  /// current moment — shared by the direct-write path and the SAF fallback
+  /// so both produce identically-named files.
+  String defaultBackupFileName();
+
+  /// A default file name for a fresh transactions CSV export, timestamped
+  /// at the current moment.
+  String defaultCsvFileName();
 }
 
 /// Production implementation of [ExportImportRepository] backed by [Isar].
@@ -73,13 +93,36 @@ class IsarExportImportRepository implements ExportImportRepository {
   }
 
   @override
+  Future<String> buildBackupJson() async {
+    final backup = await createBackupData();
+    const encoder = JsonEncoder.withIndent('  ');
+    return encoder.convert(backup.toJson());
+  }
+
+  @override
+  Future<String> buildTransactionsCsv() async {
+    final transactions = await isar.transactions.where().findAll();
+    final categories = await isar.categorys.where().findAll();
+    return CsvSerializer.transactionsToCsv(
+      transactions: transactions,
+      categories: categories,
+    );
+  }
+
+  @override
+  String defaultBackupFileName() =>
+      'ledgermate_backup_${_formatTimestamp(DateTime.now())}.json';
+
+  @override
+  String defaultCsvFileName() =>
+      'ledgermate_transaksi_${_formatTimestamp(DateTime.now())}.csv';
+
+  @override
   Future<String> exportBackupToJson({
     String? targetDirectoryPath,
     String? customFileName,
   }) async {
-    final backup = await createBackupData();
-    const encoder = JsonEncoder.withIndent('  ');
-    final jsonText = encoder.convert(backup.toJson());
+    final jsonText = await buildBackupJson();
 
     final dir = targetDirectoryPath != null
         ? Directory(targetDirectoryPath)
@@ -89,8 +132,7 @@ class IsarExportImportRepository implements ExportImportRepository {
       await dir.create(recursive: true);
     }
 
-    final timestamp = _formatTimestamp(backup.exportedAt);
-    final fileName = customFileName ?? 'ledgermate_backup_$timestamp.json';
+    final fileName = customFileName ?? defaultBackupFileName();
     final file = File('${dir.path}/$fileName');
 
     await file.writeAsString(jsonText, flush: true);
@@ -102,13 +144,7 @@ class IsarExportImportRepository implements ExportImportRepository {
     String? targetDirectoryPath,
     String? customFileName,
   }) async {
-    final transactions = await isar.transactions.where().findAll();
-    final categories = await isar.categorys.where().findAll();
-
-    final csvText = CsvSerializer.transactionsToCsv(
-      transactions: transactions,
-      categories: categories,
-    );
+    final csvText = await buildTransactionsCsv();
 
     final dir = targetDirectoryPath != null
         ? Directory(targetDirectoryPath)
@@ -118,8 +154,7 @@ class IsarExportImportRepository implements ExportImportRepository {
       await dir.create(recursive: true);
     }
 
-    final timestamp = _formatTimestamp(DateTime.now());
-    final fileName = customFileName ?? 'ledgermate_transaksi_$timestamp.csv';
+    final fileName = customFileName ?? defaultCsvFileName();
     final file = File('${dir.path}/$fileName');
 
     await file.writeAsString(csvText, flush: true);
