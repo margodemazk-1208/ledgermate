@@ -50,15 +50,21 @@ void main() {
         await repository.seedDefaultCategories();
 
         final categories = await isar.categorys.where().findAll();
-        expect(categories.length, 5);
-        final names = categories.map((c) => c.name).toList();
+        expect(categories.length, 6);
+        final defaultCats = categories.where((c) => c.isDefault).toList();
+        expect(defaultCats.length, 5);
+        final names = defaultCats.map((c) => c.name).toList();
         expect(
           names,
           containsAll(['Makan', 'Transport', 'Hiburan', 'Tagihan', 'Lainnya']),
         );
-        for (final cat in categories) {
+        for (final cat in defaultCats) {
           expect(cat.isDefault, isTrue);
         }
+        expect(
+          categories.any((c) => c.isSystemGenerated && c.name == 'Pemasukan'),
+          isTrue,
+        );
       },
     );
 
@@ -66,10 +72,10 @@ void main() {
       'seedDefaultCategories is idempotent and does not create duplicates',
       () async {
         await repository.seedDefaultCategories();
-        expect(await isar.categorys.count(), 5);
+        expect(await isar.categorys.count(), 6);
 
         await repository.seedDefaultCategories();
-        expect(await isar.categorys.count(), 5);
+        expect(await isar.categorys.count(), 6);
       },
     );
 
@@ -77,7 +83,7 @@ void main() {
       expect(await isar.categorys.count(), 0);
       final categories = await repository.getCategories();
       expect(categories, isNotEmpty);
-      expect(categories.length, 5);
+      expect(categories.length, 6);
     });
   });
 

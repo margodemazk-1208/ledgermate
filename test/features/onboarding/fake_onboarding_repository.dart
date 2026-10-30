@@ -20,6 +20,7 @@ class RecordedCompleteOnboardingCall {
     this.walletIcon = 'account_balance_wallet',
     this.walletStartingBalance = 0,
     this.walletIncludeInDailyBudget = true,
+    this.referenceNow,
   });
 
   final IncomeFrequency incomeFrequency;
@@ -31,6 +32,7 @@ class RecordedCompleteOnboardingCall {
   final String walletIcon;
   final int walletStartingBalance;
   final bool walletIncludeInDailyBudget;
+  final DateTime? referenceNow;
 }
 
 class FakeOnboardingRepository implements OnboardingRepositoryBase {
@@ -55,6 +57,7 @@ class FakeOnboardingRepository implements OnboardingRepositoryBase {
     String walletIcon = 'account_balance_wallet',
     int walletStartingBalance = 0,
     bool walletIncludeInDailyBudget = true,
+    DateTime? referenceNow,
   }) async {
     if (failWith != null) {
       final error = failWith!;
@@ -72,6 +75,7 @@ class FakeOnboardingRepository implements OnboardingRepositoryBase {
         walletIcon: walletIcon,
         walletStartingBalance: walletStartingBalance,
         walletIncludeInDailyBudget: walletIncludeInDailyBudget,
+        referenceNow: referenceNow,
       ),
     );
   }

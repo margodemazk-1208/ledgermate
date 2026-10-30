@@ -71,5 +71,11 @@ Milestones map 1:1 to FR/BR ids in `docs/PRD.md`. Each milestone = one unit of w
 - [x] **M22 — Mandatory Expenses Settings Screen (v1.4 Phase 2)**
   Post-onboarding mandatory expenses management UI. Added "Pengeluaran Wajib" card to `lib/features/settings/presentation/settings_screen.dart` following the Category Management card visual and interaction pattern (list of current items, add dialog with `RupiahInputFormatter` and `FloatingLabelBehavior.always`, tap-to-edit dialog, delete confirmation dialog). Integrated into `SettingsRepository` and `FakeSettingsRepository` writing directly to the underlying `LocalProfile.mandatoryExpenses` field used by onboarding and downstream budget calculations. Verified that settings updates correctly propagate to Mode B carry-over accrual calculation (`DailyAccrualService`). Localized strings for ID and EN with explicit placeholder metadata. 345/345 tests passing, `flutter analyze`/`dart format` clean.
 
+- [x] **M23 — Remove Income Category Field (v1.4 Phase 3)**
+  Removed category picker on TransactionFormScreen when transaction type is income. Auto-assigns system income category ('Pemasukan', isSystemGenerated=true) on save, excluded system categories from analytics expense breakdown and settings category management, and verified export/import round-trips cleanly. 353/353 tests passing.
+
+- [x] **M24 — Goal Accrual Same-Day Fix (v1.4 Phase 4)**
+  Fixed same-day goal accrual gap where newly onboarded profiles deferred day-one accrual to tomorrow due to unseeded `lastAccrualDate`. Onboarding completion now initializes `lastAccrualDate` to yesterday, allowing the immediate run of `runCatchUp()` to accrue today's daily savings reserve for new goals. Pre-M16 upgrade path remains unchanged (silent seed to today without retroactive accrual). Wired accrual checks into `AppLifecycleState.resumed` and `currentDayProvider` midnight rollover in `app.dart`. Validated reactive stream updates for goal progress. All 359 tests passing, `flutter analyze`/`dart format` clean. Closes v1.4 fix cycle (M21-M24).
+
 ## Non-goals (do not implement without a new PRD revision)
 See `docs/PRD.md` §3.2 Out-of-Scope and `docs/EXTENDING.md`.

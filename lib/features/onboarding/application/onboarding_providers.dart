@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/isar_provider.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
+import '../../../core/time/current_day_provider.dart';
 import '../../settings/application/settings_providers.dart';
 import '../data/onboarding_repository.dart';
 import 'onboarding_wizard_state.dart';
@@ -152,6 +153,7 @@ class OnboardingWizardNotifier extends Notifier<OnboardingWizardState> {
             walletIcon: state.walletIcon,
             walletStartingBalance: state.walletStartingBalance,
             walletIncludeInDailyBudget: state.walletIncludeInDailyBudget,
+            referenceNow: ref.read(systemClockProvider)(),
           );
       // D18/M17 bug #2: onboarding completion is the first guaranteed
       // moment a fresh install has a persisted LocalProfile to read

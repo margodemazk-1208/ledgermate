@@ -1,6 +1,7 @@
 // Unit tests for DailyAccrualService (D18/M16 bug #1 & #4c).
 import 'dart:io';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar_community/isar.dart';
 import 'package:ledgermate/core/accrual/daily_accrual_service.dart';
@@ -9,6 +10,9 @@ import 'package:ledgermate/core/database/isar_provider.dart';
 import 'package:ledgermate/core/database/local_profile.dart';
 import 'package:ledgermate/core/database/transaction.dart' as db;
 import 'package:ledgermate/core/database/wallet.dart';
+import 'package:ledgermate/core/time/current_day_provider.dart';
+import 'package:ledgermate/features/goals/application/goals_providers.dart';
+import 'package:ledgermate/features/onboarding/data/onboarding_repository.dart';
 
 void main() {
   late Directory tempDir;
@@ -212,4 +216,173 @@ void main() {
       });
     },
   );
+
+  group('M24: Goal Accrual Same-Day Fix (v1.4 Phase 4)', () {
+    test('reproduction: fresh onboarding completes today -> user creates goal today -> runCatchUp accrues today immediately', () async {
+      final today = DateTime(2026, 10, 28, 10, 0);
+      final onboardingRepo = OnboardingRepository(isar);
+
+      // 1. Fresh onboarding completes on reference date `today`
+      await onboardingRepo.completeOnboarding(
+        incomeFrequency: IncomeFrequency.periodic,
+        incomeIntervalType: IncomeIntervalType.monthly,
+        nextPaydayDate: DateTime(2026, 11, 28),
+        initialIncomeAmount: 5000000,
+        mandatoryExpenses: const [],
+        referenceNow: today,
+      );
+
+      // 2. User creates and funds a goal on `today`
+      // 9 days remaining to Nov 6 from Oct 28: ceil(1000000 / 9) = 111112.
+      await isar.writeTxn(() async {
+        final goal = FinancialGoal()
+          ..goalName = 'Dana Darurat'
+          ..targetAmount = 1000000
+          ..currentAmount = 0
+          ..targetDate = DateTime(2026, 11, 6);
+        await isar.financialGoals.put(goal);
+      });
+
+      // 3. Catch-up runs (as it would on the same session/launch)
+      final processed = await service.runCatchUp(referenceNow: today);
+
+      // Pre-fix: processed was 0 because lastAccrualDate was null and hit the
+      // silent-seed-and-skip branch, leaving goal.currentAmount at 0 until tomorrow.
+      // Post-fix: lastAccrualDate was seeded to yesterday by onboarding, so today
+      // is processed immediately!
+      expect(processed, 1);
+
+      final goal = await isar.financialGoals.where().findFirst();
+      expect(goal!.currentAmount, 111112);
+
+      final profile = await isar.localProfiles.where().findFirst();
+      expect(profile!.lastAccrualDate, DateTime(2026, 10, 28));
+    });
+
+    test('pre-M16-upgrade path is UNCHANGED: existing profile with null lastAccrualDate still silently seeds without retroactive accrual', () async {
+      final today = DateTime(2026, 10, 28, 10, 0);
+
+      // Simulate existing profile upgrading from pre-M16 data:
+      // onboardingComplete is true, but lastAccrualDate is null.
+      await isar.writeTxn(() async {
+        final profile = LocalProfile()
+          ..incomeFrequency = IncomeFrequency.periodic
+          ..onboardingComplete = true; // lastAccrualDate == null
+        await isar.localProfiles.put(profile);
+
+        final goal = FinancialGoal()
+          ..goalName = 'Goal Lama'
+          ..targetAmount = 1000000
+          ..currentAmount = 0
+          ..targetDate = DateTime(2026, 12, 1);
+        await isar.financialGoals.put(goal);
+      });
+
+      final processed = await service.runCatchUp(referenceNow: today);
+
+      // Upgrade path: zero days processed, no retroactive credit, seeds to today.
+      expect(processed, 0);
+      final goal = await isar.financialGoals.where().findFirst();
+      expect(goal!.currentAmount, 0);
+
+      final profile = await isar.localProfiles.where().findFirst();
+      expect(profile!.lastAccrualDate, DateTime(2026, 10, 28));
+    });
+
+    test('item 2: resume-triggered catch-up across a day boundary without a cold relaunch', () async {
+      // App was active yesterday (Oct 27) and up-to-date with accruals.
+      await isar.writeTxn(() async {
+        final profile = LocalProfile()
+          ..incomeFrequency = IncomeFrequency.periodic
+          ..onboardingComplete = true
+          ..lastAccrualDate = DateTime(2026, 10, 27);
+        await isar.localProfiles.put(profile);
+
+        final goal = FinancialGoal()
+          ..goalName = 'Target Liburan'
+          ..targetAmount = 1000000
+          ..currentAmount = 0
+          ..targetDate = DateTime(2026, 11, 6); // 9 days from Oct 28
+        await isar.financialGoals.put(goal);
+      });
+
+      // Setup container with injectable systemClock and Isar
+      var fakeNow = DateTime(2026, 10, 27, 23, 0);
+      final container = ProviderContainer(
+        overrides: [
+          isarProvider.overrideWithValue(isar),
+          systemClockProvider.overrideWithValue(() => fakeNow),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      // App backgrounded across day boundary; resumed on Oct 28 at 08:00
+      fakeNow = DateTime(2026, 10, 28, 8, 0);
+
+      // Simulate app resume trigger: refresh day provider + run accrual catch-up
+      container.read(currentDayProvider.notifier).refresh();
+      final processed = await runDailyAccrualCatchUp(
+        container.read(isarProvider),
+        referenceNow: container.read(systemClockProvider)(),
+      );
+
+      expect(processed, 1);
+
+      final goal = await isar.financialGoals.where().findFirst();
+      expect(goal!.currentAmount, 111112);
+
+      final profile = await isar.localProfiles.where().findFirst();
+      expect(profile!.lastAccrualDate, DateTime(2026, 10, 28));
+    });
+
+    test('item 3: goal progress UI / reactive stream reflects post-accrual state immediately without manual refresh', () async {
+      await isar.writeTxn(() async {
+        final profile = LocalProfile()
+          ..incomeFrequency = IncomeFrequency.periodic
+          ..onboardingComplete = true
+          ..lastAccrualDate = DateTime(2026, 10, 27);
+        await isar.localProfiles.put(profile);
+
+        final goal = FinancialGoal()
+          ..goalName = 'Reactive Goal'
+          ..targetAmount = 500000
+          ..currentAmount = 0
+          ..targetDate = DateTime(2026, 11, 1); // 4 days remaining from Oct 28
+        await isar.financialGoals.put(goal);
+      });
+
+      final container = ProviderContainer(
+        overrides: [isarProvider.overrideWithValue(isar)],
+      );
+      addTearDown(container.dispose);
+
+      // Watch goals overview summary (which drives GoalsScreen UI)
+      final emittedTotals = <int>[];
+      final sub = container.listen<AsyncValue<GoalsOverviewSummary>>(
+        goalsOverviewSummaryProvider,
+        (prev, next) {
+          if (next.hasValue) {
+            emittedTotals.add(next.value!.totalCurrentAmount);
+          }
+        },
+        fireImmediately: true,
+      );
+      addTearDown(sub.close);
+
+      // Wait for stream to emit initial data
+      await pumpEventQueue();
+      expect(emittedTotals, isNotEmpty);
+      expect(emittedTotals.first, 0);
+
+      // Run catch-up for Oct 28
+      // ceil(500000 / 4) = 125000
+      await service.runCatchUp(referenceNow: DateTime(2026, 10, 28));
+
+      // Pump event loop for Isar stream watcher to deliver update
+      await pumpEventQueue();
+
+      // Reactive stream must have received the updated state immediately
+      expect(emittedTotals.last, 125000);
+    });
+  });
 }

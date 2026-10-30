@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/accrual/daily_accrual_service.dart';
+import 'core/database/isar_provider.dart';
 import 'core/l10n/app_localizations.dart';
 import 'core/presentation/navigation/app_shell.dart';
 import 'core/theme/theme_provider.dart';
@@ -69,11 +71,29 @@ class _DayRolloverObserverState extends ConsumerState<_DayRolloverObserver>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.read(currentDayProvider.notifier).refresh();
+      _runAccrual();
+    }
+  }
+
+  void _runAccrual() {
+    try {
+      final isar = ref.read(isarProvider);
+      final clock = ref.read(systemClockProvider);
+      runDailyAccrualCatchUp(isar, referenceNow: clock());
+    } catch (_) {
+      // Best-effort in lifecycle observer (safe when isarProvider is unmocked in widget tests)
     }
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    ref.listen<DateTime>(currentDayProvider, (previous, next) {
+      if (previous != null && next != previous) {
+        _runAccrual();
+      }
+    });
+    return widget.child;
+  }
 }
 
 /// Routes to Onboarding while incomplete, BudgetHomeScreen once done.

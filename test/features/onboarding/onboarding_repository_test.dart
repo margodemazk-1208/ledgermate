@@ -136,4 +136,25 @@ void main() {
       expect(allProfiles.single.carryOverBalance, 20000);
     },
   );
+
+  test(
+    'M24: fresh onboarding initializes lastAccrualDate to yesterday',
+    () async {
+      final today = DateTime(2026, 10, 31, 14, 30);
+      await repository.completeOnboarding(
+        incomeFrequency: IncomeFrequency.periodic,
+        incomeIntervalType: IncomeIntervalType.monthly,
+        nextPaydayDate: DateTime(2026, 11, 25),
+        initialIncomeAmount: 5000000,
+        mandatoryExpenses: const [],
+        referenceNow: today,
+      );
+
+      final profile = await isar.localProfiles.where().findFirst();
+      expect(profile, isNotNull);
+      expect(profile!.onboardingComplete, isTrue);
+      // Normalized midnight of yesterday (Oct 30)
+      expect(profile.lastAccrualDate, DateTime(2026, 10, 30));
+    },
+  );
 }

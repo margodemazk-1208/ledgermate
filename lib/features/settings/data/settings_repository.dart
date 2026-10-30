@@ -307,7 +307,7 @@ class SettingsRepository implements SettingsRepositoryBase {
     final cat = await _isar.categorys.get(id);
     if (cat == null) return false;
 
-    if (cat.isDefault) {
+    if (cat.isDefault || cat.isSystemGenerated) {
       throw StateError('Kategori bawaan sistem tidak dapat dihapus.');
     }
 

@@ -8,6 +8,7 @@ import 'package:isar_community/isar.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/wallet.dart';
+import '../../../core/formulas/daily_budget_formulas.dart';
 
 /// Interface extracted so widget tests can override
 /// `onboardingRepositoryProvider` with an in-memory fake instead of a real
@@ -33,6 +34,7 @@ abstract class OnboardingRepositoryBase {
     String walletIcon = 'account_balance_wallet',
     int walletStartingBalance = 0,
     bool walletIncludeInDailyBudget = true,
+    DateTime? referenceNow,
   });
 }
 
@@ -69,13 +71,25 @@ class OnboardingRepository implements OnboardingRepositoryBase {
     String walletIcon = 'account_balance_wallet',
     int walletStartingBalance = 0,
     bool walletIncludeInDailyBudget = true,
+    DateTime? referenceNow,
   }) async {
     await _isar.writeTxn(() async {
       final existing = await _isar.localProfiles.where().findFirst();
       final profile = existing ?? LocalProfile();
 
+      final now = referenceNow ?? DateTime.now();
       profile.incomeFrequency = incomeFrequency;
       profile.onboardingComplete = true;
+
+      // M24: Fresh onboarding completion initializes lastAccrualDate to
+      // yesterday so the very first runCatchUp() call processes "today"
+      // through the normal non-null loop, immediately crediting any goal
+      // created on day one. Pre-M16 upgrades (existing profile with
+      // onboarding already completed before lastAccrualDate was introduced)
+      // retain lastAccrualDate == null until DailyAccrualService seeds it
+      // to today, preserving the deliberate M16 safe-skip behavior.
+      profile.lastAccrualDate ??= normalizeDate(now)
+          .subtract(const Duration(days: 1));
 
       if (incomeFrequency == IncomeFrequency.periodic) {
         profile.incomeIntervalType = incomeIntervalType;
@@ -94,15 +108,15 @@ class OnboardingRepository implements OnboardingRepositoryBase {
         profile.nextPaydayDate = null;
         profile.carryOverBalance = initialIncomeAmount;
         profile.mandatoryExpenses = mandatoryExpenses;
-        profile.lastRolloverDate = DateTime.now();
+        profile.lastRolloverDate = now;
       }
 
       await _isar.localProfiles.put(profile);
 
       if (incomeFrequency == IncomeFrequency.periodic) {
         final cycle = PayCycle()
-          ..startDate = DateTime.now()
-          ..paydayDate = nextPaydayDate ?? DateTime.now()
+          ..startDate = now
+          ..paydayDate = nextPaydayDate ?? now
           ..fixedSalary = initialIncomeAmount
           ..variableIncomeTotal = 0
           ..mandatoryExpenses = mandatoryExpenses;

@@ -98,6 +98,9 @@ class TransactionFormState {
               transferPeerWalletId! > 0 &&
               transferPeerWalletId != walletId);
     }
+    if (type == db.TransactionType.income) {
+      return true;
+    }
     return (categoryId != null && categoryId! > 0);
   }
 
@@ -240,7 +243,11 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
             amount: state.amount!,
             categoryId: state.type == db.TransactionType.transfer
                 ? 0
-                : state.categoryId!,
+                : (state.type == db.TransactionType.income
+                      ? await ref
+                            .read(transactionRepositoryProvider)
+                            .resolveSystemIncomeCategoryId()
+                      : state.categoryId!),
             date: state.date,
             notes: state.notes,
             walletId: state.walletId,

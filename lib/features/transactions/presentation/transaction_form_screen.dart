@@ -417,45 +417,49 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     style: const TextStyle(color: AppColors.expenseRed),
                   ),
                 ),
-                const SizedBox(height: 20),
+                if (formState.type != db.TransactionType.income) ...[
+                  const SizedBox(height: 20),
 
-                // Category Dropdown
-                categoriesAsync.when(
-                  data: (categories) {
-                    final selectedValue =
-                        categories.any((c) => c.id == formState.categoryId)
-                        ? formState.categoryId
-                        : (categories.isNotEmpty ? categories.first.id : null);
+                  // Category Dropdown
+                  categoriesAsync.when(
+                    data: (categories) {
+                      final selectedValue =
+                          categories.any((c) => c.id == formState.categoryId)
+                          ? formState.categoryId
+                          : (categories.isNotEmpty
+                                ? categories.first.id
+                                : null);
 
-                    return DropdownButtonFormField<int>(
-                      key: const ValueKey('transaction_category_picker'),
-                      initialValue: selectedValue,
-                      decoration: InputDecoration(
-                        labelText: l10n.transactionFormScreenCategoryLabel,
-                        border: const OutlineInputBorder(),
-                      ),
-                      items: categories.map((cat) {
-                        return DropdownMenuItem<int>(
-                          value: cat.id,
-                          child: Text(cat.name),
-                        );
-                      }).toList(),
-                      onChanged: (catId) {
-                        if (catId != null) {
-                          ref
-                              .read(transactionFormProvider.notifier)
-                              .setCategory(catId);
-                          _markDirty();
-                        }
-                      },
-                    );
-                  },
-                  loading: () => const LinearProgressIndicator(),
-                  error: (err, _) => Text(
-                    l10n.transactionFormScreenCategoryLoadError(err),
-                    style: const TextStyle(color: AppColors.expenseRed),
+                      return DropdownButtonFormField<int>(
+                        key: const ValueKey('transaction_category_picker'),
+                        initialValue: selectedValue,
+                        decoration: InputDecoration(
+                          labelText: l10n.transactionFormScreenCategoryLabel,
+                          border: const OutlineInputBorder(),
+                        ),
+                        items: categories.map((cat) {
+                          return DropdownMenuItem<int>(
+                            value: cat.id,
+                            child: Text(cat.name),
+                          );
+                        }).toList(),
+                        onChanged: (catId) {
+                          if (catId != null) {
+                            ref
+                                .read(transactionFormProvider.notifier)
+                                .setCategory(catId);
+                            _markDirty();
+                          }
+                        },
+                      );
+                    },
+                    loading: () => const LinearProgressIndicator(),
+                    error: (err, _) => Text(
+                      l10n.transactionFormScreenCategoryLoadError(err),
+                      style: const TextStyle(color: AppColors.expenseRed),
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 20),
               ],
 

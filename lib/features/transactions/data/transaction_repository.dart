@@ -4,6 +4,7 @@ import 'package:isar_community/isar.dart';
 
 import '../../../core/database/category.dart';
 import '../../../core/database/isar_provider.dart';
+import '../../../core/database/isar_provider.dart' as isar_provider;
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
@@ -315,6 +316,6 @@ class TransactionRepository implements TransactionRepositoryBase {
 
   @override
   Future<int> resolveSystemIncomeCategoryId() {
-    return resolveSystemIncomeCategoryId(_isar);
+    return isar_provider.resolveSystemIncomeCategoryId(_isar);
   }
 }

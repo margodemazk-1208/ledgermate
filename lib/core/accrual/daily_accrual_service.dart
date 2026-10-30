@@ -15,7 +15,8 @@
 // math as the manual transition screen's preview
 // (`core/budget_scope/budget_scope.dart` — see that file's header for why
 // this must stay a single shared implementation). Wired to run on every
-// Isar open (`core/database/isar_provider.dart`), i.e. on every app launch.
+// Isar open (`core/database/isar_provider.dart`), i.e. on every app launch,
+// and re-checked on app resume and day rollover via `app.dart` (M24).
 import 'package:isar_community/isar.dart';
 
 import '../budget_scope/budget_scope.dart';
@@ -43,10 +44,12 @@ class DailyAccrualService {
     if (profile == null || !profile.onboardingComplete) return 0;
 
     if (profile.lastAccrualDate == null) {
-      // First run ever for this profile (fresh install, or upgrading from
-      // pre-M16 data with no accrual history). Seed to today WITHOUT
-      // retroactively accruing for days before this fix existed — there is
-      // no reliable way to know what "should have" accrued pre-M16.
+      // M24: This branch is now only reached for pre-M16 data upgrades (profiles
+      // that completed onboarding before lastAccrualDate existed). Fresh
+      // onboarding sets lastAccrualDate to yesterday in completeOnboarding(),
+      // so fresh installs naturally accrue today on their very first catch-up.
+      // For pre-M16 upgrades, we deliberately keep the safe M16 behavior:
+      // seed to today WITHOUT retroactively accruing for an unknown historical gap.
       await _isar.writeTxn(() async {
         final p = await _isar.localProfiles.where().findFirst();
         if (p == null) return;
