@@ -2,9 +2,11 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar_community/isar.dart';
+import 'package:ledgermate/core/accrual/daily_accrual_service.dart';
 import 'package:ledgermate/core/database/isar_provider.dart';
 import 'package:ledgermate/core/database/local_profile.dart';
 import 'package:ledgermate/core/database/transaction.dart' as db;
+import 'package:ledgermate/core/database/wallet.dart';
 import 'package:ledgermate/features/settings/data/settings_repository.dart';
 
 import '../../notifications/fake_notification_service.dart';
@@ -208,6 +210,117 @@ void main() {
 
       final cats = await repository.getCategories();
       expect(cats.any((c) => c.id == customCat.id), isFalse);
+    });
+  });
+
+  group('SettingsRepository - Mandatory Expenses CRUD (FR-09, BR-02, M22)', () {
+    test('addMandatoryExpense adds item to profile and validates', () async {
+      await repository.addMandatoryExpense('Sewa Kos', 1500000);
+      var profile = await repository.getProfile();
+      expect(profile.mandatoryExpenses.length, 1);
+      expect(profile.mandatoryExpenses.first.name, 'Sewa Kos');
+      expect(profile.mandatoryExpenses.first.amount, 1500000);
+
+      await repository.addMandatoryExpense('Listrik', 300000);
+      profile = await repository.getProfile();
+      expect(profile.mandatoryExpenses.length, 2);
+      expect(profile.mandatoryExpenses[1].name, 'Listrik');
+      expect(profile.mandatoryExpenses[1].amount, 300000);
+
+      expect(
+        () => repository.addMandatoryExpense('   ', 100000),
+        throwsArgumentError,
+      );
+      expect(
+        () => repository.addMandatoryExpense('Air', 0),
+        throwsArgumentError,
+      );
+      expect(
+        () => repository.addMandatoryExpense('Air', -50000),
+        throwsArgumentError,
+      );
+    });
+
+    test(
+      'updateMandatoryExpense updates item at index and validates',
+      () async {
+        await repository.addMandatoryExpense('Sewa Kos', 1500000);
+        await repository.addMandatoryExpense('Listrik', 300000);
+
+        await repository.updateMandatoryExpense(0, 'Sewa Apartemen', 2000000);
+        final profile = await repository.getProfile();
+        expect(profile.mandatoryExpenses.first.name, 'Sewa Apartemen');
+        expect(profile.mandatoryExpenses.first.amount, 2000000);
+        expect(profile.mandatoryExpenses[1].name, 'Listrik');
+
+        expect(
+          () => repository.updateMandatoryExpense(0, '', 100000),
+          throwsArgumentError,
+        );
+        expect(
+          () => repository.updateMandatoryExpense(0, 'Test', 0),
+          throwsArgumentError,
+        );
+        expect(
+          () => repository.updateMandatoryExpense(5, 'Test', 100000),
+          throwsRangeError,
+        );
+        expect(
+          () => repository.updateMandatoryExpense(-1, 'Test', 100000),
+          throwsRangeError,
+        );
+      },
+    );
+
+    test(
+      'deleteMandatoryExpense removes item at index and validates bounds',
+      () async {
+        await repository.addMandatoryExpense('Sewa Kos', 1500000);
+        await repository.addMandatoryExpense('Listrik', 300000);
+
+        await repository.deleteMandatoryExpense(0);
+        var profile = await repository.getProfile();
+        expect(profile.mandatoryExpenses.length, 1);
+        expect(profile.mandatoryExpenses.first.name, 'Listrik');
+        expect(profile.mandatoryExpenses.first.amount, 300000);
+
+        await repository.deleteMandatoryExpense(0);
+        profile = await repository.getProfile();
+        expect(profile.mandatoryExpenses, isEmpty);
+
+        expect(() => repository.deleteMandatoryExpense(0), throwsRangeError);
+      },
+    );
+
+    test('regression: mandatory expense added via settings affects Mode B daily carry-over accrual calculation', () async {
+      final profile = await repository.getProfile();
+      profile.incomeFrequency = IncomeFrequency.daily;
+      profile.onboardingComplete = true;
+      profile.lastAccrualDate = DateTime(2026, 10, 27);
+      profile.carryOverBalance = 200000;
+      await isar.writeTxn(() => isar.localProfiles.put(profile));
+
+      final wallet = Wallet()
+        ..name = 'Dompet Utama'
+        ..startingBalance = 500000
+        ..includeInDailyBudget = true;
+      await isar.writeTxn(() => isar.wallets.put(wallet));
+
+      final incomeTx = db.Transaction()
+        ..amount = 150000
+        ..type = db.TransactionType.income
+        ..walletId = wallet.id
+        ..date = DateTime(2026, 10, 28, 10, 0);
+      await isar.writeTxn(() => isar.transactions.put(incomeTx));
+
+      await repository.addMandatoryExpense('Paket Data Harian', 50000);
+
+      final accrualService = DailyAccrualService(isar);
+      await accrualService.runCatchUp(referenceNow: DateTime(2026, 10, 28));
+
+      final updatedProfile = await repository.getProfile();
+      expect(updatedProfile.carryOverBalance, 300000);
+      expect(updatedProfile.lastAccrualDate, DateTime(2026, 10, 28));
     });
   });
 }

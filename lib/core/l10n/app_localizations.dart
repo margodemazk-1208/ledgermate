@@ -2623,6 +2623,120 @@ abstract class AppLocalizations {
   /// **'Gagal memuat kategori: {error}'**
   String categoryManagementCardLoadError(Object error);
 
+  /// No description provided for @mandatoryExpensesCardTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Pengeluaran Wajib'**
+  String get mandatoryExpensesCardTitle;
+
+  /// No description provided for @mandatoryExpensesCardSubtitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Pengeluaran tetap & rutin untuk alokasi anggaran'**
+  String get mandatoryExpensesCardSubtitle;
+
+  /// No description provided for @mandatoryExpensesCardAddTooltip.
+  ///
+  /// In id, this message translates to:
+  /// **'Tambah Pengeluaran Wajib'**
+  String get mandatoryExpensesCardAddTooltip;
+
+  /// No description provided for @mandatoryExpensesCardEmptyMessage.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada pengeluaran wajib ditambahkan.'**
+  String get mandatoryExpensesCardEmptyMessage;
+
+  /// No description provided for @mandatoryExpensesCardAddDialogTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Tambah Pengeluaran Wajib'**
+  String get mandatoryExpensesCardAddDialogTitle;
+
+  /// No description provided for @mandatoryExpensesCardEditDialogTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Ubah Pengeluaran Wajib'**
+  String get mandatoryExpensesCardEditDialogTitle;
+
+  /// No description provided for @mandatoryExpensesCardDeleteDialogTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus Pengeluaran Wajib?'**
+  String get mandatoryExpensesCardDeleteDialogTitle;
+
+  /// No description provided for @mandatoryExpensesCardDeleteDialogMessage.
+  ///
+  /// In id, this message translates to:
+  /// **'Apakah Anda yakin ingin menghapus \"{name}\"?'**
+  String mandatoryExpensesCardDeleteDialogMessage(String name);
+
+  /// No description provided for @mandatoryExpensesCardDeleteButton.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus'**
+  String get mandatoryExpensesCardDeleteButton;
+
+  /// No description provided for @mandatoryExpensesCardCancelButton.
+  ///
+  /// In id, this message translates to:
+  /// **'Batal'**
+  String get mandatoryExpensesCardCancelButton;
+
+  /// No description provided for @mandatoryExpensesCardSaveButton.
+  ///
+  /// In id, this message translates to:
+  /// **'Simpan'**
+  String get mandatoryExpensesCardSaveButton;
+
+  /// No description provided for @mandatoryExpensesCardNameLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Nama Pengeluaran'**
+  String get mandatoryExpensesCardNameLabel;
+
+  /// No description provided for @mandatoryExpensesCardNameHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Contoh: Sewa Kos, Listrik, Wi-Fi'**
+  String get mandatoryExpensesCardNameHint;
+
+  /// No description provided for @mandatoryExpensesCardAmountLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Jumlah'**
+  String get mandatoryExpensesCardAmountLabel;
+
+  /// No description provided for @mandatoryExpensesCardEditTooltip.
+  ///
+  /// In id, this message translates to:
+  /// **'Ubah'**
+  String get mandatoryExpensesCardEditTooltip;
+
+  /// No description provided for @mandatoryExpensesCardDeleteTooltip.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus'**
+  String get mandatoryExpensesCardDeleteTooltip;
+
+  /// No description provided for @mandatoryExpensesCardNameEmptyError.
+  ///
+  /// In id, this message translates to:
+  /// **'Nama tidak boleh kosong'**
+  String get mandatoryExpensesCardNameEmptyError;
+
+  /// No description provided for @mandatoryExpensesCardAmountEmptyError.
+  ///
+  /// In id, this message translates to:
+  /// **'Jumlah tidak boleh kosong'**
+  String get mandatoryExpensesCardAmountEmptyError;
+
+  /// No description provided for @mandatoryExpensesCardAmountInvalidError.
+  ///
+  /// In id, this message translates to:
+  /// **'Jumlah tidak boleh negatif atau nol'**
+  String get mandatoryExpensesCardAmountInvalidError;
+
   /// No description provided for @walletsManagementCardTitle.
   ///
   /// In id, this message translates to:

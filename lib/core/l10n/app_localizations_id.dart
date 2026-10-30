@@ -1484,6 +1484,71 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get mandatoryExpensesCardTitle => 'Pengeluaran Wajib';
+
+  @override
+  String get mandatoryExpensesCardSubtitle =>
+      'Pengeluaran tetap & rutin untuk alokasi anggaran';
+
+  @override
+  String get mandatoryExpensesCardAddTooltip => 'Tambah Pengeluaran Wajib';
+
+  @override
+  String get mandatoryExpensesCardEmptyMessage =>
+      'Belum ada pengeluaran wajib ditambahkan.';
+
+  @override
+  String get mandatoryExpensesCardAddDialogTitle => 'Tambah Pengeluaran Wajib';
+
+  @override
+  String get mandatoryExpensesCardEditDialogTitle => 'Ubah Pengeluaran Wajib';
+
+  @override
+  String get mandatoryExpensesCardDeleteDialogTitle =>
+      'Hapus Pengeluaran Wajib?';
+
+  @override
+  String mandatoryExpensesCardDeleteDialogMessage(String name) {
+    return 'Apakah Anda yakin ingin menghapus \"$name\"?';
+  }
+
+  @override
+  String get mandatoryExpensesCardDeleteButton => 'Hapus';
+
+  @override
+  String get mandatoryExpensesCardCancelButton => 'Batal';
+
+  @override
+  String get mandatoryExpensesCardSaveButton => 'Simpan';
+
+  @override
+  String get mandatoryExpensesCardNameLabel => 'Nama Pengeluaran';
+
+  @override
+  String get mandatoryExpensesCardNameHint =>
+      'Contoh: Sewa Kos, Listrik, Wi-Fi';
+
+  @override
+  String get mandatoryExpensesCardAmountLabel => 'Jumlah';
+
+  @override
+  String get mandatoryExpensesCardEditTooltip => 'Ubah';
+
+  @override
+  String get mandatoryExpensesCardDeleteTooltip => 'Hapus';
+
+  @override
+  String get mandatoryExpensesCardNameEmptyError => 'Nama tidak boleh kosong';
+
+  @override
+  String get mandatoryExpensesCardAmountEmptyError =>
+      'Jumlah tidak boleh kosong';
+
+  @override
+  String get mandatoryExpensesCardAmountInvalidError =>
+      'Jumlah tidak boleh negatif atau nol';
+
+  @override
   String get walletsManagementCardTitle => 'Kelola Dompet & Rekening';
 
   @override

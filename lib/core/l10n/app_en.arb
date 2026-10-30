@@ -419,6 +419,32 @@
   "categoryManagementCardEditTooltip": "Rename",
   "categoryManagementCardDeleteTooltip": "Delete Category",
   "categoryManagementCardLoadError": "Failed to load categories: {error}",
+  "mandatoryExpensesCardTitle": "Mandatory Expenses",
+  "mandatoryExpensesCardSubtitle": "Fixed & routine expenses for daily budget allocation",
+  "mandatoryExpensesCardAddTooltip": "Add Mandatory Expense",
+  "mandatoryExpensesCardEmptyMessage": "No mandatory expenses added yet.",
+  "mandatoryExpensesCardAddDialogTitle": "Add Mandatory Expense",
+  "mandatoryExpensesCardEditDialogTitle": "Edit Mandatory Expense",
+  "mandatoryExpensesCardDeleteDialogTitle": "Delete Mandatory Expense?",
+  "mandatoryExpensesCardDeleteDialogMessage": "Are you sure you want to delete \"{name}\"?",
+  "@mandatoryExpensesCardDeleteDialogMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mandatoryExpensesCardDeleteButton": "Delete",
+  "mandatoryExpensesCardCancelButton": "Cancel",
+  "mandatoryExpensesCardSaveButton": "Save",
+  "mandatoryExpensesCardNameLabel": "Expense Name",
+  "mandatoryExpensesCardNameHint": "E.g.: Rent, Electricity, Wi-Fi",
+  "mandatoryExpensesCardAmountLabel": "Amount",
+  "mandatoryExpensesCardEditTooltip": "Edit",
+  "mandatoryExpensesCardDeleteTooltip": "Delete",
+  "mandatoryExpensesCardNameEmptyError": "Name cannot be empty",
+  "mandatoryExpensesCardAmountEmptyError": "Amount cannot be empty",
+  "mandatoryExpensesCardAmountInvalidError": "Amount cannot be negative or zero",
   "walletsManagementCardTitle": "Manage Wallets & Accounts",
   "walletsManagementCardSubtitle": "Manage wallets, bank accounts, starting balance & transfers",
   "walletsManagementCardOpenTooltip": "Open Manage Wallets",

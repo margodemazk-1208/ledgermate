@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ledgermate/core/database/local_profile.dart';
+import 'package:ledgermate/core/database/pay_cycle.dart';
 import 'package:ledgermate/core/l10n/app_localizations.dart';
 import 'package:ledgermate/features/export_import/application/export_import_providers.dart';
 import 'package:ledgermate/features/export_import/data/export_import_repository.dart';
@@ -117,7 +118,7 @@ void main() {
     'SettingsScreen Widget Tests (Milestone M9 / M10 & FR-08, FR-09, FR-11)',
     () {
       testWidgets(
-        'renders appBar and all 5 settings cards (Data, Prefs, Notifs, Categories, About)',
+        'renders appBar and all settings cards (Data, Prefs, Notifs, Categories, Mandatory Expenses, About)',
         (tester) async {
           tester.view.physicalSize = const Size(1200, 6000);
           tester.view.devicePixelRatio = 1.0;
@@ -146,6 +147,10 @@ void main() {
             findsOneWidget,
           );
           expect(
+            find.byKey(const ValueKey('settings_mandatory_expenses_card')),
+            findsOneWidget,
+          );
+          expect(
             find.byKey(const ValueKey('settings_about_card')),
             findsOneWidget,
           );
@@ -153,6 +158,7 @@ void main() {
           expect(find.text('Tampilan & Bahasa'), findsOneWidget);
           expect(find.text('Notifikasi & Pengingat'), findsOneWidget);
           expect(find.text('Kelola Kategori'), findsOneWidget);
+          expect(find.text('Pengeluaran Wajib'), findsOneWidget);
           expect(find.text('Tentang LedgerMate'), findsOneWidget);
           expect(find.textContaining('100% Offline'), findsAtLeast(1));
         },
@@ -369,6 +375,259 @@ void main() {
 
         expect(find.text('Investasi Saham'), findsOneWidget);
       });
+
+      testWidgets(
+        'renders empty message when no mandatory expenses are configured',
+        (tester) async {
+          tester.view.physicalSize = const Size(1200, 6000);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() {
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+
+          await tester.pumpWidget(createTestWidget());
+          await tester.pumpAndSettle();
+
+          expect(
+            find.text('Belum ada pengeluaran wajib ditambahkan.'),
+            findsOneWidget,
+          );
+        },
+      );
+
+      testWidgets(
+        'renders list of current mandatory expenses with formatted amounts',
+        (tester) async {
+          tester.view.physicalSize = const Size(1200, 6000);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() {
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+
+          fakeSettingsRepo.profile.mandatoryExpenses = [
+            MandatoryExpenseItem()
+              ..name = 'Sewa Kos'
+              ..amount = 1500000,
+            MandatoryExpenseItem()
+              ..name = 'Listrik'
+              ..amount = 300000,
+          ];
+
+          await tester.pumpWidget(createTestWidget());
+          await tester.pumpAndSettle();
+
+          expect(find.text('Sewa Kos'), findsOneWidget);
+          expect(find.text('Rp 1.500.000'), findsOneWidget);
+          expect(find.text('Listrik'), findsOneWidget);
+          expect(find.text('Rp 300.000'), findsOneWidget);
+        },
+      );
+
+      testWidgets(
+        'opens add mandatory expense dialog, validates, enters data, saves and updates list',
+        (tester) async {
+          tester.view.physicalSize = const Size(1200, 6000);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() {
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+
+          await tester.pumpWidget(createTestWidget());
+          await tester.pumpAndSettle();
+
+          final addBtn = find.byKey(
+            const ValueKey('settings_add_mandatory_expense_button'),
+          );
+          expect(addBtn, findsOneWidget);
+
+          await tester.tap(addBtn);
+          await tester.pumpAndSettle();
+
+          expect(find.text('Tambah Pengeluaran Wajib'), findsOneWidget);
+          expect(
+            find.byKey(const ValueKey('mandatory_expense_name_field')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const ValueKey('mandatory_expense_amount_field')),
+            findsOneWidget,
+          );
+
+          // Attempt save with empty inputs -> shows validation errors
+          await tester.tap(
+            find.byKey(const ValueKey('save_mandatory_expense_button')),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.text('Nama tidak boleh kosong'), findsOneWidget);
+          expect(find.text('Jumlah tidak boleh kosong'), findsOneWidget);
+
+          // Enter valid data
+          await tester.enterText(
+            find.byKey(const ValueKey('mandatory_expense_name_field')),
+            'Wi-Fi & Internet',
+          );
+          await tester.enterText(
+            find.byKey(const ValueKey('mandatory_expense_amount_field')),
+            '350000',
+          );
+          await tester.tap(
+            find.byKey(const ValueKey('save_mandatory_expense_button')),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.text('Wi-Fi & Internet'), findsOneWidget);
+          expect(find.text('Rp 350.000'), findsOneWidget);
+          expect(
+            fakeSettingsRepo.profile.mandatoryExpenses.any(
+              (e) => e.name == 'Wi-Fi & Internet' && e.amount == 350000,
+            ),
+            isTrue,
+          );
+        },
+      );
+
+      testWidgets(
+        'opens edit mandatory expense dialog, modifies data, saves and updates list',
+        (tester) async {
+          tester.view.physicalSize = const Size(1200, 6000);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() {
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+
+          fakeSettingsRepo.profile.mandatoryExpenses = [
+            MandatoryExpenseItem()
+              ..name = 'Sewa Kos'
+              ..amount = 1500000,
+          ];
+
+          await tester.pumpWidget(createTestWidget());
+          await tester.pumpAndSettle();
+
+          final editBtn = find.byKey(
+            const ValueKey('edit_mandatory_expense_button_0'),
+          );
+          expect(editBtn, findsOneWidget);
+
+          await tester.tap(editBtn);
+          await tester.pumpAndSettle();
+
+          expect(find.text('Ubah Pengeluaran Wajib'), findsOneWidget);
+
+          await tester.enterText(
+            find.byKey(const ValueKey('mandatory_expense_name_field')),
+            'Sewa Apartemen',
+          );
+          await tester.enterText(
+            find.byKey(const ValueKey('mandatory_expense_amount_field')),
+            '2500000',
+          );
+          await tester.tap(
+            find.byKey(const ValueKey('save_mandatory_expense_button')),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.text('Sewa Apartemen'), findsOneWidget);
+          expect(find.text('Rp 2.500.000'), findsOneWidget);
+          expect(
+            fakeSettingsRepo.profile.mandatoryExpenses.first.name,
+            'Sewa Apartemen',
+          );
+          expect(
+            fakeSettingsRepo.profile.mandatoryExpenses.first.amount,
+            2500000,
+          );
+        },
+      );
+
+      testWidgets('tapping item row opens edit dialog', (tester) async {
+        tester.view.physicalSize = const Size(1200, 6000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        fakeSettingsRepo.profile.mandatoryExpenses = [
+          MandatoryExpenseItem()
+            ..name = 'Sewa Kos'
+            ..amount = 1500000,
+        ];
+
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const ValueKey('mandatory_expense_item_0')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Ubah Pengeluaran Wajib'), findsOneWidget);
+      });
+
+      testWidgets(
+        'opens delete mandatory expense dialog, confirms and removes item',
+        (tester) async {
+          tester.view.physicalSize = const Size(1200, 6000);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() {
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+
+          fakeSettingsRepo.profile.mandatoryExpenses = [
+            MandatoryExpenseItem()
+              ..name = 'Tagihan PDAM'
+              ..amount = 120000,
+          ];
+
+          await tester.pumpWidget(createTestWidget());
+          await tester.pumpAndSettle();
+
+          final deleteBtn = find.byKey(
+            const ValueKey('delete_mandatory_expense_button_0'),
+          );
+          expect(deleteBtn, findsOneWidget);
+
+          await tester.tap(deleteBtn);
+          await tester.pumpAndSettle();
+
+          expect(find.text('Hapus Pengeluaran Wajib?'), findsOneWidget);
+          expect(
+            find.text('Apakah Anda yakin ingin menghapus "Tagihan PDAM"?'),
+            findsOneWidget,
+          );
+
+          // Cancel first
+          await tester.tap(find.text('Batal'));
+          await tester.pumpAndSettle();
+          expect(find.text('Tagihan PDAM'), findsOneWidget);
+          expect(fakeSettingsRepo.profile.mandatoryExpenses.length, 1);
+
+          // Delete again and confirm
+          await tester.tap(deleteBtn);
+          await tester.pumpAndSettle();
+
+          await tester.tap(
+            find.byKey(
+              const ValueKey('delete_mandatory_expense_confirm_button'),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.text('Tagihan PDAM'), findsNothing);
+          expect(
+            find.text('Belum ada pengeluaran wajib ditambahkan.'),
+            findsOneWidget,
+          );
+          expect(fakeSettingsRepo.profile.mandatoryExpenses, isEmpty);
+        },
+      );
     },
   );
 }

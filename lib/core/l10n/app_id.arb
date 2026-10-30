@@ -830,6 +830,32 @@
       }
     }
   },
+  "mandatoryExpensesCardTitle": "Pengeluaran Wajib",
+  "mandatoryExpensesCardSubtitle": "Pengeluaran tetap & rutin untuk alokasi anggaran",
+  "mandatoryExpensesCardAddTooltip": "Tambah Pengeluaran Wajib",
+  "mandatoryExpensesCardEmptyMessage": "Belum ada pengeluaran wajib ditambahkan.",
+  "mandatoryExpensesCardAddDialogTitle": "Tambah Pengeluaran Wajib",
+  "mandatoryExpensesCardEditDialogTitle": "Ubah Pengeluaran Wajib",
+  "mandatoryExpensesCardDeleteDialogTitle": "Hapus Pengeluaran Wajib?",
+  "mandatoryExpensesCardDeleteDialogMessage": "Apakah Anda yakin ingin menghapus \"{name}\"?",
+  "@mandatoryExpensesCardDeleteDialogMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mandatoryExpensesCardDeleteButton": "Hapus",
+  "mandatoryExpensesCardCancelButton": "Batal",
+  "mandatoryExpensesCardSaveButton": "Simpan",
+  "mandatoryExpensesCardNameLabel": "Nama Pengeluaran",
+  "mandatoryExpensesCardNameHint": "Contoh: Sewa Kos, Listrik, Wi-Fi",
+  "mandatoryExpensesCardAmountLabel": "Jumlah",
+  "mandatoryExpensesCardEditTooltip": "Ubah",
+  "mandatoryExpensesCardDeleteTooltip": "Hapus",
+  "mandatoryExpensesCardNameEmptyError": "Nama tidak boleh kosong",
+  "mandatoryExpensesCardAmountEmptyError": "Jumlah tidak boleh kosong",
+  "mandatoryExpensesCardAmountInvalidError": "Jumlah tidak boleh negatif atau nol",
   "walletsManagementCardTitle": "Kelola Dompet & Rekening",
   "walletsManagementCardSubtitle": "Atur dompet, rekening bank, saldo awal & transfer",
   "walletsManagementCardOpenTooltip": "Buka Kelola Dompet",

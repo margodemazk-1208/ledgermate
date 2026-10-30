@@ -1478,6 +1478,69 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mandatoryExpensesCardTitle => 'Mandatory Expenses';
+
+  @override
+  String get mandatoryExpensesCardSubtitle =>
+      'Fixed & routine expenses for daily budget allocation';
+
+  @override
+  String get mandatoryExpensesCardAddTooltip => 'Add Mandatory Expense';
+
+  @override
+  String get mandatoryExpensesCardEmptyMessage =>
+      'No mandatory expenses added yet.';
+
+  @override
+  String get mandatoryExpensesCardAddDialogTitle => 'Add Mandatory Expense';
+
+  @override
+  String get mandatoryExpensesCardEditDialogTitle => 'Edit Mandatory Expense';
+
+  @override
+  String get mandatoryExpensesCardDeleteDialogTitle =>
+      'Delete Mandatory Expense?';
+
+  @override
+  String mandatoryExpensesCardDeleteDialogMessage(String name) {
+    return 'Are you sure you want to delete \"$name\"?';
+  }
+
+  @override
+  String get mandatoryExpensesCardDeleteButton => 'Delete';
+
+  @override
+  String get mandatoryExpensesCardCancelButton => 'Cancel';
+
+  @override
+  String get mandatoryExpensesCardSaveButton => 'Save';
+
+  @override
+  String get mandatoryExpensesCardNameLabel => 'Expense Name';
+
+  @override
+  String get mandatoryExpensesCardNameHint => 'E.g.: Rent, Electricity, Wi-Fi';
+
+  @override
+  String get mandatoryExpensesCardAmountLabel => 'Amount';
+
+  @override
+  String get mandatoryExpensesCardEditTooltip => 'Edit';
+
+  @override
+  String get mandatoryExpensesCardDeleteTooltip => 'Delete';
+
+  @override
+  String get mandatoryExpensesCardNameEmptyError => 'Name cannot be empty';
+
+  @override
+  String get mandatoryExpensesCardAmountEmptyError => 'Amount cannot be empty';
+
+  @override
+  String get mandatoryExpensesCardAmountInvalidError =>
+      'Amount cannot be negative or zero';
+
+  @override
   String get walletsManagementCardTitle => 'Manage Wallets & Accounts';
 
   @override

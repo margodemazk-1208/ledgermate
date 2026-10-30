@@ -2,6 +2,7 @@ import 'package:isar_community/isar.dart';
 
 import '../../../core/database/category.dart';
 import '../../../core/database/local_profile.dart';
+import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
 import '../../notifications/data/notification_service.dart';
 import '../../transactions/data/transaction_repository.dart';
@@ -19,6 +20,11 @@ abstract class SettingsRepositoryBase {
   Future<void> updateLimitAlert({required bool enabled});
   Future<void> updatePayCycleAlert({required bool enabled});
   Future<void> updateGoalMilestoneAlert({required bool enabled});
+
+  /// Mandatory expenses management (FR-09, BR-02, M22).
+  Future<void> addMandatoryExpense(String name, int amount);
+  Future<void> updateMandatoryExpense(int index, String name, int amount);
+  Future<void> deleteMandatoryExpense(int index);
 
   /// D18/M17 bug #2: one-time bootstrap that actually schedules the
   /// default-enabled notifications and proactively requests the Android
@@ -123,6 +129,73 @@ class SettingsRepository implements SettingsRepositoryBase {
   Future<void> updateGoalMilestoneAlert({required bool enabled}) async {
     final profile = await getProfile();
     profile.notifGoalMilestoneEnabled = enabled;
+    await _isar.writeTxn(() async {
+      await _isar.localProfiles.put(profile);
+    });
+  }
+
+  @override
+  Future<void> addMandatoryExpense(String name, int amount) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Nama pengeluaran wajib tidak boleh kosong.');
+    }
+    if (amount <= 0) {
+      throw ArgumentError(
+        'Jumlah pengeluaran wajib harus lebih besar dari nol.',
+      );
+    }
+    final profile = await getProfile();
+    final item = MandatoryExpenseItem()
+      ..name = trimmed
+      ..amount = amount;
+    profile.mandatoryExpenses = [...profile.mandatoryExpenses, item];
+    await _isar.writeTxn(() async {
+      await _isar.localProfiles.put(profile);
+    });
+  }
+
+  @override
+  Future<void> updateMandatoryExpense(
+    int index,
+    String name,
+    int amount,
+  ) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Nama pengeluaran wajib tidak boleh kosong.');
+    }
+    if (amount <= 0) {
+      throw ArgumentError(
+        'Jumlah pengeluaran wajib harus lebih besar dari nol.',
+      );
+    }
+    final profile = await getProfile();
+    if (index < 0 || index >= profile.mandatoryExpenses.length) {
+      throw RangeError.index(index, profile.mandatoryExpenses);
+    }
+    final updatedList = List<MandatoryExpenseItem>.from(
+      profile.mandatoryExpenses,
+    );
+    updatedList[index] = MandatoryExpenseItem()
+      ..name = trimmed
+      ..amount = amount;
+    profile.mandatoryExpenses = updatedList;
+    await _isar.writeTxn(() async {
+      await _isar.localProfiles.put(profile);
+    });
+  }
+
+  @override
+  Future<void> deleteMandatoryExpense(int index) async {
+    final profile = await getProfile();
+    if (index < 0 || index >= profile.mandatoryExpenses.length) {
+      throw RangeError.index(index, profile.mandatoryExpenses);
+    }
+    final updatedList = List<MandatoryExpenseItem>.from(
+      profile.mandatoryExpenses,
+    )..removeAt(index);
+    profile.mandatoryExpenses = updatedList;
     await _isar.writeTxn(() async {
       await _isar.localProfiles.put(profile);
     });
