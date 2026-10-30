@@ -22,7 +22,12 @@ const CategorySchema = CollectionSchema(
       name: r'isDefault',
       type: IsarType.bool,
     ),
-    r'name': PropertySchema(id: 1, name: r'name', type: IsarType.string),
+    r'isSystemGenerated': PropertySchema(
+      id: 1,
+      name: r'isSystemGenerated',
+      type: IsarType.bool,
+    ),
+    r'name': PropertySchema(id: 2, name: r'name', type: IsarType.string),
   },
 
   estimateSize: _categoryEstimateSize,
@@ -57,7 +62,8 @@ void _categorySerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeBool(offsets[0], object.isDefault);
-  writer.writeString(offsets[1], object.name);
+  writer.writeBool(offsets[1], object.isSystemGenerated);
+  writer.writeString(offsets[2], object.name);
 }
 
 Category _categoryDeserialize(
@@ -69,7 +75,8 @@ Category _categoryDeserialize(
   final object = Category();
   object.id = id;
   object.isDefault = reader.readBool(offsets[0]);
-  object.name = reader.readString(offsets[1]);
+  object.isSystemGenerated = reader.readBool(offsets[1]);
+  object.name = reader.readString(offsets[2]);
   return object;
 }
 
@@ -83,6 +90,8 @@ P _categoryDeserializeProp<P>(
     case 0:
       return (reader.readBool(offset)) as P;
     case 1:
+      return (reader.readBool(offset)) as P;
+    case 2:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -244,6 +253,15 @@ extension CategoryQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'isDefault', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<Category, Category, QAfterFilterCondition>
+  isSystemGeneratedEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'isSystemGenerated', value: value),
       );
     });
   }
@@ -414,6 +432,18 @@ extension CategoryQuerySortBy on QueryBuilder<Category, Category, QSortBy> {
     });
   }
 
+  QueryBuilder<Category, Category, QAfterSortBy> sortByIsSystemGenerated() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSystemGenerated', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Category, Category, QAfterSortBy> sortByIsSystemGeneratedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSystemGenerated', Sort.desc);
+    });
+  }
+
   QueryBuilder<Category, Category, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -453,6 +483,18 @@ extension CategoryQuerySortThenBy
     });
   }
 
+  QueryBuilder<Category, Category, QAfterSortBy> thenByIsSystemGenerated() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSystemGenerated', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Category, Category, QAfterSortBy> thenByIsSystemGeneratedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSystemGenerated', Sort.desc);
+    });
+  }
+
   QueryBuilder<Category, Category, QAfterSortBy> thenByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -471,6 +513,12 @@ extension CategoryQueryWhereDistinct
   QueryBuilder<Category, Category, QDistinct> distinctByIsDefault() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isDefault');
+    });
+  }
+
+  QueryBuilder<Category, Category, QDistinct> distinctByIsSystemGenerated() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isSystemGenerated');
     });
   }
 
@@ -494,6 +542,12 @@ extension CategoryQueryProperty
   QueryBuilder<Category, bool, QQueryOperations> isDefaultProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isDefault');
+    });
+  }
+
+  QueryBuilder<Category, bool, QQueryOperations> isSystemGeneratedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isSystemGenerated');
     });
   }
 

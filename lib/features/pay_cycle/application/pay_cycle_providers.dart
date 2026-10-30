@@ -1,13 +1,16 @@
 // Riverpod providers for M5 Pay Cycle Transition feature (FR-05, BR-02).
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/budget_scope/budget_scope.dart';
 import '../../../core/database/isar_provider.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/database/wallet.dart';
 import '../../../core/formulas/daily_budget_formulas.dart';
 import '../../budget_engine/application/budget_providers.dart';
 import '../../notifications/application/pay_cycle_notification_hook.dart';
+import '../../wallets/application/wallet_providers.dart';
 import '../data/pay_cycle_repository.dart';
 import 'pay_cycle_transition_state.dart';
 
@@ -63,49 +66,54 @@ final isCycleTransitionDueProvider = Provider<AsyncValue<bool>>((ref) {
   }
 });
 
-/// Pure helper to compute Mode B carry-over balance from yesterday
-/// per BR-01 & BR-02 formulas.
+/// Computes Mode B's carry-over balance to pre-fill the Pay Cycle Transition
+/// screen, catching up every full day between `profile.lastRolloverDate`
+/// and yesterday (D18/M16 bug #4):
+/// (a) transfers are excluded/netted per D16, not counted as plain expense;
+/// (b) only transactions in `includeInDailyBudget` wallets count (BR-04);
+/// (c) if 2+ days were skipped since the user last visited this screen,
+/// each skipped day is rolled over in order, not just the single most
+/// recent one.
+///
+/// Shares its per-day math with the automatic background catch-up job
+/// (`core/accrual/daily_accrual_service.dart`) via
+/// `core/budget_scope/budget_scope.dart` — see that file's header for why
+/// there must be exactly one implementation of this math, not two.
+///
+/// Known limitation (pre-existing, not introduced by this fix): historical
+/// mandatory expenses for skipped days cannot be recovered — `LocalProfile.
+/// mandatoryExpenses` only ever holds the MOST RECENTLY entered day's list
+/// (BR-02 has no per-day history) — so the current list is used as the best
+/// available approximation for every skipped day.
 int computeModeBYesterdayCarryOver({
   required LocalProfile profile,
   required List<db.Transaction> transactions,
-  required int dailySavingsReserve,
+  required List<Wallet> wallets,
+  required List<GoalAllocationInput> goals,
   DateTime? referenceNow,
 }) {
   final now = referenceNow ?? DateTime.now();
-  final todayMidnight = normalizeDate(now);
+  final today = normalizeDate(now);
+  final yesterday = today.subtract(const Duration(days: 1));
 
-  final lastDate = profile.lastRolloverDate != null
+  final lastProcessed = profile.lastRolloverDate != null
       ? normalizeDate(profile.lastRolloverDate!)
-      : todayMidnight.subtract(const Duration(days: 1));
+      : yesterday.subtract(const Duration(days: 1));
 
-  var bekelKemarin = 0;
-  var pengeluaranKemarin = 0;
-  for (final tx in transactions) {
-    if (isSameCalendarDay(tx.date, lastDate)) {
-      if (tx.type == db.TransactionType.income) {
-        bekelKemarin += tx.amount;
-      } else {
-        pengeluaranKemarin += tx.amount;
-      }
-    }
+  if (!lastProcessed.isBefore(yesterday)) {
+    // Already caught up through yesterday — nothing to advance.
+    return profile.carryOverBalance;
   }
 
-  final pengeluaranWajibKemarin = profile.mandatoryExpenses.fold<int>(
-    0,
-    (sum, item) => sum + item.amount,
+  return advanceModeBCarryOverAcrossDays(
+    startingCarryOver: profile.carryOverBalance,
+    fromDateExclusive: lastProcessed,
+    toDateInclusive: yesterday,
+    transactions: transactions,
+    includedWalletIds: includedWalletIdsFrom(wallets),
+    mandatoryExpensesForDay: profile.mandatoryExpenses,
+    goals: goals,
   );
-
-  final previousCarryOver = profile.carryOverBalance;
-
-  final yesterdayBudget = calculateModeBBudget(
-    saldoCarryOver: previousCarryOver,
-    bekelHariIni: bekelKemarin,
-    pengeluaranWajibHariIni: pengeluaranWajibKemarin,
-    pengeluaranHariIni: pengeluaranKemarin,
-    dailySavingsReserve: dailySavingsReserve,
-  );
-
-  return calculateNextDayCarryOver(yesterdayBudget.uangJajanAmanHariIni);
 }
 
 DateTime calculateDefaultNextPayday(
@@ -163,15 +171,13 @@ class PayCycleTransitionNotifier extends Notifier<PayCycleTransitionState> {
         );
       }).toList();
 
-      final dailySavingsReserve = calculateDailySavingsReserve(
-        goals: goalInputs,
-        today: now,
-      );
+      final wallets = ref.watch(walletsStreamProvider).value ?? [];
 
       carryOver = computeModeBYesterdayCarryOver(
         profile: profile,
         transactions: txs,
-        dailySavingsReserve: dailySavingsReserve,
+        wallets: wallets,
+        goals: goalInputs,
         referenceNow: now,
       );
     }

@@ -23,30 +23,35 @@ const TransactionSchema = CollectionSchema(
       name: r'categoryId',
       type: IsarType.long,
     ),
-    r'date': PropertySchema(id: 2, name: r'date', type: IsarType.dateTime),
-    r'notes': PropertySchema(id: 3, name: r'notes', type: IsarType.string),
+    r'createdAt': PropertySchema(
+      id: 2,
+      name: r'createdAt',
+      type: IsarType.dateTime,
+    ),
+    r'date': PropertySchema(id: 3, name: r'date', type: IsarType.dateTime),
+    r'notes': PropertySchema(id: 4, name: r'notes', type: IsarType.string),
     r'payCycleId': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'payCycleId',
       type: IsarType.long,
     ),
     r'transferGroupId': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'transferGroupId',
       type: IsarType.string,
     ),
     r'transferPeerWalletId': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'transferPeerWalletId',
       type: IsarType.long,
     ),
     r'type': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'type',
       type: IsarType.byte,
       enumMap: _TransactiontypeEnumValueMap,
     ),
-    r'walletId': PropertySchema(id: 8, name: r'walletId', type: IsarType.long),
+    r'walletId': PropertySchema(id: 9, name: r'walletId', type: IsarType.long),
   },
 
   estimateSize: _transactionEstimateSize,
@@ -93,13 +98,14 @@ void _transactionSerialize(
 ) {
   writer.writeLong(offsets[0], object.amount);
   writer.writeLong(offsets[1], object.categoryId);
-  writer.writeDateTime(offsets[2], object.date);
-  writer.writeString(offsets[3], object.notes);
-  writer.writeLong(offsets[4], object.payCycleId);
-  writer.writeString(offsets[5], object.transferGroupId);
-  writer.writeLong(offsets[6], object.transferPeerWalletId);
-  writer.writeByte(offsets[7], object.type.index);
-  writer.writeLong(offsets[8], object.walletId);
+  writer.writeDateTime(offsets[2], object.createdAt);
+  writer.writeDateTime(offsets[3], object.date);
+  writer.writeString(offsets[4], object.notes);
+  writer.writeLong(offsets[5], object.payCycleId);
+  writer.writeString(offsets[6], object.transferGroupId);
+  writer.writeLong(offsets[7], object.transferPeerWalletId);
+  writer.writeByte(offsets[8], object.type.index);
+  writer.writeLong(offsets[9], object.walletId);
 }
 
 Transaction _transactionDeserialize(
@@ -111,16 +117,17 @@ Transaction _transactionDeserialize(
   final object = Transaction();
   object.amount = reader.readLong(offsets[0]);
   object.categoryId = reader.readLong(offsets[1]);
-  object.date = reader.readDateTime(offsets[2]);
+  object.createdAt = reader.readDateTimeOrNull(offsets[2]);
+  object.date = reader.readDateTime(offsets[3]);
   object.id = id;
-  object.notes = reader.readStringOrNull(offsets[3]);
-  object.payCycleId = reader.readLongOrNull(offsets[4]);
-  object.transferGroupId = reader.readStringOrNull(offsets[5]);
-  object.transferPeerWalletId = reader.readLongOrNull(offsets[6]);
+  object.notes = reader.readStringOrNull(offsets[4]);
+  object.payCycleId = reader.readLongOrNull(offsets[5]);
+  object.transferGroupId = reader.readStringOrNull(offsets[6]);
+  object.transferPeerWalletId = reader.readLongOrNull(offsets[7]);
   object.type =
-      _TransactiontypeValueEnumMap[reader.readByteOrNull(offsets[7])] ??
+      _TransactiontypeValueEnumMap[reader.readByteOrNull(offsets[8])] ??
       TransactionType.income;
-  object.walletId = reader.readLong(offsets[8]);
+  object.walletId = reader.readLong(offsets[9]);
   return object;
 }
 
@@ -136,20 +143,22 @@ P _transactionDeserializeProp<P>(
     case 1:
       return (reader.readLong(offset)) as P;
     case 2:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 3:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 4:
-      return (reader.readLongOrNull(offset)) as P;
-    case 5:
       return (reader.readStringOrNull(offset)) as P;
-    case 6:
+    case 5:
       return (reader.readLongOrNull(offset)) as P;
+    case 6:
+      return (reader.readStringOrNull(offset)) as P;
     case 7:
+      return (reader.readLongOrNull(offset)) as P;
+    case 8:
       return (_TransactiontypeValueEnumMap[reader.readByteOrNull(offset)] ??
               TransactionType.income)
           as P;
-    case 8:
+    case 9:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -366,6 +375,79 @@ extension TransactionQueryFilter
       return query.addFilterCondition(
         FilterCondition.between(
           property: r'categoryId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  createdAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'createdAt'),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  createdAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'createdAt'),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  createdAtEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'createdAt', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  createdAtGreaterThan(DateTime? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'createdAt',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  createdAtLessThan(DateTime? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'createdAt',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterFilterCondition>
+  createdAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'createdAt',
           lower: lower,
           includeLower: includeLower,
           upper: upper,
@@ -1113,6 +1195,18 @@ extension TransactionQuerySortBy
     });
   }
 
+  QueryBuilder<Transaction, Transaction, QAfterSortBy> sortByCreatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'createdAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterSortBy> sortByCreatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'createdAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<Transaction, Transaction, QAfterSortBy> sortByDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'date', Sort.asc);
@@ -1224,6 +1318,18 @@ extension TransactionQuerySortThenBy
   QueryBuilder<Transaction, Transaction, QAfterSortBy> thenByCategoryIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'categoryId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterSortBy> thenByCreatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'createdAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Transaction, Transaction, QAfterSortBy> thenByCreatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'createdAt', Sort.desc);
     });
   }
 
@@ -1341,6 +1447,12 @@ extension TransactionQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Transaction, Transaction, QDistinct> distinctByCreatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'createdAt');
+    });
+  }
+
   QueryBuilder<Transaction, Transaction, QDistinct> distinctByDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'date');
@@ -1409,6 +1521,12 @@ extension TransactionQueryProperty
   QueryBuilder<Transaction, int, QQueryOperations> categoryIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'categoryId');
+    });
+  }
+
+  QueryBuilder<Transaction, DateTime?, QQueryOperations> createdAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'createdAt');
     });
   }
 

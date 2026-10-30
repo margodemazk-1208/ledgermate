@@ -8,6 +8,7 @@ import 'package:ledgermate/core/database/isar_provider.dart';
 import 'package:ledgermate/core/database/local_profile.dart';
 import 'package:ledgermate/core/database/pay_cycle.dart';
 import 'package:ledgermate/core/database/transaction.dart' as db;
+import 'package:ledgermate/core/database/wallet.dart';
 import 'package:ledgermate/features/notifications/application/pay_cycle_notification_hook.dart';
 import 'package:ledgermate/features/pay_cycle/data/pay_cycle_repository.dart';
 
@@ -132,7 +133,10 @@ void main() {
   });
 
   test('Mode B transition: updates carryOver, sets lastRolloverDate, resets mandatory expenses, logs bekel', () async {
-    // Seed initial profile and default category
+    // Seed initial profile and default category — "Uang Saku" deliberately
+    // seeded FIRST, mirroring the real app's default category list (where
+    // "Makan" is first) to prove the bekel transaction is NOT just picking
+    // "whatever category happens to be first" (D18/M16 bug #3).
     await isar.writeTxn(() async {
       final profile = LocalProfile()
         ..incomeFrequency = IncomeFrequency.daily
@@ -150,6 +154,14 @@ void main() {
         ..name = 'Uang Saku'
         ..isDefault = true;
       await isar.categorys.put(cat);
+
+      final wallet = Wallet()
+        ..name = 'Dompet Utama'
+        ..icon = 'account_balance_wallet'
+        ..startingBalance = 0
+        ..includeInDailyBudget = true
+        ..createdAt = DateTime(2026, 1, 1);
+      await isar.wallets.put(wallet);
     });
 
     final today = DateTime(2026, 10, 28);
@@ -181,9 +193,42 @@ void main() {
     expect(txs.first.amount, 50000);
     expect(txs.first.notes, 'Bekel hari ini');
 
+    // D18/M16 bug #3 regression: the bekel transaction must be attributed to
+    // a REAL wallet (never 0 — a walletId=0 bekel entry never reaches the
+    // Home budget number since no wallet's computed balance includes it)
+    // and a dedicated system category (never "Uang Saku"/"Makan"/whatever
+    // category happens to be first).
+    final wallet = await isar.wallets.where().findFirst();
+    expect(txs.first.walletId, wallet!.id);
+    expect(txs.first.walletId, isNot(0));
+    final usedCategory = await isar.categorys.get(txs.first.categoryId);
+    expect(usedCategory, isNotNull);
+    expect(usedCategory!.isSystemGenerated, isTrue);
+    expect(usedCategory.name, isNot('Uang Saku'));
+
     // Verify: notification hook fired
     expect(notificationHook.onPayCycleStartedCalls, 1);
     expect(notificationHook.lastFrequency, IncomeFrequency.daily);
     expect(notificationHook.lastIncomeAmount, 50000);
+  });
+
+  test('Mode B transition without bekel income does not create any system wallet/category (no side effect when nothing to log)', () async {
+    await isar.writeTxn(() async {
+      final profile = LocalProfile()
+        ..incomeFrequency = IncomeFrequency.daily
+        ..carryOverBalance = 50000
+        ..onboardingComplete = true;
+      await isar.localProfiles.put(profile);
+    });
+
+    await repository.completeModeBTransition(
+      carryOverBalance: 50000,
+      todayMandatoryExpenses: const [],
+      referenceNow: DateTime(2026, 10, 28),
+    );
+
+    expect(await isar.transactions.count(), 0);
+    expect(await isar.wallets.count(), 0);
+    expect(await isar.categorys.count(), 0);
   });
 }

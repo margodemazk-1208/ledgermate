@@ -1,6 +1,7 @@
 // Riverpod providers for M4 Smart Daily Budget Engine.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/budget_scope/budget_scope.dart';
 import '../../../core/database/financial_goal.dart';
 import '../../../core/database/isar_provider.dart';
 import '../../../core/database/local_profile.dart';
@@ -53,13 +54,13 @@ class DailyBudgetSummary {
   bool get isPositive => uangJajanAmanHariIni >= 0;
 }
 
-/// Helper to check if two dates share the exact same calendar day.
-bool isSameCalendarDay(DateTime a, DateTime b) {
-  return a.year == b.year && a.month == b.month && a.day == b.day;
-}
-
 /// Pure adapter mapping DB entities into the pure formula engine
 /// in `lib/core/formulas/daily_budget_formulas.dart`.
+///
+/// Wallet/transfer scoping (BR-04, D16) is delegated to the SHARED helper in
+/// `core/budget_scope/budget_scope.dart` — this is one of the 4 call sites
+/// documented there; do not reimplement the filtering inline here again
+/// (that regression is exactly D18/M16 bug #4 & #7).
 DailyBudgetSummary computeDailyBudgetSummary({
   required LocalProfile profile,
   PayCycle? latestCycle,
@@ -69,11 +70,6 @@ DailyBudgetSummary computeDailyBudgetSummary({
   DateTime? referenceNow,
 }) {
   final now = referenceNow ?? DateTime.now();
-
-  bool isIncluded(db.Transaction tx) {
-    if (includedWalletIds == null) return true;
-    return includedWalletIds.contains(tx.walletId);
-  }
 
   // Convert Isar FinancialGoal models to pure GoalAllocationInput
   final goalInputs = goals.map((g) {
@@ -109,32 +105,11 @@ DailyBudgetSummary computeDailyBudgetSummary({
       return true;
     }).toList();
 
-    var additionalIncome = 0;
-    var recordedExpenses = 0;
-    for (final tx in cycleTxs) {
-      if (tx.type == db.TransactionType.income) {
-        if (isIncluded(tx)) {
-          additionalIncome += tx.amount;
-        }
-      } else if (tx.type == db.TransactionType.expense) {
-        if (isIncluded(tx)) {
-          recordedExpenses += tx.amount;
-        }
-      } else if (tx.type == db.TransactionType.transfer) {
-        final fromIncluded =
-            includedWalletIds == null ||
-            includedWalletIds.contains(tx.walletId);
-        final toIncluded =
-            includedWalletIds == null ||
-            (tx.transferPeerWalletId != null &&
-                includedWalletIds.contains(tx.transferPeerWalletId));
-        if (fromIncluded && !toIncluded) {
-          recordedExpenses += tx.amount;
-        } else if (!fromIncluded && toIncluded) {
-          additionalIncome += tx.amount;
-        }
-      }
-    }
+    final totals = sumBudgetScopedTransactions(
+      transactions: cycleTxs,
+      includedWalletIds: includedWalletIds,
+      predicate: (_) => true,
+    );
 
     final mandatoryExpenses =
         latestCycle?.mandatoryExpenses.fold<int>(
@@ -147,9 +122,9 @@ DailyBudgetSummary computeDailyBudgetSummary({
 
     final modeAResult = calculateModeABudget(
       fixedIncome: fixedIncome,
-      additionalIncome: additionalIncome,
+      additionalIncome: totals.income,
       mandatoryExpenses: mandatoryExpenses,
-      recordedExpenses: recordedExpenses,
+      recordedExpenses: totals.expense,
       remainingDays: remainingDays,
       dailySavingsReserve: dailySavingsReserve,
     );
@@ -169,34 +144,11 @@ DailyBudgetSummary computeDailyBudgetSummary({
       transactionDates: transactions.map((t) => t.date).toList(),
     );
 
-    var bekelHariIni = 0;
-    var pengeluaranHariIni = 0;
-    for (final tx in transactions) {
-      if (isSameCalendarDay(tx.date, now)) {
-        if (tx.type == db.TransactionType.income) {
-          if (isIncluded(tx)) {
-            bekelHariIni += tx.amount;
-          }
-        } else if (tx.type == db.TransactionType.expense) {
-          if (isIncluded(tx)) {
-            pengeluaranHariIni += tx.amount;
-          }
-        } else if (tx.type == db.TransactionType.transfer) {
-          final fromIncluded =
-              includedWalletIds == null ||
-              includedWalletIds.contains(tx.walletId);
-          final toIncluded =
-              includedWalletIds == null ||
-              (tx.transferPeerWalletId != null &&
-                  includedWalletIds.contains(tx.transferPeerWalletId));
-          if (fromIncluded && !toIncluded) {
-            pengeluaranHariIni += tx.amount;
-          } else if (!fromIncluded && toIncluded) {
-            bekelHariIni += tx.amount;
-          }
-        }
-      }
-    }
+    final totals = sumBudgetScopedTransactions(
+      transactions: transactions,
+      includedWalletIds: includedWalletIds,
+      predicate: (tx) => isSameCalendarDay(tx.date, now),
+    );
 
     final pengeluaranWajibHariIni = profile.mandatoryExpenses.fold<int>(
       0,
@@ -207,9 +159,9 @@ DailyBudgetSummary computeDailyBudgetSummary({
 
     final modeBResult = calculateModeBBudget(
       saldoCarryOver: saldoCarryOver,
-      bekelHariIni: bekelHariIni,
+      bekelHariIni: totals.income,
       pengeluaranWajibHariIni: pengeluaranWajibHariIni,
-      pengeluaranHariIni: pengeluaranHariIni,
+      pengeluaranHariIni: totals.expense,
       dailySavingsReserve: dailySavingsReserve,
     );
 
@@ -223,7 +175,16 @@ DailyBudgetSummary computeDailyBudgetSummary({
   }
 }
 
-/// Reactively recomputed whenever profile, pay cycles, transactions, or goals change.
+/// Reactively recomputed whenever profile, pay cycles, transactions, goals,
+/// or wallets change.
+///
+/// D18/M16 bug #8: ALL FOUR source streams (profile, pay cycle, transactions,
+/// goals) plus the wallets stream must finish loading before any number is
+/// computed — gating on only some of them let a transiently-wrong number
+/// (computed with `latestCycle: null` or `includedWalletIds: null` before
+/// the real data arrived) flash on screen, which M14's count-up animation
+/// would then visibly animate away from. The UI shows its skeleton loader
+/// for the `AsyncValue.loading()` case instead (`budget_home_screen.dart`).
 final dailyBudgetSummaryProvider = Provider<AsyncValue<DailyBudgetSummary>>((
   ref,
 ) {
@@ -231,6 +192,7 @@ final dailyBudgetSummaryProvider = Provider<AsyncValue<DailyBudgetSummary>>((
   final cycleAsync = ref.watch(budgetLatestPayCycleStreamProvider);
   final txsAsync = ref.watch(budgetTransactionsStreamProvider);
   final goalsAsync = ref.watch(budgetGoalsStreamProvider);
+  final walletsAsync = ref.watch(walletsStreamProvider);
 
   if (profileAsync.hasError) {
     return AsyncValue.error(profileAsync.error!, profileAsync.stackTrace!);
@@ -244,8 +206,15 @@ final dailyBudgetSummaryProvider = Provider<AsyncValue<DailyBudgetSummary>>((
   if (goalsAsync.hasError) {
     return AsyncValue.error(goalsAsync.error!, goalsAsync.stackTrace!);
   }
+  if (walletsAsync.hasError) {
+    return AsyncValue.error(walletsAsync.error!, walletsAsync.stackTrace!);
+  }
 
-  if (profileAsync.isLoading || txsAsync.isLoading || goalsAsync.isLoading) {
+  if (profileAsync.isLoading ||
+      cycleAsync.isLoading ||
+      txsAsync.isLoading ||
+      goalsAsync.isLoading ||
+      walletsAsync.isLoading) {
     return const AsyncValue.loading();
   }
 
@@ -254,11 +223,8 @@ final dailyBudgetSummaryProvider = Provider<AsyncValue<DailyBudgetSummary>>((
     return const AsyncValue.loading();
   }
 
-  final walletsAsync = ref.watch(walletsStreamProvider);
-  final wallets = walletsAsync.value;
-  final includedWalletIds = wallets != null && wallets.isNotEmpty
-      ? wallets.where((w) => w.includeInDailyBudget).map((w) => w.id).toSet()
-      : null;
+  final wallets = walletsAsync.value ?? const [];
+  final includedWalletIds = includedWalletIdsFrom(wallets);
 
   final summary = computeDailyBudgetSummary(
     profile: profile,

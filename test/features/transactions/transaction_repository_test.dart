@@ -11,6 +11,7 @@ import 'package:ledgermate/core/database/isar_provider.dart';
 import 'package:ledgermate/core/database/local_profile.dart';
 import 'package:ledgermate/core/database/pay_cycle.dart';
 import 'package:ledgermate/core/database/transaction.dart' as db;
+import 'package:ledgermate/core/database/wallet.dart';
 import 'package:ledgermate/features/transactions/data/transaction_repository.dart';
 
 void main() {
@@ -213,6 +214,95 @@ void main() {
       },
     );
 
+    test('D18/M16 bug #5 regression: editing an OLD transaction without changing its date keeps it in its ORIGINAL pay cycle, not the current one', () async {
+      await isar.writeTxn(() async {
+        final profile = LocalProfile()
+          ..incomeFrequency = IncomeFrequency.periodic
+          ..onboardingComplete = true;
+        await isar.localProfiles.put(profile);
+      });
+      await repository.seedDefaultCategories();
+      final categories = await isar.categorys.where().findAll();
+      final catA = categories[0];
+      final catB = categories[1];
+
+      final oldCycle = PayCycle()
+        ..startDate = DateTime(2026, 8, 1)
+        ..paydayDate = DateTime(2026, 8, 31);
+      await isar.writeTxn(() => isar.payCycles.put(oldCycle));
+
+      final oldTxDate = DateTime(2026, 8, 15);
+      final tx = await repository.saveTransaction(
+        type: db.TransactionType.expense,
+        amount: 30000,
+        categoryId: catA.id,
+        date: oldTxDate,
+      );
+      expect(tx.payCycleId, oldCycle.id);
+
+      // A NEW pay cycle starts later (e.g. the next payday) — this is the
+      // "current" cycle at the time of editing.
+      final currentCycle = PayCycle()
+        ..startDate = DateTime(2026, 10, 1)
+        ..paydayDate = DateTime(2026, 10, 31);
+      await isar.writeTxn(() => isar.payCycles.put(currentCycle));
+
+      // Edit the OLD transaction's category ONLY — date is unchanged.
+      final edited = await repository.saveTransaction(
+        id: tx.id,
+        type: db.TransactionType.expense,
+        amount: 30000,
+        categoryId: catB.id,
+        date: oldTxDate, // unchanged
+      );
+
+      // Must STILL belong to the OLD cycle, not silently re-homed into
+      // the newer "current" cycle just because a save happened today.
+      expect(edited.payCycleId, oldCycle.id);
+      expect(edited.payCycleId, isNot(currentCycle.id));
+      expect(edited.categoryId, catB.id); // the actual edit took effect
+    });
+
+    test('D18/M16 bug #5: explicitly moving a transaction\'s date into a different cycle DOES re-home it there', () async {
+      await isar.writeTxn(() async {
+        final profile = LocalProfile()
+          ..incomeFrequency = IncomeFrequency.periodic
+          ..onboardingComplete = true;
+        await isar.localProfiles.put(profile);
+      });
+      await repository.seedDefaultCategories();
+      final cat = (await isar.categorys.where().findAll()).first;
+
+      final oldCycle = PayCycle()
+        ..startDate = DateTime(2026, 8, 1)
+        ..paydayDate = DateTime(2026, 8, 31);
+      await isar.writeTxn(() => isar.payCycles.put(oldCycle));
+
+      final newCycle = PayCycle()
+        ..startDate = DateTime(2026, 9, 1)
+        ..paydayDate = DateTime(2026, 9, 30);
+      await isar.writeTxn(() => isar.payCycles.put(newCycle));
+
+      final tx = await repository.saveTransaction(
+        type: db.TransactionType.expense,
+        amount: 30000,
+        categoryId: cat.id,
+        date: DateTime(2026, 8, 15),
+      );
+      expect(tx.payCycleId, oldCycle.id);
+
+      // User explicitly edits the transaction's DATE into the new cycle's range.
+      final edited = await repository.saveTransaction(
+        id: tx.id,
+        type: db.TransactionType.expense,
+        amount: 30000,
+        categoryId: cat.id,
+        date: DateTime(2026, 9, 10),
+      );
+
+      expect(edited.payCycleId, newCycle.id);
+    });
+
     test('watchTransactions and getTransactions return items in reverse-chronological order', () async {
       await repository.seedDefaultCategories();
       final cat = (await isar.categorys.where().findAll()).first;
@@ -291,6 +381,111 @@ void main() {
 
       // Data must remain untouched
       expect(await isar.transactions.count(), 1);
+    });
+
+    test('D18/M16 bug #6 regression: editing an old transaction\'s date to today does NOT bypass the delete restriction', () async {
+      await repository.seedDefaultCategories();
+      final cat = (await isar.categorys.where().findAll()).first;
+
+      final createdOn = DateTime(2026, 10, 20, 8, 0);
+      final today = DateTime(2026, 10, 28, 12, 0);
+
+      // Originally created (and dated) 8 days ago.
+      final tx = await repository.saveTransaction(
+        type: db.TransactionType.expense,
+        amount: 75000,
+        categoryId: cat.id,
+        date: createdOn,
+      );
+      final persisted = await isar.transactions.get(tx.id);
+      expect(persisted!.createdAt, isNotNull);
+
+      // Attacker/user move: edit the transaction's user-facing `date` to
+      // TODAY, hoping to make `isTransactionDeletable` (which the OLD
+      // code checked against `date`) think it's a fresh transaction.
+      final edited = await repository.saveTransaction(
+        id: tx.id,
+        type: db.TransactionType.expense,
+        amount: 75000,
+        categoryId: cat.id,
+        date: today,
+      );
+      expect(edited.date, today);
+
+      // `createdAt` must be UNCHANGED by the edit — this is the actual
+      // delete-eligibility check.
+      final afterEdit = await isar.transactions.get(tx.id);
+      expect(afterEdit!.createdAt, persisted.createdAt);
+
+      // The bypass attempt must still fail.
+      expect(
+        () => repository.deleteTransaction(tx.id, referenceDate: today),
+        throwsA(isA<TransactionDeleteRestrictedException>()),
+      );
+      expect(await isar.transactions.count(), 1);
+    });
+
+    test('D18/M16 bug #10 regression: switching a transaction\'s type away from transfer clears the dangling transferPeerWalletId/transferGroupId', () async {
+      await repository.seedDefaultCategories();
+      final cat = (await isar.categorys.where().findAll()).first;
+
+      final walletA = Wallet()
+        ..name = 'Tunai'
+        ..icon = 'wallet'
+        ..startingBalance = 0
+        ..includeInDailyBudget = true
+        ..createdAt = DateTime(2026, 1, 1);
+      final walletB = Wallet()
+        ..name = 'Bank'
+        ..icon = 'bank'
+        ..startingBalance = 0
+        ..includeInDailyBudget = true
+        ..createdAt = DateTime(2026, 1, 2);
+      await isar.writeTxn(() async {
+        await isar.wallets.put(walletA);
+        await isar.wallets.put(walletB);
+      });
+
+      final transferTx = await repository.saveTransaction(
+        type: db.TransactionType.transfer,
+        amount: 100000,
+        categoryId: 0,
+        date: DateTime(2026, 10, 28),
+        walletId: walletA.id,
+        transferPeerWalletId: walletB.id,
+        transferGroupId: 'trf_1',
+      );
+      expect(transferTx.transferPeerWalletId, walletB.id);
+      expect(transferTx.transferGroupId, 'trf_1');
+
+      // User switches this transaction's type away from `transfer`.
+      final edited = await repository.saveTransaction(
+        id: transferTx.id,
+        type: db.TransactionType.expense,
+        amount: 100000,
+        categoryId: cat.id,
+        date: DateTime(2026, 10, 28),
+        walletId: walletA.id,
+        // UI might still pass the stale peer id along — the repository
+        // must ignore it once type != transfer.
+        transferPeerWalletId: walletB.id,
+        transferGroupId: 'trf_1',
+      );
+
+      expect(edited.type, db.TransactionType.expense);
+      expect(edited.transferPeerWalletId, isNull);
+      expect(edited.transferGroupId, isNull);
+
+      final persisted = await isar.transactions.get(transferTx.id);
+      expect(persisted!.transferPeerWalletId, isNull);
+      expect(persisted.transferGroupId, isNull);
+
+      // walletB must now be deletable (no dangling reference to it survives).
+      final stillReferencing = await isar.transactions
+          .filter()
+          .transferPeerWalletIdEqualTo(walletB.id)
+          .findFirst();
+      expect(stillReferencing, isNull);
     });
   });
 

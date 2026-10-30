@@ -85,6 +85,14 @@ DateTime normalizeDate(DateTime date) {
   return DateTime(date.year, date.month, date.day);
 }
 
+/// Checks whether two [DateTime]s fall on the exact same calendar day
+/// (year, month, day), ignoring time-of-day. Shared by every feature that
+/// buckets transactions by day (Mode B budget calc, carry-over catch-up,
+/// FR-03 delete restriction) — see `docs/DECISIONS.md` D18/M16.
+bool isSameCalendarDay(DateTime a, DateTime b) {
+  return a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
 /// Calculates `RemainingDays` for Mode A (PRD §7.1):
 /// Number of days from [today] until [nextPaydayDate] (inclusive of today).
 ///

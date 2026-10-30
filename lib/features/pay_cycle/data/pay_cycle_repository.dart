@@ -3,7 +3,7 @@
 
 import 'package:isar_community/isar.dart';
 
-import '../../../core/database/category.dart';
+import '../../../core/database/isar_provider.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
@@ -146,6 +146,21 @@ class PayCycleRepository implements PayCycleRepositoryBase {
   }) async {
     final now = referenceNow ?? DateTime.now();
 
+    // Resolved BEFORE opening the write transaction below (matches the
+    // established pattern in `TransactionRepository.saveTransaction`). D18/
+    // M16 bug #3: previously this transaction was written with
+    // `walletId == 0` (never reaches a budget-included wallet, so today's
+    // bekel never reached the Home number) and category "Makan" (whatever
+    // category happened to be first) — both replaced with real, resolved
+    // values. Only resolved when actually needed, to avoid creating a
+    // system category/wallet on every rollover that logs no bekel.
+    int? walletId;
+    int? catId;
+    if (todayBekelIncome != null && todayBekelIncome > 0) {
+      walletId = await resolveDefaultWalletId(_isar);
+      catId = await resolveSystemCategoryId(_isar);
+    }
+
     await _isar.writeTxn(() async {
       final existing = await _isar.localProfiles.where().findFirst();
       final profile = existing ?? LocalProfile();
@@ -157,14 +172,13 @@ class PayCycleRepository implements PayCycleRepositoryBase {
       await _isar.localProfiles.put(profile);
 
       if (todayBekelIncome != null && todayBekelIncome > 0) {
-        final categories = await _isar.categorys.where().findAll();
-        final catId = categories.isNotEmpty ? categories.first.id : 1;
-
         final tx = db.Transaction()
           ..type = db.TransactionType.income
           ..amount = todayBekelIncome
-          ..categoryId = catId
+          ..categoryId = catId!
+          ..walletId = walletId!
           ..date = now
+          ..createdAt = now
           ..notes = 'Bekel hari ini';
 
         await _isar.transactions.put(tx);

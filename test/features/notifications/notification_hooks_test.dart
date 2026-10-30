@@ -7,6 +7,7 @@ import 'package:ledgermate/core/database/isar_provider.dart';
 import 'package:ledgermate/core/database/local_profile.dart';
 import 'package:ledgermate/core/database/pay_cycle.dart';
 import 'package:ledgermate/core/database/transaction.dart' as db;
+import 'package:ledgermate/core/database/wallet.dart';
 import 'package:ledgermate/features/notifications/application/goal_notification_hook.dart';
 import 'package:ledgermate/features/notifications/application/limit_alert_hook.dart';
 import 'package:ledgermate/features/notifications/application/pay_cycle_notification_hook.dart';
@@ -165,5 +166,59 @@ void main() {
 
       expect(fakeNotif.limitExceededAlerts.length, 1);
     });
+
+    test(
+      'D18/M16 bug #7 regression: does NOT fire from a transaction in a '
+      'non-budget wallet (must match the SAME wallet scoping Home uses)',
+      () async {
+        final today = DateTime.now();
+        final profile = LocalProfile()
+          ..notifLimitAlertEnabled = true
+          ..incomeFrequency = IncomeFrequency.periodic;
+        await isar.writeTxn(() => isar.localProfiles.put(profile));
+
+        final cycle = PayCycle()
+          ..fixedSalary = 3000000
+          ..startDate = today.subtract(const Duration(days: 1))
+          ..paydayDate = today.add(const Duration(days: 29));
+        await isar.writeTxn(() => isar.payCycles.put(cycle));
+
+        final budgetWallet = Wallet()
+          ..name = 'Tunai'
+          ..icon = 'wallet'
+          ..startingBalance = 0
+          ..includeInDailyBudget = true
+          ..createdAt = DateTime(2026, 1, 1);
+        final savingsWallet = Wallet()
+          ..name = 'Tabungan'
+          ..icon = 'savings'
+          ..startingBalance = 0
+          ..includeInDailyBudget = false
+          ..createdAt = DateTime(2026, 1, 1);
+        await isar.writeTxn(() async {
+          final bId = await isar.wallets.put(budgetWallet);
+          budgetWallet.id = bId;
+          final sId = await isar.wallets.put(savingsWallet);
+          savingsWallet.id = sId;
+        });
+
+        // A huge expense, but entirely in the NON-budget savings wallet —
+        // before D18/M16's fix, the hook summed ALL wallets with no
+        // scoping, so this would have wrongly fired despite Home correctly
+        // excluding it (BR-04).
+        final tx = db.Transaction()
+          ..amount = 9000000
+          ..type = db.TransactionType.expense
+          ..categoryId = 1
+          ..walletId = savingsWallet.id
+          ..date = today;
+        await isar.writeTxn(() => isar.transactions.put(tx));
+
+        final hook = container.read(limitAlertHookProvider);
+        await hook.onTransactionSaved();
+
+        expect(fakeNotif.limitExceededAlerts, isEmpty);
+      },
+    );
   });
 }

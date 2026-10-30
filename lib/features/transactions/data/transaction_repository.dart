@@ -136,16 +136,22 @@ class TransactionRepository implements TransactionRepositoryBase {
       );
     }
 
+    final isEditing = id != null && id > 0;
+    final existingTx = isEditing ? await _isar.transactions.get(id) : null;
+
     int? effectivePayCycleId = payCycleId;
     if (effectivePayCycleId == null) {
-      // For Mode A (periodic income), associate with the latest pay cycle if available.
+      // For Mode A (periodic income), associate with whichever PayCycle's
+      // date range actually covers [date] — NOT unconditionally "the latest
+      // cycle" (D18/M16 bug #5: that previously silently re-homed an edited
+      // historical transaction into the CURRENT cycle just because the edit
+      // didn't touch the date field). Editing a transaction without
+      // changing its date naturally resolves back to the SAME cycle it was
+      // always in; explicitly moving the date into a different cycle's
+      // range correctly re-homes it there instead.
       final profile = await _isar.localProfiles.where().findFirst();
       if (profile?.incomeFrequency == IncomeFrequency.periodic) {
-        final latestCycle = await _isar.payCycles
-            .where()
-            .sortByStartDateDesc()
-            .findFirst();
-        effectivePayCycleId = latestCycle?.id;
+        effectivePayCycleId = await _resolveCycleIdForDate(date);
       }
     }
 
@@ -173,11 +179,9 @@ class TransactionRepository implements TransactionRepositoryBase {
     }
 
     return _isar.writeTxn(() async {
-      final tx = (id != null && id > 0)
-          ? (await _isar.transactions.get(id) ?? db.Transaction())
-          : db.Transaction();
+      final tx = existingTx ?? db.Transaction();
 
-      if (id != null && id > 0) {
+      if (isEditing) {
         tx.id = id;
       }
       tx.type = type;
@@ -187,8 +191,29 @@ class TransactionRepository implements TransactionRepositoryBase {
       tx.notes = notes?.trim().isEmpty == true ? null : notes?.trim();
       tx.payCycleId = effectivePayCycleId;
       tx.walletId = effectiveWalletId;
-      tx.transferPeerWalletId = transferPeerWalletId;
-      tx.transferGroupId = transferGroupId;
+
+      // D18/M16 bug #10: a transaction's `transferPeerWalletId`/
+      // `transferGroupId` must never survive once its type is no longer
+      // `transfer` — otherwise the old peer wallet can never be deleted
+      // again (a dangling FK reference to it persists forever). Transfers
+      // in this codebase are modeled as a SINGLE row with a peer-wallet
+      // reference (see `WalletRepository.transfer`), not two physically
+      // linked rows, so there is no second row to delete/convert here —
+      // clearing this row's own fields is the complete fix.
+      if (type == db.TransactionType.transfer) {
+        tx.transferPeerWalletId = transferPeerWalletId;
+        tx.transferGroupId = transferGroupId;
+      } else {
+        tx.transferPeerWalletId = null;
+        tx.transferGroupId = null;
+      }
+
+      // D18/M16 bug #6: `createdAt` is set ONCE at first save and never
+      // touched again on edit — this is what delete-eligibility checks
+      // against (see `deleteTransaction` below), so editing a historical
+      // transaction's user-facing [date] can never resurrect its delete
+      // eligibility.
+      tx.createdAt ??= DateTime.now();
 
       final savedId = await _isar.transactions.put(tx);
       tx.id = savedId;
@@ -196,8 +221,35 @@ class TransactionRepository implements TransactionRepositoryBase {
     });
   }
 
+  /// Finds which [PayCycle]'s date range covers [date] — the most recent
+  /// cycle whose `startDate` is on or before [date]. Falls back to the
+  /// oldest known cycle if [date] predates every cycle, or `null` if no
+  /// cycle exists at all yet.
+  Future<int?> _resolveCycleIdForDate(DateTime date) async {
+    final cycles = await _isar.payCycles
+        .where()
+        .sortByStartDateDesc()
+        .findAll();
+    if (cycles.isEmpty) return null;
+    for (final cycle in cycles) {
+      if (!date.isBefore(cycle.startDate)) {
+        return cycle.id;
+      }
+    }
+    return cycles.last.id; // date predates every known cycle
+  }
+
   /// Deletes a transaction, strictly enforcing the FR-03 restriction:
-  /// Only transactions dated today can be deleted.
+  /// Only transactions ORIGINALLY CREATED today can be deleted.
+  ///
+  /// D18/M16 bug #6: this previously checked the user-editable [db.
+  /// Transaction.date] field, which meant editing an old transaction's date
+  /// to today — then deleting it — bypassed the "can't delete historical
+  /// transactions" rule entirely. Checking [db.Transaction.createdAt]
+  /// (never touched by edits) closes that loophole. Pre-M16 legacy rows
+  /// with no recorded `createdAt` fall back to the old (bypassable)
+  /// [db.Transaction.date] check, since there is no way to recover their
+  /// true creation date.
   @override
   Future<void> deleteTransaction(int id, {DateTime? referenceDate}) async {
     final tx = await _isar.transactions.get(id);
@@ -205,7 +257,7 @@ class TransactionRepository implements TransactionRepositoryBase {
       return; // Already deleted or doesn't exist
     }
 
-    if (!isTransactionDeletable(tx.date, referenceDate)) {
+    if (!isTransactionDeletable(tx.createdAt ?? tx.date, referenceDate)) {
       throw TransactionDeleteRestrictedException();
     }
 

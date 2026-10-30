@@ -214,6 +214,7 @@ class BackupData {
       'notifGoalMilestoneEnabled': p.notifGoalMilestoneEnabled,
       'onboardingComplete': p.onboardingComplete,
       'lastRolloverDate': p.lastRolloverDate?.toIso8601String(),
+      'lastAccrualDate': p.lastAccrualDate?.toIso8601String(),
     };
   }
 
@@ -240,7 +241,14 @@ class BackupData {
       );
     }
 
-    p.carryOverBalance = _asInt(m, 'carryOverBalance', 'LocalProfile', min: 0);
+    // D18/M16 bug #9: `carryOverBalance` (Mode B's SaldoCarryOver) legitimately
+    // goes negative when the user overspent — see `calculateNextDayCarryOver`'s
+    // doc comment ("absorbs deficits if overspent"). Clamping it to `min: 0`
+    // here rejected every valid backup containing a negative carry-over
+    // outright, breaking restore-to-a-new-phone for exactly the users who
+    // most needed it. No `min` constraint for this field; it does NOT apply
+    // to any other monetary field on this entity.
+    p.carryOverBalance = _asInt(m, 'carryOverBalance', 'LocalProfile');
 
     final rawMandatory = m['mandatoryExpenses'];
     if (rawMandatory is List) {
@@ -293,6 +301,10 @@ class BackupData {
 
     if (m['lastRolloverDate'] != null) {
       p.lastRolloverDate = _asDateTime(m, 'lastRolloverDate', 'LocalProfile');
+    }
+
+    if (m['lastAccrualDate'] != null) {
+      p.lastAccrualDate = _asDateTime(m, 'lastAccrualDate', 'LocalProfile');
     }
 
     return p;
@@ -348,7 +360,12 @@ class BackupData {
   // Category (PRD §8)
   // --------------------------------------------------------------------------
   static Map<String, dynamic> _categoryToJson(Category cat) {
-    return {'id': cat.id, 'name': cat.name, 'isDefault': cat.isDefault};
+    return {
+      'id': cat.id,
+      'name': cat.name,
+      'isDefault': cat.isDefault,
+      'isSystemGenerated': cat.isSystemGenerated,
+    };
   }
 
   static Category _categoryFromJson(Map<String, dynamic> m) {
@@ -356,6 +373,9 @@ class BackupData {
     if (m['id'] is int) cat.id = m['id'] as int;
     cat.name = _asString(m, 'name', 'Category');
     cat.isDefault = m['isDefault'] is bool ? m['isDefault'] as bool : false;
+    cat.isSystemGenerated = m['isSystemGenerated'] is bool
+        ? m['isSystemGenerated'] as bool
+        : false;
     return cat;
   }
 
@@ -374,6 +394,7 @@ class BackupData {
       'walletId': tx.walletId,
       'transferPeerWalletId': tx.transferPeerWalletId,
       'transferGroupId': tx.transferGroupId,
+      'createdAt': tx.createdAt?.toIso8601String(),
     };
   }
 
@@ -397,6 +418,11 @@ class BackupData {
         ? m['transferPeerWalletId'] as int
         : null;
     tx.transferGroupId = m['transferGroupId']?.toString();
+    // M16 addition — null for backups exported before this field existed,
+    // same fallback-to-[date] behavior as any other pre-M16 legacy row.
+    if (m['createdAt'] != null) {
+      tx.createdAt = _asDateTime(m, 'createdAt', 'Transaction');
+    }
     return tx;
   }
 

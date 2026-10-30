@@ -114,4 +114,15 @@ class LocalProfile {
   /// for Mode B (or cycle transition). Nullable for backward compatibility;
   /// when null, cycle boundary detection falls back to transaction dates.
   DateTime? lastRolloverDate;
+
+  /// M16 schema addition (D18 bug #1/#4c): tracks the calendar date through
+  /// which the automatic daily accrual/catch-up job
+  /// (`core/accrual/daily_accrual_service.dart`) has already processed goal
+  /// accrual (BR-03) and Mode B carry-over advancement (BR-01). `null` means
+  /// the job has never run for this profile — on first run it seeds to
+  /// today WITHOUT retroactively accruing for days before the fix shipped
+  /// (there is no reliable way to know what "should have" accrued before
+  /// M16). Distinct from [lastRolloverDate], which tracks the user-facing
+  /// manual Pay Cycle Transition screen (FR-05), a separate concern.
+  DateTime? lastAccrualDate;
 }

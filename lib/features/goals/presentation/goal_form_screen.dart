@@ -11,6 +11,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
 import '../../budget_engine/application/budget_providers.dart';
+import '../../wallets/application/wallet_providers.dart';
 import '../application/goals_providers.dart';
 import 'widgets/realism_warning_dialog.dart';
 
@@ -117,6 +118,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
     final latestCycle = ref.read(budgetLatestPayCycleStreamProvider).value;
     final txs = ref.read(budgetTransactionsStreamProvider).value ?? const [];
     final existingGoals = ref.read(budgetGoalsStreamProvider).value ?? const [];
+    final wallets = ref.read(walletsStreamProvider).value ?? const [];
 
     if (profile != null) {
       final realism = checkGoalRealism(
@@ -125,6 +127,7 @@ class _GoalFormScreenState extends ConsumerState<GoalFormScreen> {
         profile: profile,
         latestCycle: latestCycle,
         transactions: txs,
+        wallets: wallets,
         referenceNow: now,
       );
 

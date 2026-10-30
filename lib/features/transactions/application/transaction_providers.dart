@@ -47,6 +47,7 @@ class TransactionFormState {
     this.isSubmitting = false,
     this.submitError,
     this.initialTransactionId,
+    this.createdAt,
   });
 
   final db.TransactionType type;
@@ -60,6 +61,13 @@ class TransactionFormState {
   final bool isSubmitting;
   final String? submitError;
   final int? initialTransactionId;
+
+  /// The transaction's ORIGINAL creation timestamp (D18/M16 bug #6) — `null`
+  /// for brand-new (not-yet-saved) transactions and for pre-M16 legacy rows
+  /// with no recorded `createdAt`. [canDelete] checks this instead of
+  /// [date] so editing a historical transaction's date to today can never
+  /// resurrect delete eligibility.
+  final DateTime? createdAt;
 
   bool get isEditMode => initialTransactionId != null;
 
@@ -75,10 +83,11 @@ class TransactionFormState {
     return (categoryId != null && categoryId! > 0);
   }
 
-  /// Checks if this transaction is dated today (FR-03: today-only delete restriction).
+  /// Checks if this transaction is eligible for delete (FR-03: restricted to
+  /// transactions ORIGINALLY CREATED today — see [createdAt] doc).
   bool get canDelete {
     if (!isEditMode) return false;
-    return isTransactionDeletable(date);
+    return isTransactionDeletable(createdAt ?? date);
   }
 
   TransactionFormState copyWith({
@@ -88,25 +97,32 @@ class TransactionFormState {
     int? walletId,
     int? transferPeerWalletId,
     String? transferGroupId,
+    bool clearTransferFields = false,
     DateTime? date,
     String? notes,
     bool? isSubmitting,
     String? submitError,
     bool clearSubmitError = false,
     int? initialTransactionId,
+    DateTime? createdAt,
   }) {
     return TransactionFormState(
       type: type ?? this.type,
       amount: amount ?? this.amount,
       categoryId: categoryId ?? this.categoryId,
       walletId: walletId ?? this.walletId,
-      transferPeerWalletId: transferPeerWalletId ?? this.transferPeerWalletId,
-      transferGroupId: transferGroupId ?? this.transferGroupId,
+      transferPeerWalletId: clearTransferFields
+          ? null
+          : (transferPeerWalletId ?? this.transferPeerWalletId),
+      transferGroupId: clearTransferFields
+          ? null
+          : (transferGroupId ?? this.transferGroupId),
       date: date ?? this.date,
       notes: notes ?? this.notes,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       submitError: clearSubmitError ? null : (submitError ?? this.submitError),
       initialTransactionId: initialTransactionId ?? this.initialTransactionId,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }
@@ -130,6 +146,7 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
         date: tx.date,
         notes: tx.notes,
         initialTransactionId: tx.id,
+        createdAt: tx.createdAt,
       );
     } else {
       state = TransactionFormState(date: DateTime.now());
@@ -137,7 +154,15 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
   }
 
   void setType(db.TransactionType type) {
-    state = state.copyWith(type: type);
+    // D18/M16 bug #10: clear any dangling transfer peer/group reference the
+    // moment the user switches away from `transfer` in the form itself —
+    // the data-layer fix in `TransactionRepository.saveTransaction` is the
+    // authoritative one, but clearing it here too avoids briefly showing a
+    // stale peer-wallet selection in the UI.
+    state = state.copyWith(
+      type: type,
+      clearTransferFields: type != db.TransactionType.transfer,
+    );
   }
 
   void setWallet(int walletId) {

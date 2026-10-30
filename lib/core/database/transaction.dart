@@ -52,4 +52,13 @@ class Transaction {
 
   /// Identifier grouping the transfer action or paired rows (v1.1, D16).
   String? transferGroupId;
+
+  /// Timestamp this row was FIRST saved, distinct from the user-editable
+  /// [date] field (M16, D18 bug #6). `null` only for pre-M16 legacy rows
+  /// that predate this field (no reliable backfill is possible — see
+  /// `isTransactionDeletable` callers, which fall back to [date] for those).
+  /// Never overwritten on edit — this is what FR-03's delete-restriction
+  /// must check, so that editing a transaction's [date] to today can never
+  /// resurrect delete eligibility for a historical transaction.
+  DateTime? createdAt;
 }

@@ -9,6 +9,8 @@ import '../../../core/database/isar_provider.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/database/wallet.dart';
+import '../../../core/budget_scope/budget_scope.dart';
 import '../../../core/formulas/daily_budget_formulas.dart';
 import '../../budget_engine/application/budget_providers.dart';
 import '../../notifications/application/goal_notification_hook.dart';
@@ -196,21 +198,28 @@ class RealismCheckResult {
 ///
 /// Strictly calls M4's existing formula functions via `computeDailyBudgetSummary`,
 /// preserving the single source of truth without duplicating formula logic.
+/// [wallets] threads BR-04 wallet scoping through to the SAME shared
+/// computation Home uses (D18/M16 bug #7: this previously omitted wallet
+/// scoping entirely, so the realism check could disagree with what Home
+/// actually showed).
 RealismCheckResult checkGoalRealism({
   required FinancialGoal candidateGoal,
   required List<FinancialGoal> existingGoals,
   required LocalProfile profile,
   PayCycle? latestCycle,
   required List<db.Transaction> transactions,
+  List<Wallet> wallets = const [],
   DateTime? referenceNow,
 }) {
   final now = referenceNow ?? DateTime.now();
+  final includedWalletIds = includedWalletIdsFrom(wallets);
 
   final currentSummary = computeDailyBudgetSummary(
     profile: profile,
     latestCycle: latestCycle,
     transactions: transactions,
     goals: existingGoals,
+    includedWalletIds: includedWalletIds,
     referenceNow: now,
   );
 
@@ -234,6 +243,7 @@ RealismCheckResult checkGoalRealism({
     latestCycle: latestCycle,
     transactions: transactions,
     goals: candidateGoals,
+    includedWalletIds: includedWalletIds,
     referenceNow: now,
   );
 

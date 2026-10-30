@@ -2,8 +2,8 @@
 // feeding back into active PayCycle or LocalProfile carry-over (FR-06, FR-06b, FR-06c, BR-03).
 import 'package:isar_community/isar.dart';
 
-import '../../../core/database/category.dart';
 import '../../../core/database/financial_goal.dart';
+import '../../../core/database/isar_provider.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
@@ -169,6 +169,16 @@ class GoalsRepository implements GoalsRepositoryBase {
       );
     }
 
+    // Resolved BEFORE opening the write transaction below (matches the
+    // established pattern in `TransactionRepository.saveTransaction` — see
+    // doc comments on these helpers in `core/database/isar_provider.dart`).
+    // D18/M16 bug #2: previously this transaction was written with
+    // `walletId == 0` (never reaches a real wallet's computed balance) and
+    // category "Makan" (whatever category happened to be first) — both
+    // replaced with real, resolved values.
+    final walletId = await resolveDefaultWalletId(_isar);
+    final catId = await resolveSystemCategoryId(_isar);
+
     return _isar.writeTxn(() async {
       final goal = await _isar.financialGoals.get(goalId);
       if (goal == null) {
@@ -195,30 +205,38 @@ class GoalsRepository implements GoalsRepositoryBase {
           profile?.incomeFrequency == IncomeFrequency.periodic ||
           (profile == null && latestCycle != null);
 
-      final categories = await _isar.categorys.where().findAll();
-      final catId = categories.isNotEmpty ? categories.first.id : 1;
-
       final tx = db.Transaction()
         ..type = db.TransactionType.income
         ..amount = amount
         ..categoryId = catId
+        ..walletId = walletId
         ..date = now
+        ..createdAt = now
         ..notes = 'Tarik dari goal: ${goal.goalName}'
         ..payCycleId = isPeriodic ? latestCycle?.id : null;
 
       await _isar.transactions.put(tx);
 
+      // D18/M16 bug #2 (Mode B double-count): the withdrawn amount must be
+      // counted EXACTLY ONCE. For Mode B, `UangJajanAmanHariIni` sums
+      // `carryOverBalance` (closed-out days) + today's budget-scoped income
+      // transactions (open day) — see `computeDailyBudgetSummary`. The
+      // transaction recorded above is dated `now` and already flows into
+      // "today's bekel income" via that same mechanism, exactly like Mode
+      // A's RemainingBalance is driven entirely by recorded transactions.
+      // The OLD code ALSO incremented `carryOverBalance` directly here,
+      // double-counting the exact same withdrawal (once via carryOverBalance
+      // forever, once via the transaction for today only) — removed.
+      // `carryOverBalance` itself only advances once the day actually closes
+      // out, via the shared accrual/catch-up job
+      // (`core/accrual/daily_accrual_service.dart`).
       if (isPeriodic) {
-        // Mode A: increases RemainingBalance for the active PayCycle
+        // Mode A: decorative running total (NOT read by the budget formula —
+        // `computeDailyBudgetSummary` sums recorded transactions directly —
+        // kept for consistency with other income-recording call sites).
         if (latestCycle != null) {
           latestCycle.variableIncomeTotal += amount;
           await _isar.payCycles.put(latestCycle);
-        }
-      } else {
-        // Mode B: increases SaldoCarryOver
-        if (profile != null) {
-          profile.carryOverBalance += amount;
-          await _isar.localProfiles.put(profile);
         }
       }
 

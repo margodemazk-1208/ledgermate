@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ledgermate/core/database/financial_goal.dart';
 import 'package:ledgermate/core/database/local_profile.dart';
 import 'package:ledgermate/core/database/pay_cycle.dart';
+import 'package:ledgermate/core/database/transaction.dart' as db;
+import 'package:ledgermate/core/database/wallet.dart';
 import 'package:ledgermate/features/goals/application/goals_providers.dart';
 
 void main() {
@@ -147,5 +149,58 @@ void main() {
         expect(result.projectedDailySavingsReserve, 100000);
       },
     );
+
+    test('D18/M16 bug #7 regression: a huge expense in a non-budget wallet '
+        'must NOT be the reason a goal is flagged unrealistic', () {
+      final referenceNow = DateTime(2026, 10, 1);
+      final profile = LocalProfile()
+        ..incomeFrequency = IncomeFrequency.periodic
+        ..fixedSalary = 15000000;
+
+      final cycle = PayCycle()
+        ..startDate = DateTime(2026, 10, 1)
+        ..paydayDate = DateTime(2026, 10, 31)
+        ..fixedSalary = 15000000
+        ..variableIncomeTotal = 0;
+
+      final budgetWallet = Wallet()
+        ..id = 1
+        ..name = 'Tunai'
+        ..includeInDailyBudget = true
+        ..createdAt = DateTime(2026, 1, 1);
+      final savingsWallet = Wallet()
+        ..id = 2
+        ..name = 'Tabungan'
+        ..includeInDailyBudget = false
+        ..createdAt = DateTime(2026, 1, 1);
+
+      // A huge expense entirely in the non-budget savings wallet — before
+      // D18/M16's fix, `checkGoalRealism` had no wallet scoping at all, so
+      // this would have wrongly dragged the projected number negative.
+      final hugeSavingsExpense = db.Transaction()
+        ..type = db.TransactionType.expense
+        ..amount = 14000000
+        ..walletId = savingsWallet.id
+        ..date = DateTime(2026, 10, 1);
+
+      final candidate = FinancialGoal()
+        ..goalName = 'Dana Darurat'
+        ..targetAmount = 3000000
+        ..currentAmount = 0
+        ..targetDate = DateTime(2026, 12, 31);
+
+      final result = checkGoalRealism(
+        candidateGoal: candidate,
+        existingGoals: const [],
+        profile: profile,
+        latestCycle: cycle,
+        transactions: [hugeSavingsExpense],
+        wallets: [budgetWallet, savingsWallet],
+        referenceNow: referenceNow,
+      );
+
+      expect(result.isUnrealistic, isFalse);
+      expect(result.projectedUangJajanAmanHariIni, greaterThanOrEqualTo(0));
+    });
   });
 }

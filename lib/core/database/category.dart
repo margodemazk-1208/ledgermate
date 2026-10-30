@@ -12,4 +12,11 @@ class Category {
   /// true for default/built-in categories, false for custom ones the user
   /// created in Settings (FR-09).
   bool isDefault = false;
+
+  /// true for categories the app itself creates to attribute system-
+  /// generated bookkeeping transactions (goal withdrawals, Mode B bekel
+  /// rollover entries — M16, D18 bug #2/#3), never shown in the user-facing
+  /// "pick a category" list. Distinct from [isDefault], which is about
+  /// user-visible seed categories.
+  bool isSystemGenerated = false;
 }

@@ -226,5 +226,46 @@ void main() {
         throwsA(isA<BackupValidationException>()),
       );
     });
+
+    test('D18/M16 bug #9 regression: a backup with a NEGATIVE carryOverBalance '
+        'imports successfully instead of being wrongly rejected', () {
+      // A Mode B user who overspent has a legitimately negative
+      // carryOverBalance — `calculateNextDayCarryOver` explicitly "absorbs
+      // deficits if overspent" (see core/formulas/daily_budget_formulas.dart).
+      // The OLD `min: 0` validation rejected this outright, breaking
+      // restore-to-a-new-phone for exactly the users who most needed it.
+      final negativeCarryOverJson = {
+        'app': 'LedgerMate',
+        'version': 1,
+        'exportedAt': DateTime.now().toIso8601String(),
+        'data': {
+          'profiles': [
+            {
+              'id': 1,
+              'fixedSalary': 0,
+              'incomeFrequency': 'daily',
+              'carryOverBalance': -75000,
+              'language': 'id',
+              'theme': 'dark',
+              'notifDailyReminderEnabled': true,
+              'notifDailyReminderTime': 1260,
+              'notifLimitAlertEnabled': true,
+              'notifPayCycleEnabled': true,
+              'notifGoalMilestoneEnabled': true,
+              'onboardingComplete': true,
+            },
+          ],
+          'payCycles': [],
+          'categories': [],
+          'transactions': [],
+          'financialGoals': [],
+          'assets': [],
+        },
+      };
+
+      final restored = BackupData.fromJson(negativeCarryOverJson);
+      expect(restored.profiles, hasLength(1));
+      expect(restored.profiles.first.carryOverBalance, -75000);
+    });
   });
 }
