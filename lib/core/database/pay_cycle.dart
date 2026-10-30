@@ -22,6 +22,10 @@ class MandatoryExpenseItem {
 class PayCycle {
   Id id = Isar.autoIncrement;
 
+  /// Indexed (M18/D18 perf item 1): [watchLatestPayCycle]/[getLatestPayCycle]
+  /// sort by this field on every query, and `TransactionRepository`
+  /// resolves a transaction's owning cycle by scanning cycles sorted by it.
+  @Index()
   DateTime startDate = DateTime.now();
 
   DateTime paydayDate = DateTime.now();

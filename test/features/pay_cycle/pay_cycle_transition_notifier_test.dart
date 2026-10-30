@@ -23,6 +23,10 @@ void main() {
     container = ProviderContainer(
       overrides: [payCycleRepositoryProvider.overrideWithValue(fakeRepository)],
     );
+    // M18: payCycleTransitionNotifierProvider is now `.autoDispose` (item
+    // 6) — keep it alive across this container's lifetime the same way a
+    // mounted PayCycleTransitionScreen's `ref.watch` would in production.
+    container.listen(payCycleTransitionNotifierProvider, (_, _) {});
   });
 
   tearDown(() {
@@ -201,6 +205,11 @@ void main() {
     // Subscribe eagerly so the broadcast stream's events aren't dropped
     // before the notifier itself first reads it.
     isolatedContainer.listen(budgetProfileStreamProvider, (_, _) {});
+    // M18: payCycleTransitionNotifierProvider is now `.autoDispose` (item
+    // 6) — without an active listener here, the bare `.read()` calls below
+    // would let the notifier (and the user-picked date mutated onto it) be
+    // torn down and recreated between statements.
+    isolatedContainer.listen(payCycleTransitionNotifierProvider, (_, _) {});
 
     final profileA = LocalProfile()
       ..incomeFrequency = IncomeFrequency.periodic

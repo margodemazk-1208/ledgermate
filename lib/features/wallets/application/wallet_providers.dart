@@ -181,7 +181,7 @@ class WalletFormNotifier extends Notifier<WalletFormState> {
 }
 
 final walletFormProvider =
-    NotifierProvider<WalletFormNotifier, WalletFormState>(
+    NotifierProvider.autoDispose<WalletFormNotifier, WalletFormState>(
       WalletFormNotifier.new,
     );
 

@@ -282,21 +282,14 @@ void main() {
       expect(find.text('Tipe aset tidak boleh kosong.'), findsOneWidget);
     });
 
-    testWidgets(
-      'bottom navigation bar navigates to Analytics without placeholder (R-26)',
-      (tester) async {
-        tester.view.physicalSize = const Size(800, 1600);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(() => tester.view.resetPhysicalSize());
-
-        await tester.pumpWidget(buildTestWidget());
-        await tester.pumpAndSettle();
-
-        // Tap tab 4 (Analitik)
-        await tester.tap(find.text('Analitik'));
-        await tester.pumpAndSettle();
-        expect(find.text('Visual Analitik'), findsOneWidget);
-      },
-    );
+    // "bottom navigation bar navigates to Analytics" used to live here, but
+    // M18 (D18 perf item 5) moved tab-switch handling out of each
+    // standalone screen and into the persistent `AppShell`/`AppBottomNav`
+    // pair (`AppBottomNav` now only mutates `currentTabIndexProvider`,
+    // relying on `AppShell` to react to it — a bare `AssetsScreen` pumped
+    // without an `AppShell` ancestor has nothing listening for that
+    // change). That behavior, plus the back-button and slide-transition
+    // guarantees, is now covered end-to-end by
+    // `test/core/presentation/navigation/app_shell_test.dart`.
   });
 }

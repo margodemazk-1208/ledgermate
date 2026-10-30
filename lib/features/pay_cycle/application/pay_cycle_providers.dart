@@ -304,6 +304,7 @@ class PayCycleTransitionNotifier extends Notifier<PayCycleTransitionState> {
 }
 
 final payCycleTransitionNotifierProvider =
-    NotifierProvider<PayCycleTransitionNotifier, PayCycleTransitionState>(
-      PayCycleTransitionNotifier.new,
-    );
+    NotifierProvider.autoDispose<
+      PayCycleTransitionNotifier,
+      PayCycleTransitionState
+    >(PayCycleTransitionNotifier.new);

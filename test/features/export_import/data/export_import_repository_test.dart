@@ -129,7 +129,7 @@ void main() {
         expect(content, contains('"app": "LedgerMate"'));
         expect(content, contains('"Transport"'));
 
-        final parsed = repository.validateBackupString(content);
+        final parsed = await repository.validateBackupString(content);
         expect(parsed.categories.first.name, 'Transport');
       },
     );
@@ -168,9 +168,9 @@ void main() {
       expect(content, contains('50000,Beli beras'));
     });
 
-    test('validateBackupString rejects corrupt or non-JSON input', () {
-      expect(
-        () => repository.validateBackupString('NOT A JSON STRING'),
+    test('validateBackupString rejects corrupt or non-JSON input', () async {
+      await expectLater(
+        repository.validateBackupString('NOT A JSON STRING'),
         throwsA(
           isA<BackupValidationException>().having(
             (e) => e.message,
@@ -180,8 +180,8 @@ void main() {
         ),
       );
 
-      expect(
-        () => repository.validateBackupString('[1, 2, 3]'),
+      await expectLater(
+        repository.validateBackupString('[1, 2, 3]'),
         throwsA(
           isA<BackupValidationException>().having(
             (e) => e.message,
@@ -288,7 +288,7 @@ void main() {
           targetDirectoryPath: tempDir.path,
         );
         final rawJson = await File(filePath).readAsString();
-        final validated = repository.validateBackupString(rawJson);
+        final validated = await repository.validateBackupString(rawJson);
 
         // Clear DB manually to simulate fresh install
         await isar.writeTxn(() async {

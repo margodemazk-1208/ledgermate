@@ -4,6 +4,7 @@ import 'package:isar_community/isar.dart';
 
 import '../../../core/database/category.dart';
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/database/transactions_watch.dart';
 
 abstract class AnalyticsRepositoryBase {
   /// Reactive stream of all transactions sorted reverse-chronologically.
@@ -29,11 +30,12 @@ class AnalyticsRepository implements AnalyticsRepositoryBase {
 
   final Isar _isar;
 
+  /// M18/D18 perf item 2: delegates to the SHARED watch helper in
+  /// `core/database/transactions_watch.dart` instead of opening its own
+  /// independent Isar subscription — see that file's header for why.
   @override
   Stream<List<db.Transaction>> watchTransactions() {
-    return _isar.transactions.where().sortByDateDesc().watch(
-      fireImmediately: true,
-    );
+    return watchAllTransactionsShared(_isar);
   }
 
   @override

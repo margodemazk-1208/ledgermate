@@ -22,6 +22,12 @@ void main() {
     container = ProviderContainer(
       overrides: [transactionRepositoryProvider.overrideWithValue(fakeRepo)],
     );
+    // M18: transactionFormProvider is now `.autoDispose` (item 6) — a bare
+    // `container.read()` with no active listener would let Riverpod tear
+    // the notifier down between statements in the async tests below.
+    // `listen` keeps it alive for the life of this container, matching how
+    // a mounted TransactionFormScreen's `ref.watch` keeps it alive in prod.
+    container.listen(transactionFormProvider, (_, _) {});
   });
 
   tearDown(() {

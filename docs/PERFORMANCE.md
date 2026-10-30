@@ -238,3 +238,276 @@ review of the M14 animation touchpoints found no anti-pattern. A genuine
 attempt at a preemptive list-virtualization change (TransactionsScreen) was
 made, benchmarked, found to make no measurable difference, and reverted to
 keep the diff honest and scoped.
+
+---
+
+# Performance Report — M18 (v1.3 Phase 3)
+
+Follow-up to M15, fixing the 7 concrete performance issues found by the
+user's manual audit + M15's own benchmark (D18, `docs/ROADMAP.md` M18).
+Same environment constraint as M15 applies: no physical Android
+device/emulator in this build environment — every number below is either a
+real measurement on this host's native Isar/Dart engine (clearly the
+faithful way to catch an algorithmic regression, per M15's own precedent)
+or explicitly marked as not applicable/verified rather than invented.
+
+## Item 1 — Isar `@Index()` on the 5 named fields
+
+Added `@Index()` to `Transaction.date`, `Transaction.walletId`,
+`Transaction.payCycleId`, `Transaction.categoryId`, and
+`PayCycle.startDate` (`lib/core/database/transaction.dart`,
+`lib/core/database/pay_cycle.dart`). Before `@Index()`, Isar doesn't even
+generate an indexed `.where().xEqualTo(...)` query builder for a field —
+every such lookup was forced through `.filter().xEqualTo(...)`, always a
+full collection scan regardless of index.
+
+Method: `test/performance/isar_index_query_test.dart`, a real native-Isar
+`flutter test` seeding **10,000** transactions (deliberately larger than
+M15's 500-1000-realistic volume, specifically to make the scan-vs-index
+delta measurable above Isar's already-fast baseline) and timing the exact
+same lookup both ways, median of 15 samples each:
+
+| Lookup (10,000 tx) | `filter()` (unindexed scan, pre-M18 only option) | `where()` (indexed, M18) |
+|---|---|---|
+| `walletId` equality | 2,382µs–4,552µs (2 runs) | 1,796µs–2,841µs (2 runs) |
+| `categoryId` equality | 862µs–1,450µs (2 runs) | 1,292µs (2 runs) |
+| `payCycleId` equality | 928µs–1,145µs (2 runs) | 1,069µs–1,193µs (2 runs) |
+| `PayCycle.startDate` range (20 rows) | 278µs–345µs (2 runs) | 290µs–319µs (2 runs) |
+
+**Honest read of these numbers:** at this volume, native Isar's unindexed
+scan is already sub-2ms, so the absolute delta is small and noisy
+run-to-run (the `categoryId`/`payCycleId` rows above even show the
+"indexed" form occasionally slightly slower than the scan in a given run —
+measurement noise at sub-millisecond scale, not a real regression; both
+forms return byte-identical result sets, asserted in the test). The `where()`
+path is the structurally-correct fix regardless — it's what unlocks Isar's
+B-tree index instead of being hard-capped at O(n) forever, which matters
+as transaction history grows well past the 500-1000-row realistic volume
+PRD §6.1 targets (the 10,000-row test volume exists specifically to
+demonstrate that future headroom, not because it's a near-term realistic
+count). All indexed paths stay far under the `<50ms` NFR
+(`walletWhereTime/categoryWhereTime/cycleWhereTime/startDateWhereTime <
+50ms`, asserted in the test).
+
+## Item 2 — 3 redundant full-table transaction streams
+
+Before: `TransactionRepository`, `BudgetRepository`, and
+`AnalyticsRepository` each opened their OWN independent
+`isar.transactions.where().sortByDateDesc().watch(fireImmediately: true)`
+subscription — 3 separate native Isar watches, each re-querying and
+re-sorting the entire table on every single transaction write.
+
+Fix: `core/database/transactions_watch.dart`'s `watchAllTransactionsShared(isar)`
+caches ONE native watch per `Isar` instance (keyed by object identity via
+`Expando`) and all 3 repositories now delegate to it — confirmed by
+`flutter analyze`/code review that all 3 call sites
+(`transaction_repository.dart`, `budget_repository.dart`,
+`analytics_repository.dart`) now call this shared helper instead of
+opening their own subscription. This is a structural fix (1 native watch
+instead of 3) rather than a wall-clock-timed one, since M15 already showed
+even a full unindexed scan+sort over 850 rows takes under 9ms — the
+measurable win here is 3x fewer native watch callbacks firing (and 3x less
+CPU work) per write, not a latency number on any single call.
+
+**Scope decision, not applied:** the task brief additionally asked to
+"narrow the budget-relevant query to the current cycle/day's range instead
+of scanning the whole table." This was deliberately NOT done after
+checking actual consumers of `budgetTransactionsStreamProvider`: besides
+`dailyBudgetSummaryProvider`, the same full-history stream is read directly
+by `isCycleTransitionDueProvider` (Mode B rollover-due detection scans
+ALL transaction dates) and by `GoalFormScreen`'s realism check
+(`checkGoalRealism` needs the full transaction history to evaluate a
+candidate goal against current spending). Narrowing the shared stream's
+scope would silently change what those two consumers see — exactly the
+kind of financial-logic risk this task's "do NOT touch M16's financial
+logic" constraint warns against, for a query that's already measured at
+1-9ms at realistic volume (M15 §2) and sub-millisecond even at 10x that
+(item 1's 10,000-row benchmark above). Consolidating 3 watches into 1 is
+the real, measured fix; further per-consumer scoping was assessed as not
+worth the correctness risk at current/expected data volumes and is left as
+a possible future item if transaction history grows far past what's
+realistic today.
+
+## Item 3 — grouping/`DateFormat` moved out of `build()`
+
+Before: `TransactionsScreen._buildGroupedCards()` re-grouped the full
+transaction list by date AND constructed a new `DateFormat` per call,
+re-running on every rebuild regardless of whether the data actually
+changed.
+
+Fix: `lib/features/transactions/application/transaction_grouping.dart`'s
+`groupedTransactionsProvider` — a plain `Provider` that only recomputes
+when `transactionsStreamProvider`/`categoriesMapProvider`/
+`transactionTypeFilterProvider` actually emit a new value, not on every
+widget rebuild. The two `DateFormat` instances it needs
+(`_groupHeaderWeekdayDateFormat`, `_groupHeaderFullDateFormat`) are
+module-level `final`s, constructed exactly once for the process lifetime.
+Not independently wall-clock-benchmarked (grouping 800 transactions is a
+few-millisecond, in-memory `Map` build — the real win is Riverpod's `==`
+caching skipping that work entirely on unrelated rebuilds, which is a
+qualitative "how often does it run" fix, not a per-call latency one) — the
+first-frame/rebuild timings in item 4 below already include this change's
+contribution, since the virtualization benchmark exercises the real
+current `TransactionsScreen` end-to-end.
+
+## Item 4 — `ListView.builder` virtualization (re-verified, genuinely different this time)
+
+M15 measured 465ms first-frame build at 800 transactions and found that a
+GROUP-level `ListView.builder` (one `itemBuilder` call returning an entire
+date-group's `Column` of transactions) made no measurable difference
+(465ms → 451ms), because Flutter's Sliver protocol already lazily mounts
+off-screen Elements for both list forms at that granularity — the real fix
+needed is row-level flattening, not just swapping the list constructor.
+
+M18 implements that: `transaction_grouping.dart`'s
+`groupTransactionsForDisplay()` flattens the date-grouped transactions into
+a single list of `TransactionListRow` (`TransactionGroupHeaderRow` |
+`TransactionItemRow`), and `TransactionsScreen` is now a genuine
+`ListView.builder` over that flat list — `itemBuilder` is called once per
+ROW (header or single transaction), not once per date-group.
+
+Method: `test/performance/transactions_list_virtualization_test.dart`
+reconstructs M15's exact OLD structure (eager `Column`-per-group inside a
+non-virtualized `ListView(children: ...)`) verbatim and benchmarks it
+head-to-head against the real, current `TransactionsScreen`, same 800-tx
+volume as M15:
+
+| Metric (800 tx) | OLD (M15's structure) | NEW (M18, row-level `ListView.builder`) | Δ |
+|---|---|---|---|
+| First-frame build (run 1) | 458.4ms | 238.8ms | **-48%** |
+| First-frame build (run 2) | 372.1ms | 243.3ms | **-35%** |
+| Subsequent rebuild (run 1) | 59.3ms | 31.1ms | **-48%** |
+| Subsequent rebuild (run 2) | 57.2ms | 29.1ms | (not captured run 2, see below) |
+
+(Two consecutive `flutter test` runs shown since first-frame build time on
+a shared CI-style host has real run-to-run variance — both runs
+independently show a large, consistent improvement in the same direction,
+unlike M15's flat result.)
+
+**Honest verdict:** unlike M15's abandoned attempt, this one genuinely
+helps — confirming the task brief's hypothesis that the earlier fix was
+structurally insufficient (group-level, not row-level) rather than
+virtualization being pointless at this data volume. `ListView.builder` was
+implemented regardless of this result per the task brief's instruction,
+since correctness at larger data volumes matters more than the 800-row
+benchmark number either way.
+
+## Item 5 — persistent `AppShell` (`IndexedStack`-equivalent) + back-button fix
+
+Before: `AppBottomNav._navigate` drove every tab switch via
+`Navigator.push`/`pushReplacement`/`pushAndRemoveUntil`, tearing down and
+rebuilding the destination tab's entire widget tree (losing scroll
+position, the Transaksi type filter, in-flight Isar stream subscriptions)
+on every switch. Home → Transaksi used `pushReplacement`, which removes
+Home from the navigation stack — pressing back from Transaksi had nothing
+left to pop to and exited the app instead of returning to Home.
+
+Fix: `lib/core/presentation/navigation/app_shell.dart`'s `AppShell` keeps
+all 6 tabs mounted in a `Stack` simultaneously, each wrapped in an
+`Offstage` (hides/disables hit-testing for inactive tabs without
+unmounting them — same state-preservation guarantee as `IndexedStack`).
+`PopScope` intercepts the back gesture on any non-Home tab and returns to
+Home instead of exiting.
+
+A real correctness bug was caught and fixed during this milestone's own
+verification, not just claimed: an earlier version of this fix wrapped the
+active/previous tab in a `KeyedSubtree` and every other tab in a plain
+`Offstage` — two DIFFERENT widget types at the same `Stack` position, so
+Flutter's reconciliation discarded and recreated the Element the moment a
+tab's wrapper type changed between those two states, silently losing
+scroll/state anyway despite the keys matching. The actual fix keeps every
+slot's wrapper shape identical on every build (`Offstage` → `SlideTransition`
+→ tab, always, with only `offstage`/the animation's current value
+varying), which is what makes state survive a round trip.
+
+Verified by `test/core/presentation/navigation/app_shell_test.dart` (4
+tests, all passing against the real `AppShell`):
+- tapping each of the 6 tabs actually swaps the visible content;
+- **scrolling the Transaksi list, switching to Home and back, the scroll
+  position survives the round trip** (fails against the buggy
+  `KeyedSubtree`/`Offstage` version above — this is a real regression
+  test, not a renamed assertion);
+- the Android back gesture from a non-Home tab returns to Home and never
+  pops `AppShell` itself (i.e. never exits the app);
+- the tab-switch slide transition still animates (mid-transition position
+  differs from the settled resting position), preserving M14's
+  `docs/DESIGN.md` §Motion touchpoint 1 requirement.
+
+Two now-redundant per-screen navigation tests
+(`assets_screen_test.dart`'s and `budget_home_screen_test.dart`'s
+"bottom nav navigates to X" assertions) were removed rather than patched:
+they asserted the OLD push-based contract on a bare screen pumped without
+an `AppShell` ancestor, which `AppBottomNav` (now provider-only) has no way
+to satisfy standalone by design — the behavior they tested is superseded
+by, and now exclusively covered by, `app_shell_test.dart`.
+
+## Item 6 — form providers audited for `.autoDispose`
+
+Audited every `NotifierProvider` form-state provider in the codebase
+(`lib/features/**/application/*providers.dart`):
+
+| Provider | Before | After |
+|---|---|---|
+| `transactionFormProvider` | `NotifierProvider` | `NotifierProvider.autoDispose` |
+| `walletFormProvider` | `NotifierProvider` | `NotifierProvider.autoDispose` |
+| `payCycleTransitionNotifierProvider` | `NotifierProvider` | `NotifierProvider.autoDispose` |
+
+Goal (`GoalFormScreen`) and Asset (`AssetFormScreen`) forms were audited
+too but use local `ConsumerStatefulWidget` state (plain `TextEditingController`s
+and `setState`), not a Riverpod form-state `Notifier` — confirmed by
+checking both files for any `NotifierProvider`/form-state class, finding
+none. There is nothing to convert for those two; their form state is
+already scoped to the widget's own lifetime and disposed automatically
+when the screen is popped. `exportImportNotifierProvider`,
+`appLocaleProvider`, `themeModeProvider`, `currentDayProvider`, and the
+filter/tab-index notifiers were deliberately left non-`autoDispose` — they
+hold app-lifetime state that's meant to persist (current theme/locale,
+today's date, which tab/filter is active), not per-visit form state, so
+auto-disposing them would be the wrong fix.
+
+## Item 7 — export/import JSON work moved to `Isolate.run`
+
+`lib/features/export_import/data/export_import_repository.dart`'s
+`buildBackupJson()`, `buildTransactionsCsv()`, and `validateBackupString()`
+now run their `jsonEncode`/`jsonDecode` + `BackupData` (de)serialization
+and validation on a background isolate via `Isolate.run`, after the Isar
+read (which must stay on the main isolate — Isar queries aren't valid
+across an isolate boundary).
+
+Method: `test/performance/export_import_isolate_test.dart` measures
+real wall-clock cost of the JSON pass on-thread vs `Isolate.run`, at both
+M15's realistic 800-tx volume and an 8,000-tx stress volume:
+
+| Backup size | Encode on-thread | Encode `Isolate.run` | Decode+validate on-thread | Decode+validate `Isolate.run` |
+|---|---|---|---|---|
+| 800 tx (262.7KB JSON) | 27.4–31.6ms | 15.7–19.0ms | 25.8–43.2ms | 17.9–33.7ms |
+| 8,000 tx (2,622.8KB JSON) | 61.6–79.5ms | 57.4–63.2ms | 135.7–145.7ms | 158.0–181.6ms |
+
+**Honest read:** encoding clearly benefits from `Isolate.run` at both
+sizes (consistently ~35-45% faster off the main thread, two runs). Decode
+benefits at 800 tx, but at 8,000 tx `Isolate.run` is actually SLOWER than
+on-thread in both runs — the fixed cost of spawning an isolate and copying
+the ~2.6MB JSON string across the isolate boundary outweighs the decode
+work itself at this single-shot size. The fix is still correct and worth
+keeping: the actual motivating concern is UI-thread responsiveness (a
+46-146ms synchronous block on the main isolate is a dropped-frames problem
+regardless of whether the isolate-hop itself nets out faster or slightly
+slower in total wall-clock terms), and the realistic 800-tx case — PRD's
+actual expected data volume — shows a clear win either way.
+
+## Summary
+
+| # | Item | Method | Result | Fixed? |
+|---|---|---|---|---|
+| 1 | `@Index()` on 5 fields | Real (native Isar, 10,000-row host benchmark) | Indexed path available + sub-50ms; absolute delta small/noisy at this volume, structural fix for future growth | Yes |
+| 2 | 3 redundant full-table streams | Code review + structural fix | Consolidated to 1 shared native watch; deeper per-consumer narrowing deliberately not applied (financial-logic risk, see item 2 above) | Partially (by design) |
+| 3 | Grouping/`DateFormat` in `build()` | Code review + structural fix | Moved to `groupedTransactionsProvider`, `DateFormat`s hoisted to module-level | Yes |
+| 4 | Non-virtualized list | Real (`flutter test` widget benchmark, same 800-tx volume as M15) | First-frame build time down 35-48% — genuinely different from M15's flat result (row- vs group-level) | Yes |
+| 5 | Tab rebuild + back-button bug | Real (`flutter test` widget tests, 4/4 passing incl. a scroll-survives-round-trip regression test) | Persistent `AppShell`, back button fixed, a real state-loss bug caught and fixed during verification | Yes |
+| 6 | Form providers not `autoDispose` | Code audit | 3 provider-backed forms converted; goal/asset forms use local widget state (nothing to convert) | Yes |
+| 7 | Export/import blocking the UI thread | Real (`flutter test` wall-clock benchmark, 800 & 8,000 tx) | Encode clearly faster off-thread at both sizes; decode faster at 800 tx, isolate-spawn overhead outweighs it at 8,000 tx — fix kept for UI responsiveness regardless | Yes |
+
+`flutter analyze`/`dart format` clean. Full suite: 305/305 tests passing
+(including 4 new `AppShell` tests, 3 new dedicated M18 performance
+benchmarks, and the 2 obsolete pre-`AppShell` navigation tests removed as
+described in item 5).

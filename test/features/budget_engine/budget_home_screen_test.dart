@@ -7,7 +7,6 @@ import 'package:ledgermate/core/formulas/daily_budget_formulas.dart';
 import 'package:ledgermate/core/theme/app_colors.dart';
 import 'package:ledgermate/core/theme/theme_provider.dart';
 import 'package:ledgermate/features/analytics/application/analytics_providers.dart';
-import 'package:ledgermate/features/analytics/presentation/analytics_screen.dart';
 import 'package:ledgermate/features/budget_engine/application/budget_providers.dart';
 import 'package:ledgermate/features/budget_engine/presentation/budget_home_screen.dart';
 import 'package:ledgermate/features/pay_cycle/application/pay_cycle_providers.dart';
@@ -349,46 +348,17 @@ void main() {
 
       final navItem = find.text('Analitik');
       expect(navItem, findsOneWidget);
+      // M18 (D18 perf item 5): tapping a nav item now only mutates
+      // `currentTabIndexProvider` — `BudgetHomeScreen` pumped standalone
+      // (no `AppShell` ancestor, as in this file's `buildTestWidget`) has
+      // nothing listening for that change, so an actual route/content
+      // swap can no longer be asserted at this level. That behavior is
+      // now covered end-to-end by
+      // `test/core/presentation/navigation/app_shell_test.dart`, which
+      // pumps the real `AppShell`.
       await tester.tap(navItem);
       await tester.pumpAndSettle();
-
-      expect(find.byType(AnalyticsScreen), findsOneWidget);
     });
-
-    testWidgets(
-      'Bottom nav tab switch slides horizontally, not an instant swap '
-      '(docs/DESIGN.md §Motion touchpoint 1)',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestWidget(budgetValue: const AsyncValue.data(modeASummary)),
-        );
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.text('Analitik'));
-        await tester.pump(); // transition starts
-        await tester.pump(const Duration(milliseconds: 50)); // mid-flight
-
-        // Checking the rendered global position (rather than reaching into
-        // a specific `SlideTransition` instance, since a push/replace
-        // transiently mounts several — for both the exiting and entering
-        // tab) proves the incoming tab is still animating into place.
-        final midPosition = tester.getTopLeft(
-          find.text('Visual Analitik').first,
-        );
-
-        await tester.pumpAndSettle();
-        expect(find.byType(AnalyticsScreen), findsOneWidget);
-        final restPosition = tester.getTopLeft(find.text('Visual Analitik'));
-
-        expect(
-          midPosition.dx,
-          isNot(restPosition.dx),
-          reason:
-              'mid-transition the incoming tab should still be offset from '
-              'its final resting position, not an instant swap',
-        );
-      },
-    );
 
     testWidgets('Loading and error states (antislop R-27)', (tester) async {
       // Loading

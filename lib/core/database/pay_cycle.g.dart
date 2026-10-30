@@ -51,7 +51,21 @@ const PayCycleSchema = CollectionSchema(
   deserialize: _payCycleDeserialize,
   deserializeProp: _payCycleDeserializeProp,
   idName: r'id',
-  indexes: {},
+  indexes: {
+    r'startDate': IndexSchema(
+      id: 7723980484494730382,
+      name: r'startDate',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'startDate',
+          type: IndexType.value,
+          caseSensitive: false,
+        ),
+      ],
+    ),
+  },
   links: {},
   embeddedSchemas: {r'MandatoryExpenseItem': MandatoryExpenseItemSchema},
 
@@ -170,6 +184,14 @@ extension PayCycleQueryWhereSort on QueryBuilder<PayCycle, PayCycle, QWhere> {
       return query.addWhereClause(const IdWhereClause.any());
     });
   }
+
+  QueryBuilder<PayCycle, PayCycle, QAfterWhere> anyStartDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'startDate'),
+      );
+    });
+  }
 }
 
 extension PayCycleQueryWhere on QueryBuilder<PayCycle, PayCycle, QWhereClause> {
@@ -235,6 +257,111 @@ extension PayCycleQueryWhere on QueryBuilder<PayCycle, PayCycle, QWhereClause> {
           lower: lowerId,
           includeLower: includeLower,
           upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PayCycle, PayCycle, QAfterWhereClause> startDateEqualTo(
+    DateTime startDate,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'startDate', value: [startDate]),
+      );
+    });
+  }
+
+  QueryBuilder<PayCycle, PayCycle, QAfterWhereClause> startDateNotEqualTo(
+    DateTime startDate,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'startDate',
+                lower: [],
+                upper: [startDate],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'startDate',
+                lower: [startDate],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'startDate',
+                lower: [startDate],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'startDate',
+                lower: [],
+                upper: [startDate],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<PayCycle, PayCycle, QAfterWhereClause> startDateGreaterThan(
+    DateTime startDate, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'startDate',
+          lower: [startDate],
+          includeLower: include,
+          upper: [],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PayCycle, PayCycle, QAfterWhereClause> startDateLessThan(
+    DateTime startDate, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'startDate',
+          lower: [],
+          upper: [startDate],
+          includeUpper: include,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PayCycle, PayCycle, QAfterWhereClause> startDateBetween(
+    DateTime lowerStartDate,
+    DateTime upperStartDate, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'startDate',
+          lower: [lowerStartDate],
+          includeLower: includeLower,
+          upper: [upperStartDate],
           includeUpper: includeUpper,
         ),
       );

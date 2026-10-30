@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/presentation/navigation/app_shell.dart';
 import '../../../core/presentation/navigation/slide_page_route.dart';
 import '../../../core/presentation/widgets/app_bottom_nav.dart';
 import '../../../core/presentation/widgets/count_up_rupiah.dart';
@@ -13,7 +14,6 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
 import '../../pay_cycle/presentation/pay_cycle_transition_screen.dart';
 import '../../transactions/application/transaction_providers.dart';
-import '../../transactions/presentation/transactions_screen.dart';
 import '../../wallets/application/wallet_providers.dart';
 import '../../wallets/utils/wallet_icons.dart';
 import '../application/budget_providers.dart';
@@ -587,9 +587,10 @@ class _RincianTransaksiCard extends ConsumerWidget {
               InkWell(
                 key: const ValueKey('home_view_all_transactions_link'),
                 onTap: () {
-                  Navigator.of(context).push(
-                    SlidePageRoute(builder: (_) => const TransactionsScreen()),
-                  );
+                  // M18/D18 perf item 5: switch the shared shell tab
+                  // instead of pushing a second, independently-provider-
+                  // watching `TransactionsScreen` instance on top of it.
+                  ref.read(currentTabIndexProvider.notifier).setIndex(1);
                 },
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

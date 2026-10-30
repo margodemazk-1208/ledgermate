@@ -85,7 +85,7 @@ class FakeExportImportRepository implements ExportImportRepository {
   }
 
   @override
-  BackupData validateBackupString(String jsonContent) {
+  Future<BackupData> validateBackupString(String jsonContent) async {
     if (shouldFail) throw const BackupValidationException('Invalid content');
     return dataToReturn ??
         BackupData(

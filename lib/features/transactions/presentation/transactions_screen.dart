@@ -12,6 +12,7 @@ import '../../../core/presentation/widgets/slide_fade_in_once.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/rupiah_formatter.dart';
+import '../application/transaction_grouping.dart';
 import '../application/transaction_providers.dart';
 import 'transaction_form_screen.dart';
 
@@ -20,34 +21,27 @@ import 'transaction_form_screen.dart';
 ///
 /// Visuals rebuilt for M13 (v1.2) per `docs/design/mockups/02_transaksi.html`:
 /// date-grouped cards, filter pills, icon-circle per row, color-coded amounts.
-class TransactionsScreen extends ConsumerStatefulWidget {
+///
+/// M18 (v1.3 perf): grouping now lives in `groupedTransactionsProvider`
+/// (computed once per data/filter change, not per frame — item 3) and the
+/// list itself is a `ListView.builder` over the FLATTENED row list, which
+/// genuinely virtualizes at per-transaction granularity rather than
+/// per-date-group (item 4) — see `docs/PERFORMANCE.md` for the measured
+/// before/after and why M15's earlier group-level attempt showed no
+/// improvement.
+class TransactionsScreen extends ConsumerWidget {
   const TransactionsScreen({super.key});
 
   @override
-  ConsumerState<TransactionsScreen> createState() => _TransactionsScreenState();
-}
-
-/// Null = "Semua" (no filter).
-class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
-  db.TransactionType? _filter;
-
-  String _groupLabel(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final day = DateTime(date.year, date.month, date.day);
-    if (day == today) {
-      return 'Hari Ini — ${DateFormat('EEEE, d MMM', 'id_ID').format(date)}';
-    }
-    if (day == today.subtract(const Duration(days: 1))) {
-      return 'Kemarin — ${DateFormat('EEEE, d MMM', 'id_ID').format(date)}';
-    }
-    return DateFormat('EEEE, d MMM yyyy', 'id_ID').format(date);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final transactionsAsync = ref.watch(transactionsStreamProvider);
-    final categoriesMap = ref.watch(categoriesMapProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rowsAsync = ref.watch(groupedTransactionsProvider);
+    final filter = ref.watch(transactionTypeFilterProvider);
+    // Only used to distinguish "database genuinely has zero transactions"
+    // (show the full empty state) from "filter matched zero rows" (show
+    // the lighter inline message) — `groupedTransactionsProvider` alone
+    // can't tell these apart once filtered.
+    final isDatabaseEmpty =
+        ref.watch(transactionsStreamProvider).value?.isEmpty ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -56,36 +50,43 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           style: AppTypography.script(fontSize: 20),
         ),
       ),
-      body: transactionsAsync.when(
-        data: (allTransactions) {
-          if (allTransactions.isEmpty) {
+      body: rowsAsync.when(
+        data: (rows) {
+          if (isDatabaseEmpty) {
             return _buildEmptyState(context);
           }
-          final transactions = _filter == null
-              ? allTransactions
-              : allTransactions.where((t) => t.type == _filter).toList();
-
-          return ListView(
+          return ListView.builder(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-            children: [
-              _FilterRow(
-                selected: _filter,
-                onSelected: (f) => setState(() => _filter = f),
-              ),
-              const SizedBox(height: 16),
-              if (transactions.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 40),
-                  child: Center(
-                    child: Text(
-                      'Tidak ada transaksi untuk filter ini.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
+            // +1 for the filter-pill header row always at index 0.
+            itemCount: rows.length + 1 + (rows.isEmpty ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _FilterRow(
+                    selected: filter,
+                    onSelected: (f) => ref
+                        .read(transactionTypeFilterProvider.notifier)
+                        .select(f),
                   ),
-                )
-              else
-                ..._buildGroupedCards(context, transactions, categoriesMap),
-            ],
+                );
+              }
+              if (rows.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: Text('Tidak ada transaksi untuk filter ini.'),
+                  ),
+                );
+              }
+              final row = rows[index - 1];
+              return switch (row) {
+                TransactionGroupHeaderRow() => _GroupHeaderTile(
+                  label: row.label,
+                ),
+                TransactionItemRow() => _TransactionRowTile(row: row),
+              };
+            },
           );
         },
         loading: () => const TransactionsSkeletonList(),
@@ -111,70 +112,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       ),
       bottomNavigationBar: const AppBottomNav(currentIndex: 1),
     );
-  }
-
-  List<Widget> _buildGroupedCards(
-    BuildContext context,
-    List<db.Transaction> transactions,
-    Map<int, dynamic> categoriesMap,
-  ) {
-    final theme = Theme.of(context);
-    final groups = <String, List<db.Transaction>>{};
-    for (final tx in transactions) {
-      groups.putIfAbsent(_groupLabel(tx.date), () => []).add(tx);
-    }
-
-    final widgets = <Widget>[];
-    groups.forEach((label, txs) {
-      widgets.add(
-        Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: theme.dividerColor),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  label,
-                  style: AppTypography.mono(
-                    fontSize: 12,
-                    color: theme.textTheme.bodySmall?.color,
-                  ),
-                ),
-              ),
-              for (var i = 0; i < txs.length; i++)
-                SlideFadeInOnce(
-                  key: ValueKey('transaction_slide_${txs[i].id}'),
-                  child: _TransactionTile(
-                    key: ValueKey('transaction_item_${txs[i].id}'),
-                    transaction: txs[i],
-                    categoryName: txs[i].type == db.TransactionType.transfer
-                        ? 'Transfer'
-                        : (categoriesMap[txs[i].categoryId]?.name ??
-                              'Kategori #${txs[i].categoryId}'),
-                    showDivider: i != txs.length - 1,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        SlidePageRoute(
-                          builder: (_) =>
-                              TransactionFormScreen(transaction: txs[i]),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-            ],
-          ),
-        ),
-      );
-    });
-    return widgets;
   }
 
   Widget _buildEmptyState(BuildContext context) {
@@ -251,87 +188,146 @@ class _FilterRow extends StatelessWidget {
   }
 }
 
-class _TransactionTile extends StatelessWidget {
-  const _TransactionTile({
-    super.key,
-    required this.transaction,
-    required this.categoryName,
-    required this.onTap,
-    required this.showDivider,
-  });
+/// Top of a date-group "card" — recreates the rounded-top/bordered look a
+/// single enclosing `Container` used to provide, now split across
+/// individually-virtualized `ListView.builder` rows (M18 item 4).
+class _GroupHeaderTile extends StatelessWidget {
+  const _GroupHeaderTile({required this.label});
 
-  final db.Transaction transaction;
-  final String categoryName;
-  final VoidCallback onTap;
-  final bool showDivider;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.fromLTRB(18, 10, 18, 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+        border: Border(
+          top: BorderSide(color: theme.dividerColor),
+          left: BorderSide(color: theme.dividerColor),
+          right: BorderSide(color: theme.dividerColor),
+        ),
+      ),
+      child: Text(
+        label,
+        style: AppTypography.mono(
+          fontSize: 12,
+          color: theme.textTheme.bodySmall?.color,
+        ),
+      ),
+    );
+  }
+}
+
+/// One transaction row within a date-group "card". [TransactionItemRow.
+/// isLastInGroup] closes the card's bottom border/rounded corners and adds
+/// breathing room before the next group's header (M18 item 4).
+class _TransactionRowTile extends StatelessWidget {
+  const _TransactionRowTile({required this.row});
+
+  final TransactionItemRow row;
+
+  static final _timeFormat = DateFormat('HH:mm');
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final transaction = row.transaction;
     final isExpense = transaction.type == db.TransactionType.expense;
     final isTransfer = transaction.type == db.TransactionType.transfer;
     final amountFormatted = formatRupiah(transaction.amount);
-    final timeFormatted = DateFormat('HH:mm').format(transaction.date);
+    final timeFormatted = _timeFormat.format(transaction.date);
 
     final color = isTransfer
         ? theme.textTheme.bodySmall?.color
         : (isExpense ? AppColors.expenseRed : AppColors.savingsGreen);
 
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          border: showDivider
-              ? Border(bottom: BorderSide(color: theme.dividerColor))
-              : null,
+    return Container(
+      margin: EdgeInsets.only(bottom: row.isLastInGroup ? 16 : 0),
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: row.isLastInGroup
+            ? const BorderRadius.vertical(bottom: Radius.circular(18))
+            : null,
+        border: Border(
+          left: BorderSide(color: theme.dividerColor),
+          right: BorderSide(color: theme.dividerColor),
+          bottom: row.isLastInGroup
+              ? BorderSide(color: theme.dividerColor)
+              : BorderSide.none,
         ),
-        child: Row(
-          children: [
-            IconCircle(
-              icon: isTransfer
-                  ? Icons.swap_horiz
-                  : (isExpense ? Icons.arrow_upward : Icons.arrow_downward),
-              size: 36,
-              color: color,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    categoryName,
-                    style: AppTypography.mono(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    transaction.notes != null && transaction.notes!.isNotEmpty
-                        ? '$timeFormatted • ${transaction.notes}'
-                        : timeFormatted,
-                    style: AppTypography.mono(
-                      fontSize: 11,
-                      color: theme.textTheme.bodySmall?.color,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+      ),
+      child: SlideFadeInOnce(
+        key: ValueKey('transaction_slide_${transaction.id}'),
+        child: InkWell(
+          key: ValueKey('transaction_item_${transaction.id}'),
+          onTap: () {
+            Navigator.of(context).push(
+              SlidePageRoute(
+                builder: (_) => TransactionFormScreen(transaction: transaction),
               ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              border: row.isLastInGroup
+                  ? null
+                  : Border(bottom: BorderSide(color: theme.dividerColor)),
             ),
-            const SizedBox(width: 8),
-            Text(
-              '${isTransfer ? '' : (isExpense ? '- ' : '+ ')}$amountFormatted',
-              style: AppTypography.mono(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
+            child: Row(
+              children: [
+                IconCircle(
+                  icon: isTransfer
+                      ? Icons.swap_horiz
+                      : (isExpense ? Icons.arrow_upward : Icons.arrow_downward),
+                  size: 36,
+                  color: color,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        row.categoryName,
+                        style: AppTypography.mono(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        transaction.notes != null &&
+                                transaction.notes!.isNotEmpty
+                            ? '$timeFormatted • ${transaction.notes}'
+                            : timeFormatted,
+                        style: AppTypography.mono(
+                          fontSize: 11,
+                          color: theme.textTheme.bodySmall?.color,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${isTransfer ? '' : (isExpense ? '- ' : '+ ')}$amountFormatted',
+                  style: AppTypography.mono(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

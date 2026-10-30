@@ -28,8 +28,17 @@ class Transaction {
   /// deliberately-invalid sentinel so a transaction can never be persisted
   /// without the caller setting a real category (except for transfers where
   /// category is optional/0).
+  ///
+  /// Indexed (M18/D18 perf item 1): category-scoped lookups (analytics
+  /// breakdown, category deletion checks) would otherwise force a full
+  /// collection scan.
+  @Index()
   int categoryId = 0;
 
+  /// Indexed (M18/D18 perf item 1): every budget/transaction-list query in
+  /// this app sorts or filters by `date` (`sortByDateDesc`, range queries),
+  /// so this is the single highest-value index in the schema.
+  @Index()
   DateTime date = DateTime.now();
 
   String? notes;
@@ -39,11 +48,19 @@ class Transaction {
   /// `local_profile.dart`) groups transactions into pay cycles. Mode B
   /// (daily income) has no PayCycle concept, so its transactions leave this
   /// null.
+  ///
+  /// Indexed (M18/D18 perf item 1): Mode A's cycle-scoped budget sum
+  /// (`computeDailyBudgetSummary`) filters by this field.
+  @Index()
   int? payCycleId;
 
   /// FK to [Wallet.id] (v1.1, FR-12, D16). Required foreign key.
   /// Pre-v1.1 legacy transactions are backfilled during migration to point to
   /// the default "Dompet Utama" wallet.
+  ///
+  /// Indexed (M18/D18 perf item 1): wallet-balance computation and the
+  /// wallet-deletion safety check both filter/count by this field.
+  @Index()
   int walletId = 0;
 
   /// FK to destination [Wallet.id] (v1.1, FR-13, D16). Nullable:

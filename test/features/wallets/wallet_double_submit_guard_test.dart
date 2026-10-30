@@ -17,6 +17,10 @@ void main() {
     container = ProviderContainer(
       overrides: [walletRepositoryProvider.overrideWithValue(fakeRepo)],
     );
+    // M18: walletFormProvider is now `.autoDispose` (item 6) — keep it
+    // alive across this container's lifetime the same way a mounted
+    // WalletFormScreen's `ref.watch` would in production.
+    container.listen(walletFormProvider, (_, _) {});
   });
 
   tearDown(() {

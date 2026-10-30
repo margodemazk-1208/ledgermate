@@ -14,6 +14,15 @@ final transactionRepositoryProvider = Provider<TransactionRepositoryBase>((
 });
 
 /// Reactive stream of transactions, reverse-chronological.
+///
+/// M18/D18 perf item 2: the real Isar subscription behind this (and behind
+/// `budgetTransactionsStreamProvider` and
+/// `analyticsTransactionsStreamProvider`) is shared via
+/// `core/database/transactions_watch.dart`'s `watchAllTransactionsShared` —
+/// see that file's doc comment. Pre-M18 these 3 providers each ran through
+/// a repository that opened its OWN independent
+/// `isar.transactions.where().sortByDateDesc().watch(...)`, i.e. 3 separate
+/// full-table re-queries/re-sorts on every single transaction write.
 final transactionsStreamProvider = StreamProvider<List<db.Transaction>>((ref) {
   return ref.watch(transactionRepositoryProvider).watchTransactions();
 });
@@ -259,6 +268,6 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
 }
 
 final transactionFormProvider =
-    NotifierProvider<TransactionFormNotifier, TransactionFormState>(
+    NotifierProvider.autoDispose<TransactionFormNotifier, TransactionFormState>(
       TransactionFormNotifier.new,
     );

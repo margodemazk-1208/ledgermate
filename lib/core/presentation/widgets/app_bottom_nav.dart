@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
-import '../navigation/slide_page_route.dart';
-import '../../../features/analytics/presentation/analytics_screen.dart';
-import '../../../features/assets/presentation/assets_screen.dart';
-import '../../../features/budget_engine/presentation/budget_home_screen.dart';
-import '../../../features/goals/presentation/goals_screen.dart';
-import '../../../features/settings/presentation/settings_screen.dart';
-import '../../../features/transactions/presentation/transactions_screen.dart';
+import '../navigation/app_shell.dart';
 
 /// Shared bottom navigation bar matching `docs/design/mockups/style.css`
 /// `.bottom-nav`/`.nav-item` — Playfair Display script labels, a short
 /// burgundy underline above the active icon instead of a filled background.
 ///
-/// Centralizing navigation here (rather than duplicating a `BottomNavigationBar`
-/// + switch-statement per screen) also fixes a pre-M13 inconsistency where
-/// Home used push-stacking while other tabs used push-replace.
-class AppBottomNav extends StatelessWidget {
+/// M18 (v1.3 perf, item 5): tab switches now mutate [currentTabIndexProvider]
+/// instead of pushing/replacing routes — see `app_shell.dart`'s header for
+/// why (state preservation + correct Android back-button behavior).
+class AppBottomNav extends ConsumerWidget {
   const AppBottomNav({super.key, required this.currentIndex});
 
   final int currentIndex;
@@ -35,36 +30,8 @@ class AppBottomNav extends StatelessWidget {
     _NavItemData(Icons.settings_outlined, Icons.settings, 'Pengaturan'),
   ];
 
-  void _navigate(BuildContext context, int index) {
-    if (index == currentIndex) return;
-    final screen = switch (index) {
-      0 => const BudgetHomeScreen(),
-      1 => const TransactionsScreen(),
-      2 => const GoalsScreen(),
-      3 => const AssetsScreen(),
-      4 => const AnalyticsScreen(),
-      _ => const SettingsScreen(),
-    };
-    // Direction-aware per docs/DESIGN.md §Motion: moving to a later tab
-    // slides in from the right (forward), to an earlier tab from the left
-    // (feels like "going back").
-    final fromLeft = index < currentIndex;
-    if (index == 0) {
-      // Home is the app's root tab — clear the stack so Back doesn't pile up
-      // through every tab previously visited.
-      Navigator.of(context).pushAndRemoveUntil(
-        SlidePageRoute(builder: (_) => screen, fromLeft: fromLeft),
-        (route) => false,
-      );
-    } else {
-      Navigator.of(context).pushReplacement(
-        SlidePageRoute(builder: (_) => screen, fromLeft: fromLeft),
-      );
-    }
-  }
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final navBg = isDark ? const Color(0xFF161616) : theme.colorScheme.surface;
@@ -90,7 +57,10 @@ class AppBottomNav extends StatelessWidget {
                   active: i == currentIndex,
                   activeColor: AppColors.burgundySoft,
                   inactiveColor: unselected,
-                  onTap: () => _navigate(context, i),
+                  onTap: () {
+                    if (i == currentIndex) return;
+                    ref.read(currentTabIndexProvider.notifier).setIndex(i);
+                  },
                 ),
             ],
           ),

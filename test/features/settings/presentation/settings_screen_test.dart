@@ -62,7 +62,7 @@ class FakeExportImportRepository implements ExportImportRepository {
   }) async => '/mock/transaksi.csv';
 
   @override
-  BackupData validateBackupString(String jsonContent) {
+  Future<BackupData> validateBackupString(String jsonContent) async {
     return BackupData(
       exportedAt: DateTime(2026, 10, 29),
       profiles: [],

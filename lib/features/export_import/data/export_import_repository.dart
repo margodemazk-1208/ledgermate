@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:isar_community/isar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -25,10 +26,17 @@ abstract class ExportImportRepository {
   /// (`ExportImportNotifier`) needs the raw bytes to hand to
   /// `FilePicker.saveFile`, which writes through the SAF picker itself
   /// rather than a direct `File` path.
+  ///
+  /// M18/D18 perf item 7: the actual `jsonEncode` pass (CPU-bound, blocks
+  /// the UI thread for large datasets) runs on a background isolate via
+  /// `Isolate.run` — only the Isar read (`createBackupData`) stays on the
+  /// main isolate, since Isar queries aren't valid across an isolate
+  /// boundary.
   Future<String> buildBackupJson();
 
   /// Builds the full transactions CSV content in-memory, same rationale as
-  /// [buildBackupJson].
+  /// [buildBackupJson] (M18/D18 perf item 7: CSV row-building moved to
+  /// `Isolate.run` too).
   Future<String> buildTransactionsCsv();
 
   /// Serializes all collections to a JSON backup file in the downloads/documents folder.
@@ -47,7 +55,12 @@ abstract class ExportImportRepository {
 
   /// Validates a raw JSON string without touching the database.
   /// Throws [BackupValidationException] if malformed or incompatible.
-  BackupData validateBackupString(String jsonContent);
+  ///
+  /// M18/D18 perf item 7: `jsonDecode` + full schema validation
+  /// (`BackupData.fromJson`) run on a background isolate via `Isolate.run`
+  /// — for a large backup file this is real CPU work that would otherwise
+  /// block the UI thread for the duration of the import flow.
+  Future<BackupData> validateBackupString(String jsonContent);
 
   /// Replaces the entire local database with the records from [backupData].
   /// Performed atomically inside a single Isar write transaction.
@@ -95,18 +108,27 @@ class IsarExportImportRepository implements ExportImportRepository {
   @override
   Future<String> buildBackupJson() async {
     final backup = await createBackupData();
-    const encoder = JsonEncoder.withIndent('  ');
-    return encoder.convert(backup.toJson());
+    // M18/D18 perf item 7: the Isar read is done — everything from here is
+    // pure CPU work (JSON encoding), safe to hand to a background isolate
+    // so a large backup doesn't jank the UI thread.
+    return Isolate.run(() {
+      const encoder = JsonEncoder.withIndent('  ');
+      return encoder.convert(backup.toJson());
+    });
   }
 
   @override
   Future<String> buildTransactionsCsv() async {
     final transactions = await isar.transactions.where().findAll();
     final categories = await isar.categorys.where().findAll();
-    return CsvSerializer.transactionsToCsv(
-      transactions: transactions,
-      categories: categories,
-    );
+    // M18/D18 perf item 7: same rationale as [buildBackupJson] — the Isar
+    // reads above are done, row-building is pure CPU work.
+    return Isolate.run(() {
+      return CsvSerializer.transactionsToCsv(
+        transactions: transactions,
+        categories: categories,
+      );
+    });
   }
 
   @override
@@ -162,21 +184,27 @@ class IsarExportImportRepository implements ExportImportRepository {
   }
 
   @override
-  BackupData validateBackupString(String jsonContent) {
-    dynamic parsed;
-    try {
-      parsed = jsonDecode(jsonContent);
-    } catch (e) {
-      throw BackupValidationException('File bukan format JSON yang valid: $e');
-    }
+  Future<BackupData> validateBackupString(String jsonContent) {
+    // M18/D18 perf item 7: `jsonDecode` + full validation is pure CPU work
+    // on a plain String input — safe to run off the main isolate.
+    return Isolate.run(() {
+      dynamic parsed;
+      try {
+        parsed = jsonDecode(jsonContent);
+      } catch (e) {
+        throw BackupValidationException(
+          'File bukan format JSON yang valid: $e',
+        );
+      }
 
-    if (parsed is! Map<String, dynamic>) {
-      throw const BackupValidationException(
-        'Struktur data cadangan tidak valid: objek utama harus berupa JSON Object.',
-      );
-    }
+      if (parsed is! Map<String, dynamic>) {
+        throw const BackupValidationException(
+          'Struktur data cadangan tidak valid: objek utama harus berupa JSON Object.',
+        );
+      }
 
-    return BackupData.fromJson(parsed);
+      return BackupData.fromJson(parsed);
+    });
   }
 
   @override

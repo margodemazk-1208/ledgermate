@@ -230,7 +230,7 @@ class ExportImportNotifier extends Notifier<ExportImportState> {
       }
 
       final content = await file.readAsString();
-      final backupData = _repository.validateBackupString(content);
+      final backupData = await _repository.validateBackupString(content);
 
       state = state.copyWith(isLoading: false, pendingRestore: backupData);
       return backupData;

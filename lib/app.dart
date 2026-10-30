@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/l10n/app_localizations.dart';
+import 'core/presentation/navigation/app_shell.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/time/current_day_provider.dart';
-import 'features/budget_engine/presentation/budget_home_screen.dart';
 import 'features/onboarding/application/onboarding_providers.dart';
 import 'features/onboarding/presentation/onboarding_screen.dart';
 import 'features/settings/application/settings_providers.dart';
@@ -88,7 +88,7 @@ class _OnboardingGate extends ConsumerWidget {
     final onboardingComplete = ref.watch(onboardingCompleteProvider);
     return onboardingComplete.when(
       data: (isComplete) =>
-          isComplete ? const BudgetHomeScreen() : const OnboardingScreen(),
+          isComplete ? const AppShell() : const OnboardingScreen(),
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, stackTrace) => Scaffold(

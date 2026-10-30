@@ -7,6 +7,7 @@ import '../../../core/database/isar_provider.dart';
 import '../../../core/database/local_profile.dart';
 import '../../../core/database/pay_cycle.dart';
 import '../../../core/database/transaction.dart' as db;
+import '../../../core/database/transactions_watch.dart';
 import '../../../core/database/wallet.dart';
 
 /// Exception thrown when attempting to delete a transaction that is not
@@ -84,11 +85,13 @@ class TransactionRepository implements TransactionRepositoryBase {
 
   /// Reactive stream of all transactions sorted reverse-chronologically
   /// (newest first) per FR-02/FR-03.
+  ///
+  /// M18/D18 perf item 2: delegates to the SHARED watch helper in
+  /// `core/database/transactions_watch.dart` instead of opening its own
+  /// independent Isar subscription — see that file's header for why.
   @override
   Stream<List<db.Transaction>> watchTransactions() {
-    return _isar.transactions.where().sortByDateDesc().watch(
-      fireImmediately: true,
-    );
+    return watchAllTransactionsShared(_isar);
   }
 
   @override
